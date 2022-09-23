@@ -125,6 +125,8 @@ void norm(REAL * vec) {
 
 // ##################################################
 // 从 train2id.txt 中读取三元组
+// prerequisites: 
+//     relation2id.txt, entity2id.txt, train2id.txt
 // ##################################################
 
 // relation_total: 关系总数
@@ -145,10 +147,15 @@ INT *freq_rel, *freq_ent;
 // train_list (triple_total): 训练集中的三元组集合，未排序
 Triple *train_head, *train_tail, *train_list;
 
-// left_head: 
+// left_head (entity_total): 存储每种实体 (head) 在 train_head 中第一次出现的位置
+// right_head (entity_total): 存储每种实体 (head) 在 train_head 中最后一次出现的位置
+// left_tail (entity_total): 存储每种实体 (tail) 在 train_tail 中第一次出现的位置
+// right_tail (entity_total): 存储每种实体 (tail) 在 train_tail 中最后一次出现的位置
 INT *left_head, *right_head;
 INT *left_tail, *right_tail;
 
+// left_mean (relation_total): 记录每种关系 head 的种类数
+// right_mean (relation_total): 记录每种关系 tail 的种类数
 REAL *left_mean, *right_mean;
 
 void init() {
@@ -206,10 +213,11 @@ void init() {
 	}
 	fclose(fin);
 
-	// 分别以 head 和 tail 排序
+	// train_head 和 train_tail 分别以 head 和 tail 排序
 	std::sort(train_head, train_head + triple_total, cmp_head());
 	std::sort(train_tail, train_tail + triple_total, cmp_tail());
 
+	// 获得 left_head, right_head, left_tail, right_tail
 	left_head = (INT *)calloc(entity_total, sizeof(INT));
 	right_head = (INT *)calloc(entity_total, sizeof(INT));
 	left_tail = (INT *)calloc(entity_total, sizeof(INT));
@@ -227,6 +235,9 @@ void init() {
 	right_head[train_head[triple_total - 1].h] = triple_total - 1;
 	right_tail[train_tail[triple_total - 1].t] = triple_total - 1;
 
+	// 获得 left_mean、right_mean，为 trainMode 中的 bern_flag 做准备
+	// denoted as “bern”.
+	// 在训练过程中，为了负采样，我们能够构建负三元组，bern 算法能恰当的 lef/(rig+lef)
 	left_mean = (REAL *)calloc(relation_total * 2, sizeof(REAL));
 	right_mean = left_mean + relation_total;
 	for (INT i = 0; i < entity_total; i++) {
