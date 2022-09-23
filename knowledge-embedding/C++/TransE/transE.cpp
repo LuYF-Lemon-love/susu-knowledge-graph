@@ -134,14 +134,17 @@ void norm(REAL * vec) {
 
 // relation_total: 关系总数
 // entity_total: 实体总数
-// triple_total: 
+// triple_total: 训练集中的三元组总数
 INT relation_total, entity_total, triple_total;
 
 // relation_vec: 关系嵌入矩阵 (relation_total * dimension)
 // entity_vec: 实体嵌入矩阵 (entity_total * dimension)
 REAL *relation_vec, *entity_vec;
 
+// freq_rel: 存储各个关系在训练集中的个数 (relation_total)
+// freq_ent: 存储各个实体在训练集中的个数 (entity_total)
 INT *freq_rel, *freq_ent;
+
 REAL *left_mean, *right_mean;
 
 void init() {
@@ -149,6 +152,7 @@ void init() {
 	FILE *fin;
 	INT tmp;
 
+	// 初始化 relation_vec
 	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &relation_total);
 	fclose(fin);
@@ -162,6 +166,7 @@ void init() {
 					6 / sqrt(dimension));
 	}
 
+	// 初始化 entity_vec
 	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &entity_total);
 	fclose(fin);
@@ -175,9 +180,11 @@ void init() {
 					6 / sqrt(dimension));
 	}
 
+	// 为 freq_rel 和 freq_ent 分配一个内存块，并将其所有位初始化为零。
 	freq_rel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
 	freq_ent = freq_rel + relation_total;
 
+	//
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &triple_total);
 	train_head = (Triple *)calloc(triple_total, sizeof(Triple));
