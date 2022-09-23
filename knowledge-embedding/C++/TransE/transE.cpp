@@ -1,18 +1,17 @@
 // transE.cpp
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
-#include <ctime>
-#include <string>
-#include <algorithm>
-#include <pthread.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <cstdio>			// fscanf, fwrite
+#include <cstdlib>			// calloc, free, atoi, atof, rand
+#include <cmath>			// exp, fabs
+#include <cstring>			// memcmp, memcpy, strcmp
+#include <string>			// string::c_str
+#include <algorithm>		// sort
+#include <pthread.h>		// pthread_create, pthread_exit, pthread_join
+#include <sys/mman.h>		// mmap, munmap
+#include <fcntl.h>			// open, close, O_RDONLY
+#include <unistd.h>			// stat
+#include <sys/stat.h>		// stat
 
 #define REAL float
 #define INT int
@@ -39,22 +38,33 @@ string note = "";
 INT *left_head, *right_head;
 INT *left_tail, *right_tail;
 
-// 三元组，type(h) == type(r) == type(t) == int
+// 三元组: (head, label, tail)
+// type(h) == type(r) == type(t) == int
+// h: head
+// r: label or relationship
+// t: tail
+// a relationship of name label between the entities head and tail
 struct Triple {
 	INT h, r, t;
 };
 
 Triple *train_head, *train_tail, *train_list;
 
+// 为 sort() 定义比较仿函数
+// 以三元组的 h 进行比较
 struct cmp_head {
 	bool operator()(const Triple &a, const Triple &b) {
-		return (a.h < b.h)||(a.h == b.h && a.r < b.r)||(a.h == b.h && a.r == b.r && a.t < b.t);
+		return (a.h < b.h)||(a.h == b.h && a.r < b.r)
+			||(a.h == b.h && a.r == b.r && a.t < b.t);
 	}
 };
 
+// 为 sort() 定义比较仿函数
+// 以三元组的 t 进行比较
 struct cmp_tail {
 	bool operator()(const Triple &a, const Triple &b) {
-		return (a.t < b.t)||(a.t == b.t && a.r < b.r)||(a.t == b.t && a.r == b.r && a.h < b.h);
+		return (a.t < b.t)||(a.t == b.t && a.r < b.r)
+			||(a.t == b.t && a.r == b.r && a.h < b.h);
 	}
 };
 
