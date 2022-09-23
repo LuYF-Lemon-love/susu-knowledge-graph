@@ -1,8 +1,12 @@
 // transE.cpp
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 
+// ##################################################
+// 包含标准库
+// ##################################################
+
 #include <cstdio>			// fscanf, fwrite
-#include <cstdlib>			// calloc, free, atoi, atof, rand
+#include <cstdlib>			// calloc, free, atoi, atof, rand, RAND_MAX
 #include <cmath>			// exp, fabs
 #include <cstring>			// memcmp, memcpy, strcmp
 #include <fcntl.h>			// open, close, O_RDONLY
@@ -12,6 +16,10 @@
 #include <pthread.h>		// pthread_create, pthread_exit, pthread_join
 #include <string>			// std::string, std::string::c_str
 #include <algorithm>		// std::sort
+
+// ##################################################
+// 声明和定义变量
+// ##################################################
 
 #define REAL float
 #define INT int
@@ -66,54 +74,64 @@ struct cmp_tail {
 	}
 };
 
-/*
-	There are some math functions for the program initialization.
-*/
+// ##################################################
+// 一些用于程序初始化的数学函数
+// ##################################################
+
+// 为每一个线程存储独立的随机种子
 unsigned long long *next_random;
 
+// 更新第 id[0, threads) 线程的随机种子
 unsigned long long randd(INT id) {
-	next_random[id] = next_random[id] * (unsigned long long)25214903917 + 11;
+	next_random[id] = next_random[id] 
+		* (unsigned long long)25214903917 + 11;
 	return next_random[id];
 }
 
+// 为第 id[0, threads) 线程返回取值为 [0, x) 的伪随机数
 INT rand_max(INT id, INT x) {
 	INT res = randd(id) % x;
-	while (res<0)
-		res+=x;
+	while (res < 0)
+		res += x;
 	return res;
 }
 
+// 返回取值为 [min, max) 的伪随机数 
 REAL rand(REAL min, REAL max) {
 	return min + (max - min) * rand() / (RAND_MAX + 1.0);
 }
 
+// 正态分布函数，X ~ N (miu, sigma)
 REAL normal(REAL x, REAL miu,REAL sigma) {
-	return 1.0/sqrt(2*pi)/sigma*exp(-1*(x-miu)*(x-miu)/(2*sigma*sigma));
+	return 1.0 / sqrt(2 * pi) / sigma
+		* exp(-1 * (x-miu) * (x-miu) / (2 * sigma * sigma));
 }
 
-REAL randn(REAL miu,REAL sigma, REAL min ,REAL max) {
-	REAL x, y, dScope;
+// 从正态（高斯）分布中抽取随机样本，取值为 [min, max) 的伪随机数
+REAL randn(REAL miu, REAL sigma, REAL min, REAL max) {
+	REAL x, y, d_scope;
 	do {
-		x = rand(min,max);
-		y = normal(x,miu,sigma);
-		dScope=rand(0.0,normal(miu,miu,sigma));
-	} while (dScope > y);
+		x = rand(min, max);
+		y = normal(x, miu, sigma);
+		d_scope = rand(0.0, normal(miu, miu, sigma));
+	} while (d_scope > y);
 	return x;
 }
 
-void norm(REAL * con) {
+// 归一化函数：使用 l2 范数将输入向量缩放为 unit norm (vector length)
+void norm(REAL * vec) {
 	REAL x = 0;
-	for (INT  ii = 0; ii < dimension; ii++)
-		x += (*(con + ii)) * (*(con + ii));
+	for (INT i = 0; i < dimension; i++)
+		x += (*(vec + i)) * (*(vec + i));
 	x = sqrt(x);
-	if (x>1)
-		for (INT ii=0; ii < dimension; ii++)
-			*(con + ii) /= x;
+	if (x > 1)
+		for (INT i = 0; i < dimension; i++)
+			*(vec + i) /= x;
 }
 
-/*
-	Read triples from the training file.
-*/
+// ##################################################
+// Read triples from the training file.
+// ##################################################
 
 INT relationTotal, entityTotal, tripleTotal;
 REAL *relationVec, *entityVec;
