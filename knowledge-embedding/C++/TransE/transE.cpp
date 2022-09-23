@@ -5,17 +5,17 @@
 // 包含标准库
 // ##################################################
 
-#include <cstdio>			// FILE, fscanf, fwrite, fopen
-#include <cstdlib>			// calloc, free, atoi, atof, rand, RAND_MAX
-#include <cmath>			// exp, fabs
-#include <cstring>			// memcmp, memcpy, strcmp
-#include <fcntl.h>			// open, close, O_RDONLY
-#include <unistd.h>			// stat
-#include <sys/stat.h>		// stat
-#include <sys/mman.h>		// mmap, munmap
-#include <pthread.h>		// pthread_create, pthread_exit, pthread_join
-#include <string>			// std::string, std::string::c_str
-#include <algorithm>		// std::sort
+#include <cstdio>           // FILE, fscanf, fwrite, fopen
+#include <cstdlib>          // calloc, free, atoi, atof, rand, RAND_MAX
+#include <cmath>            // exp, fabs
+#include <cstring>          // memcmp, memcpy, strcmp
+#include <fcntl.h>          // open, close, O_RDONLY
+#include <unistd.h>         // stat
+#include <sys/stat.h>       // stat
+#include <sys/mman.h>       // mmap, munmap
+#include <pthread.h>        // pthread_create, pthread_exit, pthread_join
+#include <string>           // std::string, std::string::c_str
+#include <algorithm>        // std::sort
 
 // ##################################################
 // 声明和定义变量
@@ -51,7 +51,7 @@ struct Triple {
 };
 
 // 为 std::sort() 定义比较仿函数
-// 以三元组的 h 进行比较
+// 以三元组的 head 进行比较
 struct cmp_head {
 	bool operator()(const Triple &a, const Triple &b) {
 		return (a.h < b.h)||(a.h == b.h && a.r < b.r)
@@ -60,7 +60,7 @@ struct cmp_head {
 };
 
 // 为 std::sort() 定义比较仿函数
-// 以三元组的 t 进行比较
+// 以三元组的 tail 进行比较
 struct cmp_tail {
 	bool operator()(const Triple &a, const Triple &b) {
 		return (a.t < b.t)||(a.t == b.t && a.r < b.r)
@@ -184,7 +184,7 @@ void init() {
 					6 / sqrt(dimension));
 	}
 
-	// 为 freq_rel 和 freq_ent 分配一个内存块，并将其所有位初始化为零。
+	// 为 freq_rel 和 freq_ent 分配一个内存块，并将其所有位初始化为零
 	freq_rel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
 	freq_ent = freq_rel + relation_total;
 
@@ -214,8 +214,6 @@ void init() {
 	right_head = (INT *)calloc(entity_total, sizeof(INT));
 	left_tail = (INT *)calloc(entity_total, sizeof(INT));
 	right_tail = (INT *)calloc(entity_total, sizeof(INT));
-	memset(right_head, -1, sizeof(INT) * entity_total);
-	memset(right_tail, -1, sizeof(INT) * entity_total);
 	for (INT i = 1; i < triple_total; i++) {
 		if (train_head[i].h != train_head[i - 1].h) {
 			right_head[train_head[i - 1].h] = i - 1;
