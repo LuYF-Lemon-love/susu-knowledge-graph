@@ -344,4 +344,47 @@ void* test(void *con) {
 	}
 
 	for (int i = 5; i <= 5; i++) {
-		printf("left %f %f\n",
+		printf("left %f %f\n", l_rank[i][Threads - 1] / testTotal, l_tot[i][Threads - 1] / testTotal);
+		printf("left(filter) %f %f\n", l_filter_rank[i][Threads - 1] / testTotal, l_filter_tot[i][Threads - 1] / testTotal);
+		printf("right %f %f\n", r_rank[i][Threads - 1] / testTotal, r_tot[i][Threads - 1] / testTotal);
+		printf("right(filter) %f %f\n", r_filter_rank[i][Threads - 1] / testTotal, r_filter_tot[i][Threads - 1] / testTotal);
+	}
+
+	for (int i = 1; i <= 4; i++) {
+		printf("left %f %f\n", l_rank[i][Threads - 1] / nntotal[i], l_tot[i][Threads - 1] / nntotal[i]);
+		printf("left(filter) %f %f\n", l_filter_rank[i][Threads - 1] / nntotal[i], l_filter_tot[i][Threads - 1] / nntotal[i]);
+		printf("right %f %f\n", r_rank[i][Threads - 1] / nntotal[i], r_tot[i][Threads - 1] / nntotal[i]);
+		printf("right(filter) %f %f\n", r_filter_rank[i][Threads - 1] / nntotal[i], r_filter_tot[i][Threads - 1] / nntotal[i]);
+	}
+}
+
+long ArgPos(char *str, long argc, char **argv) {
+	long a;
+	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
+		if (a == argc - 1) {
+			printf("Argument missing for %s\n", str);
+			exit(1);
+		}
+		return a;
+	}
+	return -1;
+}
+
+void setparameters(long argc, char **argv) {
+	long i;
+	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-sizeR", argc, argv)) > 0) dimensionR = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) inPath = argv[i + 1];
+	if ((i = ArgPos((char *)"-init", argc, argv)) > 0) initPath = argv[i + 1];
+	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) Threads = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binaryFlag = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+}
+
+int main(int argc, char **argv) {
+	setparameters(argc, argv);
+	init();
+	prepare();
+	test(NULL);
+	return 0;
+}
