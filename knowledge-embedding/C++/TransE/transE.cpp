@@ -36,8 +36,8 @@ string out_path = "./";
 string load_path = "";
 string note = "";
 
-INT *lefHead, *rigHead;
-INT *lefTail, *rigTail;
+INT *left_head, *right_head;
+INT *left_tail, *right_tail;
 
 struct Triple {
 	INT h, r, t;
@@ -161,38 +161,38 @@ void init() {
 	sort(trainHead, trainHead + tripleTotal, cmp_head());
 	sort(trainTail, trainTail + tripleTotal, cmp_tail());
 
-	lefHead = (INT *)calloc(entityTotal, sizeof(INT));
-	rigHead = (INT *)calloc(entityTotal, sizeof(INT));
-	lefTail = (INT *)calloc(entityTotal, sizeof(INT));
-	rigTail = (INT *)calloc(entityTotal, sizeof(INT));
-	memset(rigHead, -1, sizeof(INT)*entityTotal);
-	memset(rigTail, -1, sizeof(INT)*entityTotal);
+	left_head = (INT *)calloc(entityTotal, sizeof(INT));
+	right_head = (INT *)calloc(entityTotal, sizeof(INT));
+	left_tail = (INT *)calloc(entityTotal, sizeof(INT));
+	right_tail = (INT *)calloc(entityTotal, sizeof(INT));
+	memset(right_head, -1, sizeof(INT)*entityTotal);
+	memset(right_tail, -1, sizeof(INT)*entityTotal);
 	for (INT i = 1; i < tripleTotal; i++) {
 		if (trainTail[i].t != trainTail[i - 1].t) {
-			rigTail[trainTail[i - 1].t] = i - 1;
-			lefTail[trainTail[i].t] = i;
+			right_tail[trainTail[i - 1].t] = i - 1;
+			left_tail[trainTail[i].t] = i;
 		}
 		if (trainHead[i].h != trainHead[i - 1].h) {
-			rigHead[trainHead[i - 1].h] = i - 1;
-			lefHead[trainHead[i].h] = i;
+			right_head[trainHead[i - 1].h] = i - 1;
+			left_head[trainHead[i].h] = i;
 		}
 	}
-	rigHead[trainHead[tripleTotal - 1].h] = tripleTotal - 1;
-	rigTail[trainTail[tripleTotal - 1].t] = tripleTotal - 1;
+	right_head[trainHead[tripleTotal - 1].h] = tripleTotal - 1;
+	right_tail[trainTail[tripleTotal - 1].t] = tripleTotal - 1;
 
 	left_mean = (REAL *)calloc(relationTotal * 2, sizeof(REAL));
 	right_mean = left_mean + relationTotal;
 	for (INT i = 0; i < entityTotal; i++) {
-		for (INT j = lefHead[i] + 1; j <= rigHead[i]; j++)
+		for (INT j = left_head[i] + 1; j <= right_head[i]; j++)
 			if (trainHead[j].r != trainHead[j - 1].r)
 				left_mean[trainHead[j].r] += 1.0;
-		if (lefHead[i] <= rigHead[i])
-			left_mean[trainHead[lefHead[i]].r] += 1.0;
-		for (INT j = lefTail[i] + 1; j <= rigTail[i]; j++)
+		if (left_head[i] <= right_head[i])
+			left_mean[trainHead[left_head[i]].r] += 1.0;
+		for (INT j = left_tail[i] + 1; j <= right_tail[i]; j++)
 			if (trainTail[j].r != trainTail[j - 1].r)
 				right_mean[trainTail[j].r] += 1.0;
-		if (lefTail[i] <= rigTail[i])
-			right_mean[trainTail[lefTail[i]].r] += 1.0;
+		if (left_tail[i] <= right_tail[i])
+			right_mean[trainTail[left_tail[i]].r] += 1.0;
 	}
 
 	for (INT i = 0; i < relationTotal; i++) {
@@ -304,16 +304,16 @@ void train_kb(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 
 INT corrupt_head(INT id, INT h, INT r) {
 	INT lef, rig, mid, ll, rr;
-	lef = lefHead[h] - 1;
-	rig = rigHead[h];
+	lef = left_head[h] - 1;
+	rig = right_head[h];
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
 		if (trainHead[mid].r >= r) rig = mid; else
 		lef = mid;
 	}
 	ll = rig;
-	lef = lefHead[h];
-	rig = rigHead[h] + 1;
+	lef = left_head[h];
+	rig = right_head[h] + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
 		if (trainHead[mid].r <= r) lef = mid; else
@@ -336,16 +336,16 @@ INT corrupt_head(INT id, INT h, INT r) {
 
 INT corrupt_tail(INT id, INT t, INT r) {
 	INT lef, rig, mid, ll, rr;
-	lef = lefTail[t] - 1;
-	rig = rigTail[t];
+	lef = left_tail[t] - 1;
+	rig = right_tail[t];
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
 		if (trainTail[mid].r >= r) rig = mid; else
 		lef = mid;
 	}
 	ll = rig;
-	lef = lefTail[t];
-	rig = rigTail[t] + 1;
+	lef = left_tail[t];
+	rig = right_tail[t] + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
 		if (trainTail[mid].r <= r) lef = mid; else
