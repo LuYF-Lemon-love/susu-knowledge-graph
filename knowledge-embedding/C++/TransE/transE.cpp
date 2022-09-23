@@ -41,9 +41,6 @@ std::string out_path = "./";
 std::string load_path = "";
 std::string note = "";
 
-INT *left_head, *right_head;
-INT *left_tail, *right_tail;
-
 // 三元组: (head, label, tail)
 // h: head
 // r: label or relationship
@@ -52,8 +49,6 @@ INT *left_tail, *right_tail;
 struct Triple {
 	INT h, r, t;
 };
-
-Triple *train_head, *train_tail, *train_list;
 
 // 为 std::sort() 定义比较仿函数
 // 以三元组的 h 进行比较
@@ -145,6 +140,15 @@ REAL *relation_vec, *entity_vec;
 // freq_ent: 存储各个实体在训练集中的个数 (entity_total)
 INT *freq_rel, *freq_ent;
 
+// train_head (triple_total): 训练集中的三元组集合，以 head 排序
+// train_tail (triple_total): 训练集中的三元组集合，以 tail 排序
+// train_list (triple_total): 训练集中的三元组集合，未排序
+Triple *train_head, *train_tail, *train_list;
+
+// left_head: 
+INT *left_head, *right_head;
+INT *left_tail, *right_tail;
+
 REAL *left_mean, *right_mean;
 
 void init() {
@@ -184,7 +188,7 @@ void init() {
 	freq_rel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
 	freq_ent = freq_rel + relation_total;
 
-	//
+	// 读取训练集中的三元组
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &triple_total);
 	train_head = (Triple *)calloc(triple_total, sizeof(Triple));
@@ -202,6 +206,7 @@ void init() {
 	}
 	fclose(fin);
 
+	// 分别以 head 和 tail 排序
 	std::sort(train_head, train_head + triple_total, cmp_head());
 	std::sort(train_tail, train_tail + triple_total, cmp_tail());
 
@@ -209,16 +214,16 @@ void init() {
 	right_head = (INT *)calloc(entity_total, sizeof(INT));
 	left_tail = (INT *)calloc(entity_total, sizeof(INT));
 	right_tail = (INT *)calloc(entity_total, sizeof(INT));
-	memset(right_head, -1, sizeof(INT)*entity_total);
-	memset(right_tail, -1, sizeof(INT)*entity_total);
+	memset(right_head, -1, sizeof(INT) * entity_total);
+	memset(right_tail, -1, sizeof(INT) * entity_total);
 	for (INT i = 1; i < triple_total; i++) {
-		if (train_tail[i].t != train_tail[i - 1].t) {
-			right_tail[train_tail[i - 1].t] = i - 1;
-			left_tail[train_tail[i].t] = i;
-		}
 		if (train_head[i].h != train_head[i - 1].h) {
 			right_head[train_head[i - 1].h] = i - 1;
 			left_head[train_head[i].h] = i;
+		}
+		if (train_tail[i].t != train_tail[i - 1].t) {
+			right_tail[train_tail[i - 1].t] = i - 1;
+			left_tail[train_tail[i].t] = i;
 		}
 	}
 	right_head[train_head[triple_total - 1].h] = triple_total - 1;
