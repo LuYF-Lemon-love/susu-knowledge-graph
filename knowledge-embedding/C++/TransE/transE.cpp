@@ -5,20 +5,18 @@
 #include <cstdlib>			// calloc, free, atoi, atof, rand
 #include <cmath>			// exp, fabs
 #include <cstring>			// memcmp, memcpy, strcmp
-#include <string>			// string::c_str
-#include <algorithm>		// sort
-#include <pthread.h>		// pthread_create, pthread_exit, pthread_join
-#include <sys/mman.h>		// mmap, munmap
 #include <fcntl.h>			// open, close, O_RDONLY
 #include <unistd.h>			// stat
 #include <sys/stat.h>		// stat
+#include <sys/mman.h>		// mmap, munmap
+#include <pthread.h>		// pthread_create, pthread_exit, pthread_join
+#include <string>			// std::string, std::string::c_str
+#include <algorithm>		// std::sort
 
 #define REAL float
 #define INT int
 
 const REAL pi = 3.141592653589793238462643383;
-
-using namespace std;
 
 INT bern_flag = 0;
 INT load_binary_flag = 0;
@@ -30,10 +28,10 @@ INT nbatches = 1;
 INT epochs = 1000;
 INT threads = 32;
 
-string in_path = "../data/FB15K/";
-string out_path = "./";
-string load_path = "";
-string note = "";
+std::string in_path = "../data/FB15K/";
+std::string out_path = "./";
+std::string load_path = "";
+std::string note = "";
 
 INT *left_head, *right_head;
 INT *left_tail, *right_tail;
@@ -50,7 +48,7 @@ struct Triple {
 
 Triple *train_head, *train_tail, *train_list;
 
-// 为 sort() 定义比较仿函数
+// 为 std::sort() 定义比较仿函数
 // 以三元组的 h 进行比较
 struct cmp_head {
 	bool operator()(const Triple &a, const Triple &b) {
@@ -59,7 +57,7 @@ struct cmp_head {
 	}
 };
 
-// 为 sort() 定义比较仿函数
+// 为 std::sort() 定义比较仿函数
 // 以三元组的 t 进行比较
 struct cmp_tail {
 	bool operator()(const Triple &a, const Triple &b) {
@@ -169,8 +167,8 @@ void init() {
 	}
 	fclose(fin);
 
-	sort(train_head, train_head + tripleTotal, cmp_head());
-	sort(train_tail, train_tail + tripleTotal, cmp_tail());
+	std::sort(train_head, train_head + tripleTotal, cmp_head());
+	std::sort(train_tail, train_tail + tripleTotal, cmp_tail());
 
 	left_head = (INT *)calloc(entityTotal, sizeof(INT));
 	right_head = (INT *)calloc(entityTotal, sizeof(INT));
