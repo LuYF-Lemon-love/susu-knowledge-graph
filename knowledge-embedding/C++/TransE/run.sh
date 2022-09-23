@@ -1,7 +1,10 @@
 #!/bin/bash
-# git clone https://github.com/thunlp/Fast-TransX.git
-# cd Fast-TransX/
-# cd transE/
+
+##################################################
+# run.sh
+# 使用方法：$ bash run.sh
+# created by LuYF-Lemon-love <luyanfeng@qq.com>
+##################################################
 
 # train
 g++ transE.cpp -o transE -pthread -O3 -march=native
