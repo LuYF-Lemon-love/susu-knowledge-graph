@@ -133,7 +133,7 @@ void norm(REAL * vec) {
 // 从 train2id.txt 中读取三元组
 // ##################################################
 
-INT relationTotal, entityTotal, tripleTotal;
+INT relation_total, entity_total, tripleTotal;
 REAL *relationVec, *entityVec;
 INT *freqRel, *freqEnt;
 REAL *left_mean, *right_mean;
@@ -144,28 +144,28 @@ void init() {
 	INT tmp;
 
 	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%d", &relationTotal);
+	tmp = fscanf(fin, "%d", &relation_total);
 	fclose(fin);
 
-	relationVec = (REAL *)calloc(relationTotal * dimension, sizeof(REAL));
-	for (INT i = 0; i < relationTotal; i++) {
+	relationVec = (REAL *)calloc(relation_total * dimension, sizeof(REAL));
+	for (INT i = 0; i < relation_total; i++) {
 		for (INT ii=0; ii<dimension; ii++)
 			relationVec[i * dimension + ii] = randn(0, 1.0 / dimension, -6 / sqrt(dimension), 6 / sqrt(dimension));
 	}
 
 	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%d", &entityTotal);
+	tmp = fscanf(fin, "%d", &entity_total);
 	fclose(fin);
 
-	entityVec = (REAL *)calloc(entityTotal * dimension, sizeof(REAL));
-	for (INT i = 0; i < entityTotal; i++) {
+	entityVec = (REAL *)calloc(entity_total * dimension, sizeof(REAL));
+	for (INT i = 0; i < entity_total; i++) {
 		for (INT ii=0; ii<dimension; ii++)
 			entityVec[i * dimension + ii] = randn(0, 1.0 / dimension, -6 / sqrt(dimension), 6 / sqrt(dimension));
 		norm(entityVec+i*dimension);
 	}
 
-	freqRel = (INT *)calloc(relationTotal + entityTotal, sizeof(INT));
-	freqEnt = freqRel + relationTotal;
+	freqRel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
+	freqEnt = freqRel + relation_total;
 
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &tripleTotal);
@@ -187,12 +187,12 @@ void init() {
 	std::sort(train_head, train_head + tripleTotal, cmp_head());
 	std::sort(train_tail, train_tail + tripleTotal, cmp_tail());
 
-	left_head = (INT *)calloc(entityTotal, sizeof(INT));
-	right_head = (INT *)calloc(entityTotal, sizeof(INT));
-	left_tail = (INT *)calloc(entityTotal, sizeof(INT));
-	right_tail = (INT *)calloc(entityTotal, sizeof(INT));
-	memset(right_head, -1, sizeof(INT)*entityTotal);
-	memset(right_tail, -1, sizeof(INT)*entityTotal);
+	left_head = (INT *)calloc(entity_total, sizeof(INT));
+	right_head = (INT *)calloc(entity_total, sizeof(INT));
+	left_tail = (INT *)calloc(entity_total, sizeof(INT));
+	right_tail = (INT *)calloc(entity_total, sizeof(INT));
+	memset(right_head, -1, sizeof(INT)*entity_total);
+	memset(right_tail, -1, sizeof(INT)*entity_total);
 	for (INT i = 1; i < tripleTotal; i++) {
 		if (train_tail[i].t != train_tail[i - 1].t) {
 			right_tail[train_tail[i - 1].t] = i - 1;
@@ -206,9 +206,9 @@ void init() {
 	right_head[train_head[tripleTotal - 1].h] = tripleTotal - 1;
 	right_tail[train_tail[tripleTotal - 1].t] = tripleTotal - 1;
 
-	left_mean = (REAL *)calloc(relationTotal * 2, sizeof(REAL));
-	right_mean = left_mean + relationTotal;
-	for (INT i = 0; i < entityTotal; i++) {
+	left_mean = (REAL *)calloc(relation_total * 2, sizeof(REAL));
+	right_mean = left_mean + relation_total;
+	for (INT i = 0; i < entity_total; i++) {
 		for (INT j = left_head[i] + 1; j <= right_head[i]; j++)
 			if (train_head[j].r != train_head[j - 1].r)
 				left_mean[train_head[j].r] += 1.0;
@@ -221,7 +221,7 @@ void init() {
 			right_mean[train_tail[left_tail[i]].r] += 1.0;
 	}
 
-	for (INT i = 0; i < relationTotal; i++) {
+	for (INT i = 0; i < relation_total; i++) {
 		left_mean[i] = freqRel[i] / left_mean[i];
 		right_mean[i] = freqRel[i] / right_mean[i];
 	}
@@ -254,14 +254,14 @@ void load() {
 	FILE *fin;
 	INT tmp;
 	fin = fopen((load_path + "entity2vec" + note + ".vec").c_str(), "r");
-	for (INT i = 0; i < entityTotal; i++) {
+	for (INT i = 0; i < entity_total; i++) {
 		INT last = i * dimension;
 		for (INT j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &entityVec[last + j]);
 	}
 	fclose(fin);
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
-	for (INT i = 0; i < relationTotal; i++) {
+	for (INT i = 0; i < relation_total; i++) {
 		INT last = i * dimension;
 		for (INT j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &relationVec[last + j]);
@@ -343,7 +343,7 @@ INT corrupt_head(INT id, INT h, INT r) {
 		rig = mid;
 	}
 	rr = lef;
-	INT tmp = rand_max(id, entityTotal - (rr - ll + 1));
+	INT tmp = rand_max(id, entity_total - (rr - ll + 1));
 	if (tmp < train_head[ll].t) return tmp;
 	if (tmp > train_head[rr].t - rr + ll - 1) return tmp + rr - ll + 1;
 	lef = ll, rig = rr + 1;
@@ -375,7 +375,7 @@ INT corrupt_tail(INT id, INT t, INT r) {
 		rig = mid;
 	}
 	rr = lef;
-	INT tmp = rand_max(id, entityTotal - (rr - ll + 1));
+	INT tmp = rand_max(id, entity_total - (rr - ll + 1));
 	if (tmp < train_tail[ll].h) return tmp;
 	if (tmp > train_tail[rr].h - rr + ll - 1) return tmp + rr - ll + 1;
 	lef = ll, rig = rr + 1;
@@ -441,13 +441,13 @@ void out_binary() {
 		REAL *head;		
 		FILE* f2 = fopen((out_path + "relation2vec" + note + ".bin").c_str(), "wb");
 		FILE* f3 = fopen((out_path + "entity2vec" + note + ".bin").c_str(), "wb");
-		len = relationTotal * dimension; tot = 0;
+		len = relation_total * dimension; tot = 0;
 		head = relationVec;
 		while (tot < len) {
 			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f2);
 			tot = tot + sum;
 		}
-		len = entityTotal * dimension; tot = 0;
+		len = entity_total * dimension; tot = 0;
 		head = entityVec;
 		while (tot < len) {
 			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f3);
@@ -464,13 +464,13 @@ void out() {
 		}
 		FILE* f2 = fopen((out_path + "relation2vec" + note + ".vec").c_str(), "w");
 		FILE* f3 = fopen((out_path + "entity2vec" + note + ".vec").c_str(), "w");
-		for (INT i=0; i < relationTotal; i++) {
+		for (INT i=0; i < relation_total; i++) {
 			INT last = dimension * i;
 			for (INT ii = 0; ii < dimension; ii++)
 				fprintf(f2, "%.6f\t", relationVec[last + ii]);
 			fprintf(f2,"\n");
 		}
-		for (INT  i = 0; i < entityTotal; i++) {
+		for (INT  i = 0; i < entity_total; i++) {
 			INT last = i * dimension;
 			for (INT ii = 0; ii < dimension; ii++)
 				fprintf(f3, "%.6f\t", entityVec[last + ii] );
