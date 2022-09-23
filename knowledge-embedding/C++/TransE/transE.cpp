@@ -135,7 +135,7 @@ void norm(REAL * vec) {
 
 INT relation_total, entity_total, triple_total;
 REAL *relation_vec, *entity_vec;
-INT *freqRel, *freqEnt;
+INT *freq_rel, *freq_ent;
 REAL *left_mean, *right_mean;
 
 void init() {
@@ -164,8 +164,8 @@ void init() {
 		norm(entity_vec+i*dimension);
 	}
 
-	freqRel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
-	freqEnt = freqRel + relation_total;
+	freq_rel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
+	freq_ent = freq_rel + relation_total;
 
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &triple_total);
@@ -176,9 +176,9 @@ void init() {
 		tmp = fscanf(fin, "%d", &train_list[i].h);
 		tmp = fscanf(fin, "%d", &train_list[i].t);
 		tmp = fscanf(fin, "%d", &train_list[i].r);
-		freqEnt[train_list[i].t]++;
-		freqEnt[train_list[i].h]++;
-		freqRel[train_list[i].r]++;
+		freq_ent[train_list[i].t]++;
+		freq_ent[train_list[i].h]++;
+		freq_rel[train_list[i].r]++;
 		train_head[i] = train_list[i];
 		train_tail[i] = train_list[i];
 	}
@@ -222,8 +222,8 @@ void init() {
 	}
 
 	for (INT i = 0; i < relation_total; i++) {
-		left_mean[i] = freqRel[i] / left_mean[i];
-		right_mean[i] = freqRel[i] / right_mean[i];
+		left_mean[i] = freq_rel[i] / left_mean[i];
+		right_mean[i] = freq_rel[i] / right_mean[i];
 	}
 }
 
