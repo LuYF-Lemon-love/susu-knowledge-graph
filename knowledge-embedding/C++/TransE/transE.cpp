@@ -21,15 +21,15 @@ const REAL pi = 3.141592653589793238462643383;
 
 using namespace std;
 
-INT threads = 32;
-INT bernFlag = 0;
-INT loadBinaryFlag = 0;
-INT outBinaryFlag = 0;
-INT trainTimes = 1000;
-INT nbatches = 1;
+INT bern_flag = 0;
+INT load_binary_flag = 0;
+INT out_binary_flag = 0;
 INT dimension = 50;
 REAL alpha = 0.01;
 REAL margin = 1.0;
+INT nbatches = 1;
+INT epochs = 1000;
+INT threads = 32;
 
 string inPath = "../data/FB15K/";
 string outPath = "./";
@@ -224,7 +224,7 @@ void load_binary() {
 }
 
 void load() {
-	if (loadBinaryFlag) {
+	if (load_binary_flag) {
 		load_binary();
 		return;
 	}
@@ -372,7 +372,7 @@ void* trainMode(void *con) {
 	next_random[id] = rand();
 	for (INT k = Batch / threads; k >= 0; k--) {
 		i = rand_max(id, Len);
-		if (bernFlag)
+		if (bern_flag)
 			pr = 1000 * right_mean[trainList[i].r] / (right_mean[trainList[i].r] + left_mean[trainList[i].r]);
 		else
 			pr = 500;
@@ -395,7 +395,7 @@ void* train(void *con) {
 	Len = tripleTotal;
 	Batch = Len / nbatches;
 	next_random = (unsigned long long *)calloc(threads, sizeof(unsigned long long));
-	for (INT epoch = 0; epoch < trainTimes; epoch++) {
+	for (INT epoch = 0; epoch < epochs; epoch++) {
 		res = 0;
 		for (INT batch = 0; batch < nbatches; batch++) {
 			pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
@@ -435,7 +435,7 @@ void out_binary() {
 }
 
 void out() {
-		if (outBinaryFlag) {
+		if (out_binary_flag) {
 			out_binary(); 
 			return;
 		}
@@ -481,12 +481,12 @@ void setparameters(int argc, char **argv) {
 	if ((i = ArgPos((char *)"-output", argc, argv)) > 0) outPath = argv[i + 1];
 	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) loadPath = argv[i + 1];
 	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) trainTimes = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-nbatches", argc, argv)) > 0) nbatches = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
 	if ((i = ArgPos((char *)"-margin", argc, argv)) > 0) margin = atof(argv[i + 1]);
-	if ((i = ArgPos((char *)"-load-binary", argc, argv)) > 0) loadBinaryFlag = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-out-binary", argc, argv)) > 0) outBinaryFlag = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-out-binary", argc, argv)) > 0) out_binary_flag = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
 
