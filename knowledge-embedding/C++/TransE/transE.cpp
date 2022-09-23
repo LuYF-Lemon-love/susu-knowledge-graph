@@ -1,5 +1,5 @@
-#define REAL float
-#define INT int
+// transE.cpp
+// created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 
 #include <cstring>
 #include <cstdio>
@@ -14,22 +14,25 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-using namespace std;
+#define REAL float
+#define INT int
 
 const REAL pi = 3.141592653589793238462643383;
 
-INT threads = 8;
+using namespace std;
+
+INT threads = 32;
 INT bernFlag = 0;
 INT loadBinaryFlag = 0;
 INT outBinaryFlag = 0;
 INT trainTimes = 1000;
 INT nbatches = 1;
-INT dimension = 100;
-REAL alpha = 0.001;
+INT dimension = 50;
+REAL alpha = 0.01;
 REAL margin = 1.0;
 
-string inPath = "./";
-string outPath = "";
+string inPath = "../data/FB15K/";
+string outPath = "./";
 string loadPath = "";
 string note = "";
 
