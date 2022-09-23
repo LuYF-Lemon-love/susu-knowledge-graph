@@ -31,9 +31,9 @@ INT nbatches = 1;
 INT epochs = 1000;
 INT threads = 32;
 
-string inPath = "../data/FB15K/";
-string outPath = "./";
-string loadPath = "";
+string in_path = "../data/FB15K/";
+string out_path = "./";
+string load_path = "";
 string note = "";
 
 INT *lefHead, *rigHead;
@@ -117,7 +117,7 @@ void init() {
 	FILE *fin;
 	INT tmp;
 
-	fin = fopen((inPath + "relation2id.txt").c_str(), "r");
+	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &relationTotal);
 	fclose(fin);
 
@@ -127,7 +127,7 @@ void init() {
 			relationVec[i * dimension + ii] = randn(0, 1.0 / dimension, -6 / sqrt(dimension), 6 / sqrt(dimension));
 	}
 
-	fin = fopen((inPath + "entity2id.txt").c_str(), "r");
+	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &entityTotal);
 	fclose(fin);
 
@@ -141,7 +141,7 @@ void init() {
 	freqRel = (INT *)calloc(relationTotal + entityTotal, sizeof(INT));
 	freqEnt = freqRel + relationTotal;
 
-	fin = fopen((inPath + "train2id.txt").c_str(), "r");
+	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &tripleTotal);
 	trainHead = (Triple *)calloc(tripleTotal, sizeof(Triple));
 	trainTail = (Triple *)calloc(tripleTotal, sizeof(Triple));
@@ -206,16 +206,16 @@ void init() {
 
 void load_binary() {
 	struct stat statbuf1;
-	if (stat((loadPath + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {  
-		INT fd = open((loadPath + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
+	if (stat((load_path + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {  
+		INT fd = open((load_path + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
 		REAL* entityVecTmp = (REAL*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0); 
 		memcpy(entityVec, entityVecTmp, statbuf1.st_size);
 		munmap(entityVecTmp, statbuf1.st_size);
 		close(fd);
 	}  
 	struct stat statbuf2;
-	if (stat((loadPath + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {  
-		INT fd = open((loadPath + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
+	if (stat((load_path + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {  
+		INT fd = open((load_path + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
 		REAL* relationVecTmp =(REAL*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0); 
 		memcpy(relationVec, relationVecTmp, statbuf2.st_size);
 		munmap(relationVecTmp, statbuf2.st_size);
@@ -230,14 +230,14 @@ void load() {
 	}
 	FILE *fin;
 	INT tmp;
-	fin = fopen((loadPath + "entity2vec" + note + ".vec").c_str(), "r");
+	fin = fopen((load_path + "entity2vec" + note + ".vec").c_str(), "r");
 	for (INT i = 0; i < entityTotal; i++) {
 		INT last = i * dimension;
 		for (INT j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &entityVec[last + j]);
 	}
 	fclose(fin);
-	fin = fopen((loadPath + "relation2vec" + note + ".vec").c_str(), "r");
+	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
 	for (INT i = 0; i < relationTotal; i++) {
 		INT last = i * dimension;
 		for (INT j = 0; j < dimension; j++)
@@ -416,8 +416,8 @@ void* train(void *con) {
 void out_binary() {
 		INT len, tot;
 		REAL *head;		
-		FILE* f2 = fopen((outPath + "relation2vec" + note + ".bin").c_str(), "wb");
-		FILE* f3 = fopen((outPath + "entity2vec" + note + ".bin").c_str(), "wb");
+		FILE* f2 = fopen((out_path + "relation2vec" + note + ".bin").c_str(), "wb");
+		FILE* f3 = fopen((out_path + "entity2vec" + note + ".bin").c_str(), "wb");
 		len = relationTotal * dimension; tot = 0;
 		head = relationVec;
 		while (tot < len) {
@@ -439,8 +439,8 @@ void out() {
 			out_binary(); 
 			return;
 		}
-		FILE* f2 = fopen((outPath + "relation2vec" + note + ".vec").c_str(), "w");
-		FILE* f3 = fopen((outPath + "entity2vec" + note + ".vec").c_str(), "w");
+		FILE* f2 = fopen((out_path + "relation2vec" + note + ".vec").c_str(), "w");
+		FILE* f3 = fopen((out_path + "entity2vec" + note + ".vec").c_str(), "w");
 		for (INT i=0; i < relationTotal; i++) {
 			INT last = dimension * i;
 			for (INT ii = 0; ii < dimension; ii++)
@@ -477,9 +477,9 @@ int ArgPos(char *str, int argc, char **argv) {
 void setparameters(int argc, char **argv) {
 	int i;
 	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) inPath = argv[i + 1];
-	if ((i = ArgPos((char *)"-output", argc, argv)) > 0) outPath = argv[i + 1];
-	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) loadPath = argv[i + 1];
+	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
+	if ((i = ArgPos((char *)"-output", argc, argv)) > 0) out_path = argv[i + 1];
+	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
 	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-nbatches", argc, argv)) > 0) nbatches = atoi(argv[i + 1]);
@@ -493,8 +493,8 @@ void setparameters(int argc, char **argv) {
 int main(int argc, char **argv) {
 	setparameters(argc, argv);
 	init();
-	if (loadPath != "") load();
+	if (load_path != "") load();
 	train(NULL);
-	if (outPath != "") out();
+	if (out_path != "") out();
 	return 0;
 }
