@@ -130,12 +130,11 @@ void norm(REAL * vec) {
 }
 
 // ##################################################
-// Read triples from the training file.
+// 从 train2id.txt 中读取三元组
 // ##################################################
 
 INT relationTotal, entityTotal, tripleTotal;
 REAL *relationVec, *entityVec;
-REAL *relationVecDao, *entityVecDao;
 INT *freqRel, *freqEnt;
 REAL *left_mean, *right_mean;
 
@@ -226,9 +225,6 @@ void init() {
 		left_mean[i] = freqRel[i] / left_mean[i];
 		right_mean[i] = freqRel[i] / right_mean[i];
 	}
-
-	relationVecDao = (REAL*)calloc(dimension * relationTotal, sizeof(REAL));
-	entityVecDao = (REAL*)calloc(dimension * entityTotal, sizeof(REAL));
 }
 
 void load_binary() {
