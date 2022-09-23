@@ -39,11 +39,12 @@ string note = "";
 INT *left_head, *right_head;
 INT *left_tail, *right_tail;
 
+// 三元组，type(h) == type(r) == type(t) == int
 struct Triple {
 	INT h, r, t;
 };
 
-Triple *trainHead, *trainTail, *trainList;
+Triple *train_head, *train_tail, *train_list;
 
 struct cmp_head {
 	bool operator()(const Triple &a, const Triple &b) {
@@ -143,23 +144,23 @@ void init() {
 
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &tripleTotal);
-	trainHead = (Triple *)calloc(tripleTotal, sizeof(Triple));
-	trainTail = (Triple *)calloc(tripleTotal, sizeof(Triple));
-	trainList = (Triple *)calloc(tripleTotal, sizeof(Triple));
+	train_head = (Triple *)calloc(tripleTotal, sizeof(Triple));
+	train_tail = (Triple *)calloc(tripleTotal, sizeof(Triple));
+	train_list = (Triple *)calloc(tripleTotal, sizeof(Triple));
 	for (INT i = 0; i < tripleTotal; i++) {
-		tmp = fscanf(fin, "%d", &trainList[i].h);
-		tmp = fscanf(fin, "%d", &trainList[i].t);
-		tmp = fscanf(fin, "%d", &trainList[i].r);
-		freqEnt[trainList[i].t]++;
-		freqEnt[trainList[i].h]++;
-		freqRel[trainList[i].r]++;
-		trainHead[i] = trainList[i];
-		trainTail[i] = trainList[i];
+		tmp = fscanf(fin, "%d", &train_list[i].h);
+		tmp = fscanf(fin, "%d", &train_list[i].t);
+		tmp = fscanf(fin, "%d", &train_list[i].r);
+		freqEnt[train_list[i].t]++;
+		freqEnt[train_list[i].h]++;
+		freqRel[train_list[i].r]++;
+		train_head[i] = train_list[i];
+		train_tail[i] = train_list[i];
 	}
 	fclose(fin);
 
-	sort(trainHead, trainHead + tripleTotal, cmp_head());
-	sort(trainTail, trainTail + tripleTotal, cmp_tail());
+	sort(train_head, train_head + tripleTotal, cmp_head());
+	sort(train_tail, train_tail + tripleTotal, cmp_tail());
 
 	left_head = (INT *)calloc(entityTotal, sizeof(INT));
 	right_head = (INT *)calloc(entityTotal, sizeof(INT));
@@ -168,31 +169,31 @@ void init() {
 	memset(right_head, -1, sizeof(INT)*entityTotal);
 	memset(right_tail, -1, sizeof(INT)*entityTotal);
 	for (INT i = 1; i < tripleTotal; i++) {
-		if (trainTail[i].t != trainTail[i - 1].t) {
-			right_tail[trainTail[i - 1].t] = i - 1;
-			left_tail[trainTail[i].t] = i;
+		if (train_tail[i].t != train_tail[i - 1].t) {
+			right_tail[train_tail[i - 1].t] = i - 1;
+			left_tail[train_tail[i].t] = i;
 		}
-		if (trainHead[i].h != trainHead[i - 1].h) {
-			right_head[trainHead[i - 1].h] = i - 1;
-			left_head[trainHead[i].h] = i;
+		if (train_head[i].h != train_head[i - 1].h) {
+			right_head[train_head[i - 1].h] = i - 1;
+			left_head[train_head[i].h] = i;
 		}
 	}
-	right_head[trainHead[tripleTotal - 1].h] = tripleTotal - 1;
-	right_tail[trainTail[tripleTotal - 1].t] = tripleTotal - 1;
+	right_head[train_head[tripleTotal - 1].h] = tripleTotal - 1;
+	right_tail[train_tail[tripleTotal - 1].t] = tripleTotal - 1;
 
 	left_mean = (REAL *)calloc(relationTotal * 2, sizeof(REAL));
 	right_mean = left_mean + relationTotal;
 	for (INT i = 0; i < entityTotal; i++) {
 		for (INT j = left_head[i] + 1; j <= right_head[i]; j++)
-			if (trainHead[j].r != trainHead[j - 1].r)
-				left_mean[trainHead[j].r] += 1.0;
+			if (train_head[j].r != train_head[j - 1].r)
+				left_mean[train_head[j].r] += 1.0;
 		if (left_head[i] <= right_head[i])
-			left_mean[trainHead[left_head[i]].r] += 1.0;
+			left_mean[train_head[left_head[i]].r] += 1.0;
 		for (INT j = left_tail[i] + 1; j <= right_tail[i]; j++)
-			if (trainTail[j].r != trainTail[j - 1].r)
-				right_mean[trainTail[j].r] += 1.0;
+			if (train_tail[j].r != train_tail[j - 1].r)
+				right_mean[train_tail[j].r] += 1.0;
 		if (left_tail[i] <= right_tail[i])
-			right_mean[trainTail[left_tail[i]].r] += 1.0;
+			right_mean[train_tail[left_tail[i]].r] += 1.0;
 	}
 
 	for (INT i = 0; i < relationTotal; i++) {
@@ -308,7 +309,7 @@ INT corrupt_head(INT id, INT h, INT r) {
 	rig = right_head[h];
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
-		if (trainHead[mid].r >= r) rig = mid; else
+		if (train_head[mid].r >= r) rig = mid; else
 		lef = mid;
 	}
 	ll = rig;
@@ -316,17 +317,17 @@ INT corrupt_head(INT id, INT h, INT r) {
 	rig = right_head[h] + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
-		if (trainHead[mid].r <= r) lef = mid; else
+		if (train_head[mid].r <= r) lef = mid; else
 		rig = mid;
 	}
 	rr = lef;
 	INT tmp = rand_max(id, entityTotal - (rr - ll + 1));
-	if (tmp < trainHead[ll].t) return tmp;
-	if (tmp > trainHead[rr].t - rr + ll - 1) return tmp + rr - ll + 1;
+	if (tmp < train_head[ll].t) return tmp;
+	if (tmp > train_head[rr].t - rr + ll - 1) return tmp + rr - ll + 1;
 	lef = ll, rig = rr + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
-		if (trainHead[mid].t - mid + ll - 1 < tmp)
+		if (train_head[mid].t - mid + ll - 1 < tmp)
 			lef = mid;
 		else 
 			rig = mid;
@@ -340,7 +341,7 @@ INT corrupt_tail(INT id, INT t, INT r) {
 	rig = right_tail[t];
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
-		if (trainTail[mid].r >= r) rig = mid; else
+		if (train_tail[mid].r >= r) rig = mid; else
 		lef = mid;
 	}
 	ll = rig;
@@ -348,17 +349,17 @@ INT corrupt_tail(INT id, INT t, INT r) {
 	rig = right_tail[t] + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
-		if (trainTail[mid].r <= r) lef = mid; else
+		if (train_tail[mid].r <= r) lef = mid; else
 		rig = mid;
 	}
 	rr = lef;
 	INT tmp = rand_max(id, entityTotal - (rr - ll + 1));
-	if (tmp < trainTail[ll].h) return tmp;
-	if (tmp > trainTail[rr].h - rr + ll - 1) return tmp + rr - ll + 1;
+	if (tmp < train_tail[ll].h) return tmp;
+	if (tmp > train_tail[rr].h - rr + ll - 1) return tmp + rr - ll + 1;
 	lef = ll, rig = rr + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
-		if (trainTail[mid].h - mid + ll - 1 < tmp)
+		if (train_tail[mid].h - mid + ll - 1 < tmp)
 			lef = mid;
 		else 
 			rig = mid;
@@ -373,19 +374,19 @@ void* trainMode(void *con) {
 	for (INT k = Batch / threads; k >= 0; k--) {
 		i = rand_max(id, Len);
 		if (bern_flag)
-			pr = 1000 * right_mean[trainList[i].r] / (right_mean[trainList[i].r] + left_mean[trainList[i].r]);
+			pr = 1000 * right_mean[train_list[i].r] / (right_mean[train_list[i].r] + left_mean[train_list[i].r]);
 		else
 			pr = 500;
 		if (randd(id) % 1000 < pr) {
-			j = corrupt_head(id, trainList[i].h, trainList[i].r);
-			train_kb(trainList[i].h, trainList[i].t, trainList[i].r, trainList[i].h, j, trainList[i].r);
+			j = corrupt_head(id, train_list[i].h, train_list[i].r);
+			train_kb(train_list[i].h, train_list[i].t, train_list[i].r, train_list[i].h, j, train_list[i].r);
 		} else {
-			j = corrupt_tail(id, trainList[i].t, trainList[i].r);
-			train_kb(trainList[i].h, trainList[i].t, trainList[i].r, j, trainList[i].t, trainList[i].r);
+			j = corrupt_tail(id, train_list[i].t, train_list[i].r);
+			train_kb(train_list[i].h, train_list[i].t, train_list[i].r, j, train_list[i].t, train_list[i].r);
 		}
-		norm(relationVec + dimension * trainList[i].r);
-		norm(entityVec + dimension * trainList[i].h);
-		norm(entityVec + dimension * trainList[i].t);
+		norm(relationVec + dimension * train_list[i].r);
+		norm(entityVec + dimension * train_list[i].h);
+		norm(entityVec + dimension * train_list[i].t);
 		norm(entityVec + dimension * j);
 	}
 	pthread_exit(NULL);
