@@ -5,7 +5,7 @@
 // 包含标准库
 // ##################################################
 
-#include <cstdio>			// fscanf, fwrite
+#include <cstdio>			// FILE, fscanf, fwrite, fopen
 #include <cstdlib>			// calloc, free, atoi, atof, rand, RAND_MAX
 #include <cmath>			// exp, fabs
 #include <cstring>			// memcmp, memcpy, strcmp
@@ -45,7 +45,6 @@ INT *left_head, *right_head;
 INT *left_tail, *right_tail;
 
 // 三元组: (head, label, tail)
-// type(h) == type(r) == type(t) == int
 // h: head
 // r: label or relationship
 // t: tail
@@ -133,8 +132,15 @@ void norm(REAL * vec) {
 // 从 train2id.txt 中读取三元组
 // ##################################################
 
+// relation_total: 关系总数
+// entity_total: 实体总数
+// triple_total: 
 INT relation_total, entity_total, triple_total;
+
+// relation_vec: 关系嵌入矩阵 (relation_total * dimension)
+// entity_vec: 实体嵌入矩阵 (entity_total * dimension)
 REAL *relation_vec, *entity_vec;
+
 INT *freq_rel, *freq_ent;
 REAL *left_mean, *right_mean;
 
@@ -147,21 +153,26 @@ void init() {
 	tmp = fscanf(fin, "%d", &relation_total);
 	fclose(fin);
 
-	relation_vec = (REAL *)calloc(relation_total * dimension, sizeof(REAL));
+	relation_vec = (REAL *)calloc(relation_total * dimension,
+			sizeof(REAL));
 	for (INT i = 0; i < relation_total; i++) {
-		for (INT ii=0; ii<dimension; ii++)
-			relation_vec[i * dimension + ii] = randn(0, 1.0 / dimension, -6 / sqrt(dimension), 6 / sqrt(dimension));
+		for (INT ii = 0; ii < dimension; ii++)
+			relation_vec[i * dimension + ii] =
+				randn(0, 1.0 / dimension, -6 / sqrt(dimension),
+					6 / sqrt(dimension));
 	}
 
 	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &entity_total);
 	fclose(fin);
 
-	entity_vec = (REAL *)calloc(entity_total * dimension, sizeof(REAL));
+	entity_vec = (REAL *)calloc(entity_total * dimension,
+			sizeof(REAL));
 	for (INT i = 0; i < entity_total; i++) {
-		for (INT ii=0; ii<dimension; ii++)
-			entity_vec[i * dimension + ii] = randn(0, 1.0 / dimension, -6 / sqrt(dimension), 6 / sqrt(dimension));
-		norm(entity_vec+i*dimension);
+		for (INT ii = 0; ii < dimension; ii++)
+			entity_vec[i * dimension + ii] =
+				randn(0, 1.0 / dimension, -6 / sqrt(dimension),
+					6 / sqrt(dimension));
 	}
 
 	freq_rel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
