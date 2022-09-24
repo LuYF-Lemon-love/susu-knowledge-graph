@@ -235,10 +235,10 @@ void init() {
 	right_head[train_head[triple_total - 1].h] = triple_total - 1;
 	right_tail[train_tail[triple_total - 1].t] = triple_total - 1;
 
-	// 获得 left_mean、right_mean，为 trainMode 中的 bern_flag 做准备
+	// 获得 left_mean、right_mean，为 train_mode 中的 bern_flag 做准备
 	// 在训练过程中，为了负采样，我们能够构建负三元组
 	// bern 算法能根据特定关系的 head 和 tail 种类的比值，选择构建适当的负三元组
-	// trainMode 中的 bern_flag: pr = left_mean / (left_mean + right_mean)
+	// train_mode 中的 bern_flag: pr = left_mean / (left_mean + right_mean)
 	// 因此为训练而构建的负三元组比 = tail / (tail + head)
 	left_mean = (REAL *)calloc(relation_total * 2, sizeof(REAL));
 	right_mean = left_mean + relation_total;
@@ -349,7 +349,8 @@ REAL calc_sum(INT e1, INT e2, INT rel) {
 	INT last2 = e2 * dimension;
 	INT lastr = rel * dimension;
 	for (INT i = 0; i < dimension; i++)
-		sum += fabs(entity_vec[last2 + i] - entity_vec[last1 + i] - relation_vec[lastr + i]);
+		sum += fabs(entity_vec[last2 + i] -
+			entity_vec[last1 + i] - relation_vec[lastr + i]);
 	return sum;
 }
 
@@ -368,7 +369,8 @@ void gradient(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 		REAL x;
 
 		// 尽可能让 d(e1_a, rel_a, e2_a) 接近 0
-		x = (entity_vec[lasta2 + i] - entity_vec[lasta1 + i] - relation_vec[lastar + i]);
+		x = (entity_vec[lasta2 + i] -
+			entity_vec[lasta1 + i] - relation_vec[lastar + i]);
 		if (x > 0)
 			x = -alpha;
 		else
@@ -378,7 +380,8 @@ void gradient(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 		entity_vec[lasta2 + i] += x;
 
 		// 尽可能让 d(e1_b, rel_b, e2_b) 远离 0
-		x = (entity_vec[lastb2 + i] - entity_vec[lastb1 + i] - relation_vec[lastbr + i]);
+		x = (entity_vec[lastb2 + i] -
+			entity_vec[lastb1 + i] - relation_vec[lastbr + i]);
 		if (x > 0)
 			x = alpha;
 		else
@@ -405,44 +408,70 @@ void train_kb(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 // 构建负三元组
 // ##################################################
 
-INT corrupt_head(INT id, INT h, INT r) {
+// 用 head 和 relationship 构建负三元组，即替换 tail
+// 该函数返回负三元组的 tail
+INT corrupt_with_head(INT id, INT h, INT r) {
 	INT lef, rig, mid, ll, rr;
+
+	// lef: head(h) 在 train_head 中第一次出现的前一个位置
+	// rig: head(h) 在 train_head 中最后一次出现的位置
 	lef = left_head[h] - 1;
 	rig = right_head[h];
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
+		// 二分查找算法变体
+		// 由于 >= -> rig，所以 rig 最终在第一个 r 的位置
 		if (train_head[mid].r >= r) rig = mid; else
 		lef = mid;
 	}
 	ll = rig;
+
 	lef = left_head[h];
 	rig = right_head[h] + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
+		// 二分查找算法变体
+		// 由于 <= -> lef，所以 lef 最终在最后一个 r 的位置
 		if (train_head[mid].r <= r) lef = mid; else
 		rig = mid;
 	}
 	rr = lef;
+
+	// 只能产生 (entity_total - (rr - ll + 1)) 种实体，即去掉训练集中已有的三元组
 	INT tmp = rand_max(id, entity_total - (rr - ll + 1));
+
+	// 第一种：tmp 小于第一个 r 对应的 tail
 	if (tmp < train_head[ll].t) return tmp;
+
+	// 第二种：tmp 大于最后一个 r 对应的 tail
 	if (tmp > train_head[rr].t - rr + ll - 1) return tmp + rr - ll + 1;
+
+	// 第三种：由于 (>= -> rig), (lef + 1 < rig), (tmp + lef - ll + 1)
+	// 因此最终返回取值为 (lef.t, rig.t) 的 tail
 	lef = ll, rig = rr + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
 		if (train_head[mid].t - mid + ll - 1 < tmp)
 			lef = mid;
-		else 
+		else
 			rig = mid;
 	}
 	return tmp + lef - ll + 1;
 }
 
-INT corrupt_tail(INT id, INT t, INT r) {
+// 用 tail 和 relationship 构建负三元组，即替换 head
+// 该函数返回负三元组的 head
+INT corrupt_with_tail(INT id, INT t, INT r) {
 	INT lef, rig, mid, ll, rr;
+
+	// lef: tail(t) 在 train_tail 中第一次出现的前一个位置
+	// rig: tail(t) 在 train_tail 中最后一次出现的位置
 	lef = left_tail[t] - 1;
 	rig = right_tail[t];
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
+		// 二分查找算法变体
+		// 由于 >= -> rig，所以 rig 最终在第一个 r 的位置
 		if (train_tail[mid].r >= r) rig = mid; else
 		lef = mid;
 	}
@@ -451,13 +480,24 @@ INT corrupt_tail(INT id, INT t, INT r) {
 	rig = right_tail[t] + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
+		// 二分查找算法变体
+		// 由于 <= -> lef，所以 lef 最终在最后一个 r 的位置
 		if (train_tail[mid].r <= r) lef = mid; else
 		rig = mid;
 	}
 	rr = lef;
+
+	// 只能产生 (entity_total - (rr - ll + 1)) 种实体，即去掉训练集中已有的三元组
 	INT tmp = rand_max(id, entity_total - (rr - ll + 1));
+
+	// 第一种：tmp 小于第一个 r 对应的 head
 	if (tmp < train_tail[ll].h) return tmp;
+
+	// 第二种：tmp 大于最后一个 r 对应的 head
 	if (tmp > train_tail[rr].h - rr + ll - 1) return tmp + rr - ll + 1;
+
+	// 第三种：由于 (>= -> rig), (lef + 1 < rig), (tmp + lef - ll + 1)
+	// 因此最终返回取值为 (lef.h, rig.h) 的 head
 	lef = ll, rig = rr + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
@@ -469,10 +509,19 @@ INT corrupt_tail(INT id, INT t, INT r) {
 	return tmp + lef - ll + 1;
 }
 
-void* trainMode(void *con) {
+// ##################################################
+// 多个线程训练
+// ##################################################
+
+// 单个线程内运行的任务
+void* train_mode(void *thread_id) {
 	INT id, pr, i, j;
-	id = (unsigned long long)(con);
+
+	// id: 线程 ID
+	id = (unsigned long long)(thread_id);
 	next_random[id] = rand();
+
+	// 每一个 Batch 被多个线程同时训练
 	for (INT k = Batch / threads; k >= 0; k--) {
 		i = rand_max(id, Len);
 		if (bern_flag)
@@ -480,10 +529,10 @@ void* trainMode(void *con) {
 		else
 			pr = 500;
 		if (randd(id) % 1000 < pr) {
-			j = corrupt_head(id, train_list[i].h, train_list[i].r);
+			j = corrupt_with_head(id, train_list[i].h, train_list[i].r);
 			train_kb(train_list[i].h, train_list[i].t, train_list[i].r, train_list[i].h, j, train_list[i].r);
 		} else {
-			j = corrupt_tail(id, train_list[i].t, train_list[i].r);
+			j = corrupt_with_tail(id, train_list[i].t, train_list[i].r);
 			train_kb(train_list[i].h, train_list[i].t, train_list[i].r, j, train_list[i].t, train_list[i].r);
 		}
 		norm(relation_vec + dimension * train_list[i].r);
@@ -503,7 +552,7 @@ void* train(void *con) {
 		for (INT batch = 0; batch < nbatches; batch++) {
 			pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
 			for (long a = 0; a < threads; a++)
-				pthread_create(&pt[a], NULL, trainMode,  (void*)a);
+				pthread_create(&pt[a], NULL, train_mode,  (void*)a);
 			for (long a = 0; a < threads; a++)
 				pthread_join(pt[a], NULL);
 			free(pt);
