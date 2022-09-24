@@ -629,7 +629,8 @@ void out() {
 // Main function
 // ##################################################
 
-int ArgPos(char *str, int argc, char **argv) {
+// 寻找特定参数的位置
+int arg_pos(char *str, int argc, char **argv) {
 	int a;
 	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
 		if (a == argc - 1) {
@@ -641,21 +642,44 @@ int ArgPos(char *str, int argc, char **argv) {
 	return -1;
 }
 
+// ##################################################
+// ./transX [-bern 0/1] [-load-binary 0/1] [-out-binary 0/1]
+//          [-size SIZE] [-alpha ALPHA] [-margin MARGIN]
+//          [-nbatches NBATCHES] [-epochs EPOCHS]
+//          [-threads THREAD] [-input INPUT] [-output OUTPUT]
+//          [-load LOAD] [-note NOTE]
+
+// optional arguments:
+// -bern [0/1]          [1] 使用 bern 算法进行负采样，默认值为 [1]
+// -load-binary [0/1]   [1] 以二进制形式加载预训练嵌入，默认值为 [0]
+// -out-binary [0/1]    [1] 以二进制形式输出嵌入，默认值为 [0]
+// -size SIZE           实体和关系嵌入维度，默认值为 [50]
+// -alpha ALPHA         学习率，默认值为 0.01
+// -margin MARGIN       margin in max-margin loss for pairwise training，默认值为 1.0
+// -nbatches NBATCHES   number of batches for each epoch. if unspecified, nbatches will default to 1
+// -epochs EPOCHS       number of epochs. if unspecified, epochs will default to 1000
+// -threads THREAD      number of worker threads. if unspecified, threads will default to 32
+// -input INPUT         folder of training data. if unspecified, in_path will default to "../data/FB15K/"
+// -output OUTPUT       folder of outputing results. if unspecified, out_path will default to "./"
+// -load LOAD           folder of pretrained data. if unspecified, load_path will default to ""
+// -note NOTE           information you want to add to the filename
+// ##################################################
 
 void setparameters(int argc, char **argv) {
 	int i;
-	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
-	if ((i = ArgPos((char *)"-output", argc, argv)) > 0) out_path = argv[i + 1];
-	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
-	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-nbatches", argc, argv)) > 0) nbatches = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
-	if ((i = ArgPos((char *)"-margin", argc, argv)) > 0) margin = atof(argv[i + 1]);
-	if ((i = ArgPos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-out-binary", argc, argv)) > 0) out_binary_flag = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+	if ((i = arg_pos((char *)"-bern", argc, argv)) > 0) bern_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-out-binary", argc, argv)) > 0) out_binary_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-margin", argc, argv)) > 0) margin = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-nbatches", argc, argv)) > 0) nbatches = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) threads = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-output", argc, argv)) > 0) out_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];	
+	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
 
 int main(int argc, char **argv) {
