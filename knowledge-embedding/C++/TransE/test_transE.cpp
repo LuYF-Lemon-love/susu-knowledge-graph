@@ -1,17 +1,28 @@
+// test_transE.cpp
+// created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+
+// ##################################################
+// 包含标准库
+// ##################################################
+
+#include <cstdio>           // FILE, fscanf, fwrite, fopen, fclose
+#include <cstdlib>          // calloc, free, atoi, atof, rand, RAND_MAX
+#include <cmath>            // exp, fabs
+#include <cstring>          // memcmp, memcpy, strcmp
+#include <fcntl.h>          // open, close, O_RDONLY
+#include <unistd.h>         // stat
+#include <sys/stat.h>       // stat
+#include <sys/mman.h>       // mmap, munmap
+#include <string>           // std::string, std::string::c_str
+#include <algorithm>        // std::sort
 #include <iostream>
-#include <cstring>
-#include <cstdio>
 #include <map>
 #include <vector>
-#include <string>
 #include <ctime>
-#include <algorithm>
-#include <cmath>
-#include <cstdlib>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
+
+// ##################################################
+// 声明和定义变量
+// ##################################################
 
 using namespace std;
 
