@@ -35,7 +35,7 @@ long threads = 32;
 long relation_total;
 long entity_total;
 
-float *entityVec, *relationVec;
+float *entity_vec, *relation_vec;
 long testTotal, tripleTotal, trainTotal, validTotal;
 
 struct Triple {
@@ -68,12 +68,12 @@ void init() {
 	fin = fopen((inPath + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%ld", &relation_total);
 	fclose(fin);
-	relationVec = (float *)calloc(relation_total * dimension, sizeof(float));
+	relation_vec = (float *)calloc(relation_total * dimension, sizeof(float));
 
 	fin = fopen((inPath + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%ld", &entity_total);
 	fclose(fin);
-	entityVec = (float *)calloc(entity_total * dimension, sizeof(float));
+	entity_vec = (float *)calloc(entity_total * dimension, sizeof(float));
 
 	FILE* f_kb1 = fopen((inPath + "test2id_all.txt").c_str(), "r");
 	FILE* f_kb2 = fopen((inPath + "train2id.txt").c_str(), "r");
@@ -156,29 +156,29 @@ void init() {
 	fclose(f_type);
 }
 
-void prepre_binary() {
+void prepare_binary() {
 	struct stat statbuf1;
 	if (stat((initPath + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {
 		int fd = open((initPath + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
-		float* entityVecTmp = (float*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-		memcpy(entityVec, entityVecTmp, statbuf1.st_size);
-		munmap(entityVecTmp, statbuf1.st_size);
+		float* entity_vec_tmp = (float*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
+		munmap(entity_vec_tmp, statbuf1.st_size);
 		close(fd);
 	}
 
 	struct stat statbuf2;
 	if (stat((initPath + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {
 		int fd = open((initPath + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
-		float* relationVecTmp = (float*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-		memcpy(relationVec, relationVecTmp, statbuf2.st_size);
-		munmap(relationVecTmp, statbuf2.st_size);
+		float* relation_vec_tmp = (float*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
+		munmap(relation_vec_tmp, statbuf2.st_size);
 		close(fd);
 	}
 }
 
 void prepare() {
 	if (load_binary_flag) {
-		prepre_binary();
+		prepare_binary();
 		return;
 	}
 
@@ -188,7 +188,7 @@ void prepare() {
 	for (long i = 0; i < entity_total; i++) {
 		long last = i * dimension;
 		for (long j = 0; j < dimension; j++)
-			tmp = fscanf(fin, "%f", &entityVec[last + j]);
+			tmp = fscanf(fin, "%f", &entity_vec[last + j]);
 	}
 	fclose(fin);
 
@@ -196,7 +196,7 @@ void prepare() {
 	for (long i = 0; i < relation_total; i++) {
 		long last = i * dimension;
 		for (long j = 0; j < dimension; j++)
-			tmp = fscanf(fin, "%f", &relationVec[last + j]);
+			tmp = fscanf(fin, "%f", &relation_vec[last + j]);
 	}
 	fclose(fin);
 }
@@ -207,7 +207,7 @@ float calc_sum(long e1, long e2, long rel) {
 	long last2 = e2 * dimension;
 	long lastr = rel * dimension;
 	for (long i = 0; i < dimension; i++)
-		res += fabs(entityVec[last1 + i] + relationVec[lastr + i] - entityVec[last2 + i]);
+		res += fabs(entity_vec[last1 + i] + relation_vec[lastr + i] - entity_vec[last2 + i]);
 	return res;
 }
 
