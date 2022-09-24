@@ -26,7 +26,7 @@
 
 const REAL pi = 3.141592653589793238462643383;
 
-INT bern_flag = 0;
+INT bern_flag = 1;
 INT load_binary_flag = 0;
 INT out_binary_flag = 0;
 INT dimension = 50;
@@ -138,10 +138,6 @@ INT relation_total, entity_total, triple_total;
 // entity_vec (entity_total * dimension): 实体嵌入矩阵
 REAL *relation_vec, *entity_vec;
 
-// freq_rel (relation_total): 存储各个关系在训练集中的个数
-// freq_ent (entity_total): 存储各个实体在训练集中的个数
-INT *freq_rel, *freq_ent;
-
 // train_head (triple_total): 训练集中的三元组集合，以 head 排序
 // train_tail (triple_total): 训练集中的三元组集合，以 tail 排序
 // train_list (triple_total): 训练集中的三元组集合，未排序
@@ -191,10 +187,6 @@ void init() {
 					6 / sqrt(dimension));
 	}
 
-	// 为 freq_rel 和 freq_ent 分配一个内存块，并将其所有位初始化为零
-	freq_rel = (INT *)calloc(relation_total + entity_total, sizeof(INT));
-	freq_ent = freq_rel + relation_total;
-
 	// 读取训练集中的三元组
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &triple_total);
@@ -205,9 +197,6 @@ void init() {
 		tmp = fscanf(fin, "%d", &train_list[i].h);
 		tmp = fscanf(fin, "%d", &train_list[i].t);
 		tmp = fscanf(fin, "%d", &train_list[i].r);
-		freq_ent[train_list[i].t]++;
-		freq_ent[train_list[i].h]++;
-		freq_rel[train_list[i].r]++;
 		train_head[i] = train_list[i];
 		train_tail[i] = train_list[i];
 	}
@@ -253,11 +242,6 @@ void init() {
 				right_mean[train_tail[j].r] += 1.0;
 		if (left_tail[i] <= right_tail[i])
 			right_mean[train_tail[left_tail[i]].r] += 1.0;
-	}
-
-	for (INT i = 0; i < relation_total; i++) {
-		left_mean[i] = freq_rel[i] / left_mean[i];
-		right_mean[i] = freq_rel[i] / right_mean[i];
 	}
 }
 
@@ -525,7 +509,8 @@ void* train_mode(void *thread_id) {
 	for (INT k = Batch / threads; k >= 0; k--) {
 		i = rand_max(id, Len);
 		if (bern_flag)
-			pr = 1000 * right_mean[train_list[i].r] / (right_mean[train_list[i].r] + left_mean[train_list[i].r]);
+			pr = 1000 * left_mean[train_list[i].r] /
+				(left_mean[train_list[i].r] + right_mean[train_list[i].r]);
 		else
 			pr = 500;
 		if (randd(id) % 1000 < pr) {
