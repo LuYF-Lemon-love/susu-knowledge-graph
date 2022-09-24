@@ -560,56 +560,74 @@ void* train() {
 }
 
 // ##################################################
-// Get the results of transE.
+// 输出实体嵌入和关系嵌入
+// output: 
+//     entity2vec + note + .bin
+//     relation2vec + note + .bin
+//     
+//     or
+//
+//     entity2vec + note + .vec
+//     relation2vec + note + .vec
 // ##################################################
 
 void out_binary() {
 		INT len, tot;
-		REAL *head;		
+		REAL *head;	
+		FILE* f1 = fopen((out_path + "entity2vec" + note + ".bin").c_str(), "wb");
 		FILE* f2 = fopen((out_path + "relation2vec" + note + ".bin").c_str(), "wb");
-		FILE* f3 = fopen((out_path + "entity2vec" + note + ".bin").c_str(), "wb");
+
+		// 以二进制形式输出实体嵌入
+		len = entity_total * dimension; tot = 0;
+		head = entity_vec;
+		while (tot < len) {
+			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f1);
+			tot = tot + sum;
+		}
+
+		// 以二进制形式输出关系嵌入
 		len = relation_total * dimension; tot = 0;
 		head = relation_vec;
 		while (tot < len) {
 			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f2);
 			tot = tot + sum;
 		}
-		len = entity_total * dimension; tot = 0;
-		head = entity_vec;
-		while (tot < len) {
-			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f3);
-			tot = tot + sum;
-		}	
+		
+		fclose(f1);
 		fclose(f2);
-		fclose(f3);
 }
 
 void out() {
+
 		if (out_binary_flag) {
 			out_binary(); 
 			return;
 		}
+
+		FILE* f1 = fopen((out_path + "entity2vec" + note + ".vec").c_str(), "w");
 		FILE* f2 = fopen((out_path + "relation2vec" + note + ".vec").c_str(), "w");
-		FILE* f3 = fopen((out_path + "entity2vec" + note + ".vec").c_str(), "w");
-		for (INT i=0; i < relation_total; i++) {
-			INT last = dimension * i;
-			for (INT ii = 0; ii < dimension; ii++)
-				fprintf(f2, "%.6f\t", relation_vec[last + ii]);
-			fprintf(f2,"\n");
-		}
+
 		for (INT  i = 0; i < entity_total; i++) {
 			INT last = i * dimension;
-			for (INT ii = 0; ii < dimension; ii++)
-				fprintf(f3, "%.6f\t", entity_vec[last + ii] );
-			fprintf(f3,"\n");
+			for (INT j = 0; j < dimension; j++)
+				fprintf(f1, "%.6f\t", entity_vec[last + j] );
+			fprintf(f1,"\n");
 		}
+
+		for (INT i=0; i < relation_total; i++) {
+			INT last = dimension * i;
+			for (INT j = 0; j < dimension; j++)
+				fprintf(f2, "%.6f\t", relation_vec[last + j]);
+			fprintf(f2,"\n");
+		}
+
+		fclose(f1);
 		fclose(f2);
-		fclose(f3);
 }
 
-/*
-	Main function
-*/
+// ##################################################
+// Main function
+// ##################################################
 
 int ArgPos(char *str, int argc, char **argv) {
 	int a;
