@@ -26,8 +26,11 @@
 
 using namespace std;
 
-long relationTotal;
-long entityTotal;
+// relation_total: 关系总数
+// entity_total: 实体总数
+long relation_total;
+long entity_total;
+
 long Threads = 8;
 long dimensionR = 100;
 long dimension = 100;
@@ -64,14 +67,14 @@ void init() {
 	long tmp, h, r, t, label;
 
 	fin = fopen((inPath + "relation2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%ld", &relationTotal);
+	tmp = fscanf(fin, "%ld", &relation_total);
 	fclose(fin);
-	relationVec = (float *)calloc(relationTotal * dimensionR, sizeof(float));
+	relationVec = (float *)calloc(relation_total * dimensionR, sizeof(float));
 
 	fin = fopen((inPath + "entity2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%ld", &entityTotal);
+	tmp = fscanf(fin, "%ld", &entity_total);
 	fclose(fin);
-	entityVec = (float *)calloc(entityTotal * dimension, sizeof(float));
+	entityVec = (float *)calloc(entity_total * dimension, sizeof(float));
 
 	FILE* f_kb1 = fopen((inPath + "test2id_all.txt").c_str(), "r");
 	FILE* f_kb2 = fopen((inPath + "train2id.txt").c_str(), "r");
@@ -131,7 +134,7 @@ void init() {
 	FILE* f_type = fopen((inPath + "type_constrain.txt").c_str(), "r");
 	tmp = fscanf(f_type, "%ld", &tmp);
 	
-	for (int i = 0; i < relationTotal; i++) {
+	for (int i = 0; i < relation_total; i++) {
 		int rel, tot;
 		tmp = fscanf(f_type, "%d%d", &rel, &tot);
 		head_lef[rel] = total_lef;
@@ -183,7 +186,7 @@ void prepare() {
 	FILE *fin;
 	long tmp;
 	fin = fopen((initPath + "entity2vec" + note + ".vec").c_str(), "r");
-	for (long i = 0; i < entityTotal; i++) {
+	for (long i = 0; i < entity_total; i++) {
 		long last = i * dimension;
 		for (long j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &entityVec[last + j]);
@@ -191,7 +194,7 @@ void prepare() {
 	fclose(fin);
 
 	fin = fopen((initPath + "relation2vec" + note + ".vec").c_str(), "r");
-	for (long i = 0; i < relationTotal; i++) {
+	for (long i = 0; i < relation_total; i++) {
 		long last = i * dimensionR;
 		for (long j = 0; j < dimensionR; j++)
 			tmp = fscanf(fin, "%f", &relationVec[last + j]);
@@ -246,7 +249,7 @@ void* testMode(void *con) {
 		long r_filter_s_constrain = 0;
 		long r_s_constrain = 0;
 		long type_head = head_lef[r], type_tail = tail_lef[r];
-		for (long j = 0; j < entityTotal; j++) {
+		for (long j = 0; j < entity_total; j++) {
 			if (j != h) {
 				float value = calc_sum(j, t, r);
 				if (value < minimal) {
