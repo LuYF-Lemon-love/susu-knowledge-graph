@@ -662,7 +662,7 @@ int arg_pos(char *str, int argc, char **argv) {
 // -input INPUT         folder of training data. if unspecified, in_path will default to "../data/FB15K/"
 // -output OUTPUT       folder of outputing results. if unspecified, out_path will default to "./"
 // -load LOAD           folder of pretrained data. if unspecified, load_path will default to ""
-// -note NOTE           information you want to add to the filename
+// -note NOTE           information you want to add to the filename. if unspecified, note will default to ""
 // ##################################################
 
 void setparameters(int argc, char **argv) {
