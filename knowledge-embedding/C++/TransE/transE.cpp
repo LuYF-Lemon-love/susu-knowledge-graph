@@ -236,8 +236,10 @@ void init() {
 	right_tail[train_tail[triple_total - 1].t] = triple_total - 1;
 
 	// 获得 left_mean、right_mean，为 trainMode 中的 bern_flag 做准备
-	// denoted as “bern”.
-	// 在训练过程中，为了负采样，我们能够构建负三元组，bern 算法能恰当的 lef/(rig+lef)
+	// 在训练过程中，为了负采样，我们能够构建负三元组
+	// bern 算法能根据特定关系的 head 和 tail 种类的比值，选择构建适当的负三元组
+	// trainMode 中的 bern_flag: pr = left_mean / (left_mean + right_mean)
+	// 因此构建的负三元组比 = tail / (tail + head)
 	left_mean = (REAL *)calloc(relation_total * 2, sizeof(REAL));
 	right_mean = left_mean + relation_total;
 	for (INT i = 0; i < entity_total; i++) {
