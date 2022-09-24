@@ -5,7 +5,7 @@
 // 包含标准库
 // ##################################################
 
-#include <cstdio>           // FILE, fscanf, fwrite, fopen
+#include <cstdio>           // FILE, fscanf, fwrite, fopen, fclose
 #include <cstdlib>          // calloc, free, atoi, atof, rand, RAND_MAX
 #include <cmath>            // exp, fabs
 #include <cstring>          // memcmp, memcpy, strcmp
@@ -261,19 +261,41 @@ void init() {
 	}
 }
 
+// ##################################################
+// 加载 Pretrained Embeddings
+// prerequisites: 
+//     entity2vec + note + .bin
+//     relation2vec + note + .bin
+//     
+//     or
+//
+//     entity2vec + note + .vec
+//     relation2vec + note + .vec
+// ##################################################
+
 void load_binary() {
+
+	// 以二进制形式加载预训练实体嵌入
 	struct stat statbuf1;
-	if (stat((load_path + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {  
-		INT fd = open((load_path + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
-		REAL* entity_vec_tmp = (REAL*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0); 
+	if (stat((load_path + "entity2vec" + note + ".bin").c_str(),
+			&statbuf1) != -1) {  
+		INT fd = open((load_path + "entity2vec" + note + ".bin").c_str(),
+			O_RDONLY);
+		REAL* entity_vec_tmp = (REAL*)mmap(NULL, statbuf1.st_size,
+			PROT_READ, MAP_PRIVATE, fd, 0); 
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
 		close(fd);
-	}  
+	}
+
+	// 以二进制形式加载预训练关系嵌入
 	struct stat statbuf2;
-	if (stat((load_path + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {  
-		INT fd = open((load_path + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
-		REAL* relation_vec_tmp =(REAL*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0); 
+	if (stat((load_path + "relation2vec" + note + ".bin").c_str(),
+			&statbuf2) != -1) {  
+		INT fd = open((load_path + "relation2vec" + note + ".bin").c_str(),
+			O_RDONLY);
+		REAL* relation_vec_tmp =(REAL*)mmap(NULL, statbuf2.st_size,
+			PROT_READ, MAP_PRIVATE, fd, 0); 
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
 		close(fd);
@@ -287,6 +309,8 @@ void load() {
 	}
 	FILE *fin;
 	INT tmp;
+
+	// 加载预训练实体嵌入
 	fin = fopen((load_path + "entity2vec" + note + ".vec").c_str(), "r");
 	for (INT i = 0; i < entity_total; i++) {
 		INT last = i * dimension;
@@ -294,6 +318,8 @@ void load() {
 			tmp = fscanf(fin, "%f", &entity_vec[last + j]);
 	}
 	fclose(fin);
+
+	// 加载预训练关系嵌入
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
 	for (INT i = 0; i < relation_total; i++) {
 		INT last = i * dimension;
@@ -303,25 +329,33 @@ void load() {
 	fclose(fin);
 }
 
-
-/*
-	Training process of transE.
-*/
+// ##################################################
+// Training process of transE.
+// ##################################################
 
 INT Len;
 INT Batch;
+
+// 由于没有使用互斥锁、读写锁、条件变量和信号量等手段进行线程同步
+// 所以 res 可能被不同线程同时访问并修改，因此 res 会比真实值略小
+// 但由于 res 只是为了直观地看到损失值的变化趋势，因此不需要通过
+// 线程同步（降低程序性能）获得精确结果
 REAL res;
 
+// 使用 l1 范数计算距离 d(h + l, t)
 REAL calc_sum(INT e1, INT e2, INT rel) {
-	REAL sum=0;
+	REAL sum = 0;
 	INT last1 = e1 * dimension;
 	INT last2 = e2 * dimension;
 	INT lastr = rel * dimension;
-	for (INT ii=0; ii < dimension; ii++)
-		sum += fabs(entity_vec[last2 + ii] - entity_vec[last1 + ii] - relation_vec[lastr + ii]);
+	for (INT i = 0; i < dimension; i++)
+		sum += fabs(entity_vec[last2 + i] - entity_vec[last1 + i] - relation_vec[lastr + i]);
 	return sum;
 }
 
+// 根据 d(h + l, t) 更新实体和关系嵌入
+// (e1_a, rel_a, e2_a): 正三元组
+// (e1_b, rel_b, e2_b): 负三元组
 void gradient(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 	INT lasta1 = e1_a * dimension;
 	INT lasta2 = e2_a * dimension;
@@ -329,27 +363,35 @@ void gradient(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 	INT lastb1 = e1_b * dimension;
 	INT lastb2 = e2_b * dimension;
 	INT lastbr = rel_b * dimension;
-	for (INT ii=0; ii  < dimension; ii++) {
+
+	for (INT i = 0; i  < dimension; i++) {
 		REAL x;
-		x = (entity_vec[lasta2 + ii] - entity_vec[lasta1 + ii] - relation_vec[lastar + ii]);
+
+		// 尽可能让 d(e1_a, rel_a, e2_a) 接近 0
+		x = (entity_vec[lasta2 + i] - entity_vec[lasta1 + i] - relation_vec[lastar + i]);
 		if (x > 0)
 			x = -alpha;
 		else
 			x = alpha;
-		relation_vec[lastar + ii] -= x;
-		entity_vec[lasta1 + ii] -= x;
-		entity_vec[lasta2 + ii] += x;
-		x = (entity_vec[lastb2 + ii] - entity_vec[lastb1 + ii] - relation_vec[lastbr + ii]);
+		relation_vec[lastar + i] -= x;
+		entity_vec[lasta1 + i] -= x;
+		entity_vec[lasta2 + i] += x;
+
+		// 尽可能让 d(e1_b, rel_b, e2_b) 远离 0
+		x = (entity_vec[lastb2 + i] - entity_vec[lastb1 + i] - relation_vec[lastbr + i]);
 		if (x > 0)
 			x = alpha;
 		else
 			x = -alpha;
-		relation_vec[lastbr + ii] -=  x;
-		entity_vec[lastb1 + ii] -= x;
-		entity_vec[lastb2 + ii] += x;
+		relation_vec[lastbr + i] -=  x;
+		entity_vec[lastb1 + i] -= x;
+		entity_vec[lastb2 + i] += x;
 	}
 }
 
+// 损失函数 L = [margin + d(e1_a, rel_a, e2_a) - d(e1_b, rel_b, e2_b)]+
+// 当 L > 0，说明 (d(e1_b, rel_b, e2_b) - d(e1_a, rel_a, e2_a)) < margin，
+// 进而，正负三元组的实体和关系嵌入需要 update
 void train_kb(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 	REAL sum1 = calc_sum(e1_a, e2_a, rel_a);
 	REAL sum2 = calc_sum(e1_b, e2_b, rel_b);
@@ -358,6 +400,10 @@ void train_kb(INT e1_a, INT e2_a, INT rel_a, INT e1_b, INT e2_b, INT rel_b) {
 		gradient(e1_a, e2_a, rel_a, e1_b, e2_b, rel_b);
 	}
 }
+
+// ##################################################
+// 构建负三元组
+// ##################################################
 
 INT corrupt_head(INT id, INT h, INT r) {
 	INT lef, rig, mid, ll, rr;
