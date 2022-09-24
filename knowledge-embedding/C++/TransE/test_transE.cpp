@@ -30,13 +30,17 @@ long load_binary_flag = 0;
 long dimension = 50;
 long threads = 32;
 
+string in_path = "../data/FB15K/";
+string load_path = "./";
+string note = "";
+
 // relation_total: 关系总数
 // entity_total: 实体总数
 long relation_total;
 long entity_total;
 
 float *entity_vec, *relation_vec;
-long testTotal, tripleTotal, trainTotal, validTotal;
+long test_total, train_total, valid_total, triple_total;
 
 struct Triple {
 	long h, r, t;
@@ -50,9 +54,7 @@ struct cmp_head {
 };
 
 Triple *testList, *tripleList;
-string initPath = "";
-string inPath = "";
-string note = "";
+
 int nntotal[5];
 int head_lef[10000];
 int head_rig[10000];
@@ -65,30 +67,30 @@ void init() {
 	FILE *fin;
 	long tmp, h, r, t, label;
 
-	fin = fopen((inPath + "relation2id.txt").c_str(), "r");
+	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%ld", &relation_total);
 	fclose(fin);
 	relation_vec = (float *)calloc(relation_total * dimension, sizeof(float));
 
-	fin = fopen((inPath + "entity2id.txt").c_str(), "r");
+	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%ld", &entity_total);
 	fclose(fin);
 	entity_vec = (float *)calloc(entity_total * dimension, sizeof(float));
 
-	FILE* f_kb1 = fopen((inPath + "test2id_all.txt").c_str(), "r");
-	FILE* f_kb2 = fopen((inPath + "train2id.txt").c_str(), "r");
-	FILE* f_kb3 = fopen((inPath + "valid2id.txt").c_str(), "r");
+	FILE* f_kb1 = fopen((in_path + "test2id_all.txt").c_str(), "r");
+	FILE* f_kb2 = fopen((in_path + "train2id.txt").c_str(), "r");
+	FILE* f_kb3 = fopen((in_path + "valid2id.txt").c_str(), "r");
 
-	tmp = fscanf(f_kb1, "%ld", &testTotal);
-	tmp = fscanf(f_kb2, "%ld", &trainTotal);
-	tmp = fscanf(f_kb3, "%ld", &validTotal);
-	tripleTotal = testTotal + trainTotal + validTotal;
-	testList = (Triple *)calloc(testTotal, sizeof(Triple));
-	tripleList = (Triple *)calloc(tripleTotal, sizeof(Triple));
+	tmp = fscanf(f_kb1, "%ld", &test_total);
+	tmp = fscanf(f_kb2, "%ld", &train_total);
+	tmp = fscanf(f_kb3, "%ld", &valid_total);
+	triple_total = test_total + train_total + valid_total;
+	testList = (Triple *)calloc(test_total, sizeof(Triple));
+	tripleList = (Triple *)calloc(triple_total, sizeof(Triple));
 
 	memset(nntotal, 0, sizeof(nntotal));
 
-	for (long i = 0; i < testTotal; i++) {
+	for (long i = 0; i < test_total; i++) {
 		tmp = fscanf(f_kb1, "%ld", &label);
 		tmp = fscanf(f_kb1, "%ld", &h);
 		tmp = fscanf(f_kb1, "%ld", &t);
@@ -104,33 +106,33 @@ void init() {
 		tripleList[i].r = r;
 	}
 
-	for (long i = 0; i < trainTotal; i++) {
+	for (long i = 0; i < train_total; i++) {
 		tmp = fscanf(f_kb2, "%ld", &h);
 		tmp = fscanf(f_kb2, "%ld", &t);
 		tmp = fscanf(f_kb2, "%ld", &r);
-		tripleList[i + testTotal].h = h;
-		tripleList[i + testTotal].t = t;
-		tripleList[i + testTotal].r = r;
+		tripleList[i + test_total].h = h;
+		tripleList[i + test_total].t = t;
+		tripleList[i + test_total].r = r;
 	}
 
-	for (long i = 0; i < validTotal; i++) {
+	for (long i = 0; i < valid_total; i++) {
 		tmp = fscanf(f_kb3, "%ld", &h);
 		tmp = fscanf(f_kb3, "%ld", &t);
 		tmp = fscanf(f_kb3, "%ld", &r);
-		tripleList[i + testTotal + trainTotal].h = h;
-		tripleList[i + testTotal + trainTotal].t = t;
-		tripleList[i + testTotal + trainTotal].r = r;
+		tripleList[i + test_total + train_total].h = h;
+		tripleList[i + test_total + train_total].t = t;
+		tripleList[i + test_total + train_total].r = r;
 	}
 
 	fclose(f_kb1);
 	fclose(f_kb2);
 	fclose(f_kb3);
 
-	sort(tripleList, tripleList + tripleTotal, cmp_head());
+	sort(tripleList, tripleList + triple_total, cmp_head());
 
 	long total_lef = 0;
 	long total_rig = 0;
-	FILE* f_type = fopen((inPath + "type_constrain.txt").c_str(), "r");
+	FILE* f_type = fopen((in_path + "type_constrain.txt").c_str(), "r");
 	tmp = fscanf(f_type, "%ld", &tmp);
 	
 	for (int i = 0; i < relation_total; i++) {
@@ -158,8 +160,8 @@ void init() {
 
 void prepare_binary() {
 	struct stat statbuf1;
-	if (stat((initPath + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {
-		int fd = open((initPath + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
+	if (stat((load_path + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {
+		int fd = open((load_path + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
 		float* entity_vec_tmp = (float*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
@@ -167,8 +169,8 @@ void prepare_binary() {
 	}
 
 	struct stat statbuf2;
-	if (stat((initPath + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {
-		int fd = open((initPath + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
+	if (stat((load_path + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {
+		int fd = open((load_path + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
 		float* relation_vec_tmp = (float*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
@@ -184,7 +186,7 @@ void prepare() {
 
 	FILE *fin;
 	long tmp;
-	fin = fopen((initPath + "entity2vec" + note + ".vec").c_str(), "r");
+	fin = fopen((load_path + "entity2vec" + note + ".vec").c_str(), "r");
 	for (long i = 0; i < entity_total; i++) {
 		long last = i * dimension;
 		for (long j = 0; j < dimension; j++)
@@ -192,7 +194,7 @@ void prepare() {
 	}
 	fclose(fin);
 
-	fin = fopen((initPath + "relation2vec" + note + ".vec").c_str(), "r");
+	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
 	for (long i = 0; i < relation_total; i++) {
 		long last = i * dimension;
 		for (long j = 0; j < dimension; j++)
@@ -213,7 +215,7 @@ float calc_sum(long e1, long e2, long rel) {
 
 bool find(long h, long t, long r) {
 	long lef = 0;
-	long rig = tripleTotal - 1;
+	long rig = triple_total - 1;
 	long mid;
 	while (lef + 1 < rig) {
 		long mid = (lef + rig) >> 1;
@@ -230,9 +232,9 @@ float *l_filter_rank[6], *r_filter_rank[6], *l_rank[6], *r_rank[6];
 void* testMode(void *con) {
 	long id;
 	id = (unsigned long long)(con);
-	long lef = testTotal / (threads) * id;
-	long rig = testTotal / (threads) * (id + 1) - 1;
-	if (id == threads - 1) rig = testTotal - 1;
+	long lef = test_total / (threads) * id;
+	long rig = test_total / (threads) * (id + 1) - 1;
+	if (id == threads - 1) rig = test_total - 1;
 	for (long i = lef; i <= rig; i++) {
 		long h = testList[i].h;
 		long t = testList[i].t;
@@ -350,17 +352,17 @@ void* test(void *con) {
 		}
 
 	for (int i = 0; i <= 0; i++) {
-		printf("left %f %f\n", l_rank[i][threads - 1] / testTotal, l_tot[i][threads - 1] / testTotal);
-		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / testTotal, l_filter_tot[i][threads - 1] / testTotal);
-		printf("right %f %f\n", r_rank[i][threads - 1] / testTotal, r_tot[i][threads - 1] / testTotal);
-		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / testTotal, r_filter_tot[i][threads - 1] / testTotal);
+		printf("left %f %f\n", l_rank[i][threads - 1] / test_total, l_tot[i][threads - 1] / test_total);
+		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
+		printf("right %f %f\n", r_rank[i][threads - 1] / test_total, r_tot[i][threads - 1] / test_total);
+		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
 	}
 
 	for (int i = 5; i <= 5; i++) {
-		printf("left %f %f\n", l_rank[i][threads - 1] / testTotal, l_tot[i][threads - 1] / testTotal);
-		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / testTotal, l_filter_tot[i][threads - 1] / testTotal);
-		printf("right %f %f\n", r_rank[i][threads - 1] / testTotal, r_tot[i][threads - 1] / testTotal);
-		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / testTotal, r_filter_tot[i][threads - 1] / testTotal);
+		printf("left %f %f\n", l_rank[i][threads - 1] / test_total, l_tot[i][threads - 1] / test_total);
+		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
+		printf("right %f %f\n", r_rank[i][threads - 1] / test_total, r_tot[i][threads - 1] / test_total);
+		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
 	}
 
 	for (int i = 1; i <= 4; i++) {
@@ -386,8 +388,8 @@ long ArgPos(char *str, long argc, char **argv) {
 void setparameters(long argc, char **argv) {
 	long i;
 	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) inPath = argv[i + 1];
-	if ((i = ArgPos((char *)"-init", argc, argv)) > 0) initPath = argv[i + 1];
+	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
+	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
 	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
