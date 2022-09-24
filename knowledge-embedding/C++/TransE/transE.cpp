@@ -514,25 +514,36 @@ void* train_mode(void *thread_id) {
 		else
 			pr = 500;
 		if (randd(id) % 1000 < pr) {
+			
+			// 通过 h, r 构造出负三元组
 			j = corrupt_with_head(id, train_list[i].h, train_list[i].r);
-			train_kb(train_list[i].h, train_list[i].t, train_list[i].r, train_list[i].h, j, train_list[i].r);
+			train_kb(train_list[i].h, train_list[i].t, train_list[i].r,
+				train_list[i].h, j, train_list[i].r);
 		} else {
+
+			// 通过 t, r 构造出负三元组
 			j = corrupt_with_tail(id, train_list[i].t, train_list[i].r);
-			train_kb(train_list[i].h, train_list[i].t, train_list[i].r, j, train_list[i].t, train_list[i].r);
+			train_kb(train_list[i].h, train_list[i].t, train_list[i].r,
+				j, train_list[i].t, train_list[i].r);
 		}
+
+		// 对于 entity_vec 和 relation_vec 进行归一化
 		norm(relation_vec + dimension * train_list[i].r);
 		norm(entity_vec + dimension * train_list[i].h);
 		norm(entity_vec + dimension * train_list[i].t);
 		norm(entity_vec + dimension * j);
 	}
+
 	pthread_exit(NULL);
 }
 
-void* train(void *con) {
+// 训练函数
+void* train() {
 	Len = triple_total;
 	Batch = Len / nbatches;
 	next_random = (unsigned long long *)calloc(threads, sizeof(unsigned long long));
-	for (INT epoch = 0; epoch < epochs; epoch++) {
+
+	for (INT epoch = 1; epoch <= epochs; epoch++) {
 		res = 0;
 		for (INT batch = 0; batch < nbatches; batch++) {
 			pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
@@ -542,13 +553,15 @@ void* train(void *con) {
 				pthread_join(pt[a], NULL);
 			free(pt);
 		}
-		printf("epoch %d %f\n", epoch, res);
+		
+		if (epoch % 10 == 0)
+			printf("Epoch %d/%d - loss: %f\n", epoch, epochs, res);
 	}
 }
 
-/*
-	Get the results of transE.
-*/
+// ##################################################
+// Get the results of transE.
+// ##################################################
 
 void out_binary() {
 		INT len, tot;
@@ -631,7 +644,7 @@ int main(int argc, char **argv) {
 	setparameters(argc, argv);
 	init();
 	if (load_path != "") load();
-	train(NULL);
+	train();
 	if (out_path != "") out();
 	return 0;
 }
