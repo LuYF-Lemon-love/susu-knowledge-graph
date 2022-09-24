@@ -134,12 +134,12 @@ void norm(REAL * vec) {
 // triple_total: 训练集中的三元组总数
 INT relation_total, entity_total, triple_total;
 
-// relation_vec: 关系嵌入矩阵 (relation_total * dimension)
-// entity_vec: 实体嵌入矩阵 (entity_total * dimension)
+// relation_vec (relation_total * dimension): 关系嵌入矩阵
+// entity_vec (entity_total * dimension): 实体嵌入矩阵
 REAL *relation_vec, *entity_vec;
 
-// freq_rel: 存储各个关系在训练集中的个数 (relation_total)
-// freq_ent: 存储各个实体在训练集中的个数 (entity_total)
+// freq_rel (relation_total): 存储各个关系在训练集中的个数
+// freq_ent (entity_total): 存储各个实体在训练集中的个数
 INT *freq_rel, *freq_ent;
 
 // train_head (triple_total): 训练集中的三元组集合，以 head 排序
@@ -239,7 +239,7 @@ void init() {
 	// 在训练过程中，为了负采样，我们能够构建负三元组
 	// bern 算法能根据特定关系的 head 和 tail 种类的比值，选择构建适当的负三元组
 	// trainMode 中的 bern_flag: pr = left_mean / (left_mean + right_mean)
-	// 因此构建的负三元组比 = tail / (tail + head)
+	// 因此为训练而构建的负三元组比 = tail / (tail + head)
 	left_mean = (REAL *)calloc(relation_total * 2, sizeof(REAL));
 	right_mean = left_mean + relation_total;
 	for (INT i = 0; i < entity_total; i++) {
@@ -330,7 +330,7 @@ void load() {
 }
 
 // ##################################################
-// Training process of transE.
+// Update embeddings
 // ##################################################
 
 INT Len;
