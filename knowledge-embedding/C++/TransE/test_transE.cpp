@@ -26,15 +26,14 @@
 
 using namespace std;
 
+long load_binary_flag = 0;
+long dimension = 50;
+long threads = 32;
+
 // relation_total: 关系总数
 // entity_total: 实体总数
 long relation_total;
 long entity_total;
-
-long Threads = 8;
-long dimensionR = 100;
-long dimension = 100;
-long binaryFlag = 0;
 
 float *entityVec, *relationVec;
 long testTotal, tripleTotal, trainTotal, validTotal;
@@ -69,7 +68,7 @@ void init() {
 	fin = fopen((inPath + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%ld", &relation_total);
 	fclose(fin);
-	relationVec = (float *)calloc(relation_total * dimensionR, sizeof(float));
+	relationVec = (float *)calloc(relation_total * dimension, sizeof(float));
 
 	fin = fopen((inPath + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%ld", &entity_total);
@@ -178,7 +177,7 @@ void prepre_binary() {
 }
 
 void prepare() {
-	if (binaryFlag) {
+	if (load_binary_flag) {
 		prepre_binary();
 		return;
 	}
@@ -195,8 +194,8 @@ void prepare() {
 
 	fin = fopen((initPath + "relation2vec" + note + ".vec").c_str(), "r");
 	for (long i = 0; i < relation_total; i++) {
-		long last = i * dimensionR;
-		for (long j = 0; j < dimensionR; j++)
+		long last = i * dimension;
+		for (long j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &relationVec[last + j]);
 	}
 	fclose(fin);
@@ -207,7 +206,7 @@ float calc_sum(long e1, long e2, long rel) {
 	long last1 = e1 * dimension;
 	long last2 = e2 * dimension;
 	long lastr = rel * dimension;
-	for (long i = 0; i < dimensionR; i++)
+	for (long i = 0; i < dimension; i++)
 		res += fabs(entityVec[last1 + i] + relationVec[lastr + i] - entityVec[last2 + i]);
 	return res;
 }
@@ -231,9 +230,9 @@ float *l_filter_rank[6], *r_filter_rank[6], *l_rank[6], *r_rank[6];
 void* testMode(void *con) {
 	long id;
 	id = (unsigned long long)(con);
-	long lef = testTotal / (Threads) * id;
-	long rig = testTotal / (Threads) * (id + 1) - 1;
-	if (id == Threads - 1) rig = testTotal - 1;
+	long lef = testTotal / (threads) * id;
+	long rig = testTotal / (threads) * (id + 1) - 1;
+	if (id == threads - 1) rig = testTotal - 1;
 	for (long i = lef; i <= rig; i++) {
 		long h = testList[i].h;
 		long t = testList[i].t;
@@ -319,26 +318,26 @@ void* testMode(void *con) {
 
 void* test(void *con) {
 	for (int i = 0; i <= 5; i++) {
-		l_filter_tot[i] = (float *)calloc(Threads, sizeof(float));
-		r_filter_tot[i] = (float *)calloc(Threads, sizeof(float));
-		l_tot[i] = (float *)calloc(Threads, sizeof(float));
-		r_tot[i] = (float *)calloc(Threads, sizeof(float));
+		l_filter_tot[i] = (float *)calloc(threads, sizeof(float));
+		r_filter_tot[i] = (float *)calloc(threads, sizeof(float));
+		l_tot[i] = (float *)calloc(threads, sizeof(float));
+		r_tot[i] = (float *)calloc(threads, sizeof(float));
 
-		l_filter_rank[i] = (float *)calloc(Threads, sizeof(float));
-		r_filter_rank[i] = (float *)calloc(Threads, sizeof(float));
-		l_rank[i] = (float *)calloc(Threads, sizeof(float));
-		r_rank[i] = (float *)calloc(Threads, sizeof(float));
+		l_filter_rank[i] = (float *)calloc(threads, sizeof(float));
+		r_filter_rank[i] = (float *)calloc(threads, sizeof(float));
+		l_rank[i] = (float *)calloc(threads, sizeof(float));
+		r_rank[i] = (float *)calloc(threads, sizeof(float));
 	}
 
-	pthread_t *pt = (pthread_t *)malloc(Threads * sizeof(pthread_t));
-	for (long a = 0; a < Threads; a++)
+	pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
+	for (long a = 0; a < threads; a++)
 		pthread_create(&pt[a], NULL, testMode, (void*)a);
-	for (long a = 0; a < Threads; a++)
+	for (long a = 0; a < threads; a++)
 		pthread_join(pt[a], NULL);
 	free(pt);
 
 	for (int i = 0; i <= 5; i++)
-		for (long a = 1; a < Threads; a++) {
+		for (long a = 1; a < threads; a++) {
 			l_filter_tot[i][a] += l_filter_tot[i][a - 1];
 			r_filter_tot[i][a] += r_filter_tot[i][a - 1];
 			l_tot[i][a] += l_tot[i][a - 1];
@@ -351,24 +350,24 @@ void* test(void *con) {
 		}
 
 	for (int i = 0; i <= 0; i++) {
-		printf("left %f %f\n", l_rank[i][Threads - 1] / testTotal, l_tot[i][Threads - 1] / testTotal);
-		printf("left(filter) %f %f\n", l_filter_rank[i][Threads - 1] / testTotal, l_filter_tot[i][Threads - 1] / testTotal);
-		printf("right %f %f\n", r_rank[i][Threads - 1] / testTotal, r_tot[i][Threads - 1] / testTotal);
-		printf("right(filter) %f %f\n", r_filter_rank[i][Threads - 1] / testTotal, r_filter_tot[i][Threads - 1] / testTotal);
+		printf("left %f %f\n", l_rank[i][threads - 1] / testTotal, l_tot[i][threads - 1] / testTotal);
+		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / testTotal, l_filter_tot[i][threads - 1] / testTotal);
+		printf("right %f %f\n", r_rank[i][threads - 1] / testTotal, r_tot[i][threads - 1] / testTotal);
+		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / testTotal, r_filter_tot[i][threads - 1] / testTotal);
 	}
 
 	for (int i = 5; i <= 5; i++) {
-		printf("left %f %f\n", l_rank[i][Threads - 1] / testTotal, l_tot[i][Threads - 1] / testTotal);
-		printf("left(filter) %f %f\n", l_filter_rank[i][Threads - 1] / testTotal, l_filter_tot[i][Threads - 1] / testTotal);
-		printf("right %f %f\n", r_rank[i][Threads - 1] / testTotal, r_tot[i][Threads - 1] / testTotal);
-		printf("right(filter) %f %f\n", r_filter_rank[i][Threads - 1] / testTotal, r_filter_tot[i][Threads - 1] / testTotal);
+		printf("left %f %f\n", l_rank[i][threads - 1] / testTotal, l_tot[i][threads - 1] / testTotal);
+		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / testTotal, l_filter_tot[i][threads - 1] / testTotal);
+		printf("right %f %f\n", r_rank[i][threads - 1] / testTotal, r_tot[i][threads - 1] / testTotal);
+		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / testTotal, r_filter_tot[i][threads - 1] / testTotal);
 	}
 
 	for (int i = 1; i <= 4; i++) {
-		printf("left %f %f\n", l_rank[i][Threads - 1] / nntotal[i], l_tot[i][Threads - 1] / nntotal[i]);
-		printf("left(filter) %f %f\n", l_filter_rank[i][Threads - 1] / nntotal[i], l_filter_tot[i][Threads - 1] / nntotal[i]);
-		printf("right %f %f\n", r_rank[i][Threads - 1] / nntotal[i], r_tot[i][Threads - 1] / nntotal[i]);
-		printf("right(filter) %f %f\n", r_filter_rank[i][Threads - 1] / nntotal[i], r_filter_tot[i][Threads - 1] / nntotal[i]);
+		printf("left %f %f\n", l_rank[i][threads - 1] / nntotal[i], l_tot[i][threads - 1] / nntotal[i]);
+		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / nntotal[i], l_filter_tot[i][threads - 1] / nntotal[i]);
+		printf("right %f %f\n", r_rank[i][threads - 1] / nntotal[i], r_tot[i][threads - 1] / nntotal[i]);
+		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / nntotal[i], r_filter_tot[i][threads - 1] / nntotal[i]);
 	}
 }
 
@@ -387,11 +386,10 @@ long ArgPos(char *str, long argc, char **argv) {
 void setparameters(long argc, char **argv) {
 	long i;
 	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-sizeR", argc, argv)) > 0) dimensionR = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) inPath = argv[i + 1];
 	if ((i = ArgPos((char *)"-init", argc, argv)) > 0) initPath = argv[i + 1];
-	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) Threads = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binaryFlag = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
 
