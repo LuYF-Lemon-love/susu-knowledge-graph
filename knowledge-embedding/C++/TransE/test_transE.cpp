@@ -52,7 +52,7 @@ struct Triple {
 struct cmp_head {
 	bool operator()(const Triple &a, const Triple &b) {
 		return (a.h < b.h)||(a.h == b.h && a.r < b.r)
-				||(a.h == b.h && a.r == b.r && a.t < b.t);
+		        ||(a.h == b.h && a.r == b.r && a.t < b.t);
 	}
 };
 
@@ -83,6 +83,7 @@ INT test_total, train_total, valid_total, triple_total;
 Triple *test_list, *triple_list;
 
 // 统计测试集中各种关系 (0: 1-1, 1: 1-n, 2: n-1, 3: n-n) 的数量
+// nntotal[1]: 1-1, nntotal[2]: 1-n, nntotal[3]: n-1, nntotal[4]: n-n
 INT nntotal[5];
 
 INT head_left[10000];
