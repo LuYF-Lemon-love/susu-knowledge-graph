@@ -559,7 +559,7 @@ void* train() {
 			free(pt);
 		}
 		
-		if (epoch % 10 == 0)
+		if (epoch % 50 == 0)
 			printf("Epoch %d/%d - loss: %f\n", epoch, epochs, res);
 	}
 }

@@ -2,10 +2,10 @@
 # created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 
 ##################################################
-
+# 从 train2id.txt, valid2id.txt、test2id.txt 读取三元组
 ##################################################
 
-# {[]}, 外层是 <class 'dict'>, 内层是 <class 'list'>
+# lef 和 rig 类型为 {[]}, 外层是 <class 'dict'>, 内层是 <class 'list'>
 # lef 外层的 key 为三元组 (训练集、验证集、测试集) (h, r)
 # lef 外层的 value 为 (h, r) 对应的 t 的 list
 # rig 外层的 key 为三元组 (训练集、验证集、测试集) (r, t)
@@ -13,8 +13,13 @@
 lef = {}
 rig = {}
 
-rellef = {}
-relrig = {}
+# rel_lef 和 rel_rig 类型为 {{}}, 外层是 <class 'dict'>, 内层是 <class 'dict'>
+# rel_lef 外层的 key 为三元组 (训练集、验证集、测试集) r
+# rel_lef 内层的 key 为 r 对应的 h, 内层的 value 为 1
+# rel_rig 外层的 key 为三元组 (训练集、验证集、测试集) r
+# rel_rig 内层的 key 为 r 对应的 t, 内层的 value 为 1
+rel_lef = {}
+rel_rig = {}
 
 train_list = open("train2id.txt", "r")
 valid_list = open("valid2id.txt", "r")
@@ -33,12 +38,12 @@ for i in range(tot):
 	lef[(h, r)].append(t)
 	rig[(r, t)].append(h)
 	
-	if not r in rellef:
-		rellef[r] = {}
-	if not r in relrig:
-		relrig[r] = {}
-	rellef[r][h] = 1
-	relrig[r][t] = 1
+	if not r in rel_lef:
+		rel_lef[r] = {}
+	if not r in rel_rig:
+		rel_rig[r] = {}
+	rel_lef[r][h] = 1
+	rel_rig[r][t] = 1
 
 tot = (int)(valid_list.readline())
 for i in range(tot):
@@ -53,12 +58,12 @@ for i in range(tot):
 	lef[(h,r)].append(t)
 	rig[(r,t)].append(h)
 
-	if not r in rellef:
-		rellef[r] = {}
-	if not r in relrig:
-		relrig[r] = {}
-	rellef[r][h] = 1
-	relrig[r][t] = 1
+	if not r in rel_lef:
+		rel_lef[r] = {}
+	if not r in rel_rig:
+		rel_rig[r] = {}
+	rel_lef[r][h] = 1
+	rel_rig[r][t] = 1
 
 tot = (int)(test_list.readline())
 for i in range(tot):
@@ -73,12 +78,12 @@ for i in range(tot):
 	lef[(h,r)].append(t)
 	rig[(r,t)].append(h)
 
-	if not r in rellef:
-		rellef[r] = {}
-	if not r in relrig:
-		relrig[r] = {}
-	rellef[r][h] = 1
-	relrig[r][t] = 1
+	if not r in rel_lef:
+		rel_lef[r] = {}
+	if not r in rel_rig:
+		rel_rig[r] = {}
+	rel_lef[r][h] = 1
+	rel_rig[r][t] = 1
 
 test_list.close()
 valid_list.close()
@@ -87,35 +92,35 @@ train_list.close()
 ##################################################
 
 f = open("type_constrain.txt", "w")
-f.write("%d\n"%(len(rellef)))
-for i in rellef:
-	f.write("%s\t%d"%(i,len(rellef[i])))
-	for j in rellef[i]:
+f.write("%d\n"%(len(rel_lef)))
+for i in rel_lef:
+	f.write("%s\t%d"%(i,len(rel_lef[i])))
+	for j in rel_lef[i]:
 		f.write("\t%s"%(j))
 	f.write("\n")
-	f.write("%s\t%d"%(i,len(relrig[i])))
-	for j in relrig[i]:
+	f.write("%s\t%d"%(i,len(rel_rig[i])))
+	for j in rel_rig[i]:
 		f.write("\t%s"%(j))
 	f.write("\n")
 f.close()
 
-rellef = {}
+rel_lef = {}
 totlef = {}
-relrig = {}
+rel_rig = {}
 totrig = {}
 
 for i in lef:
-	if not i[1] in rellef:
-		rellef[i[1]] = 0
+	if not i[1] in rel_lef:
+		rel_lef[i[1]] = 0
 		totlef[i[1]] = 0
-	rellef[i[1]] += len(lef[i])
+	rel_lef[i[1]] += len(lef[i])
 	totlef[i[1]] += 1.0
 
 for i in rig:
-	if not i[0] in relrig:
-		relrig[i[0]] = 0
+	if not i[0] in rel_rig:
+		rel_rig[i[0]] = 0
 		totrig[i[0]] = 0
-	relrig[i[0]] += len(rig[i])
+	rel_rig[i[0]] += len(rig[i])
 	totrig[i[0]] += 1.0
 
 s11=0
@@ -127,8 +132,8 @@ tot = (int)(f.readline())
 for i in range(tot):
 	content = f.readline()
 	h,t,r = content.strip().split()
-	rign = rellef[r] / totlef[r]
-	lefn = relrig[r] / totrig[r]
+	rign = rel_lef[r] / totlef[r]
+	lefn = rel_rig[r] / totrig[r]
 	if (rign <= 1.5 and lefn <= 1.5):
 		s11+=1
 	if (rign > 1.5 and lefn <= 1.5):
@@ -155,8 +160,8 @@ fnn.write("%d\n"%(snn))
 for i in range(tot):
 	content = f.readline()
 	h,t,r = content.strip().split()
-	rign = rellef[r] / totlef[r]
-	lefn = relrig[r] / totrig[r]
+	rign = rel_lef[r] / totlef[r]
+	lefn = rel_rig[r] / totrig[r]
 	if (rign <= 1.5 and lefn <= 1.5):
 		f11.write(content)
 		fall.write("0"+"\t"+content)
