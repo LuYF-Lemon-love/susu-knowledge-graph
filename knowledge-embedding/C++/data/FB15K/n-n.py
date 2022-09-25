@@ -3,13 +3,13 @@ rig = {}
 rellef = {}
 relrig = {}
 
-triple = open("train2id.txt", "r")
-valid = open("valid2id.txt", "r")
-test = open("test2id.txt", "r")
+train_list = open("train2id.txt", "r")
+valid_list = open("valid2id.txt", "r")
+test_list = open("test2id.txt", "r")
 
-tot = (int)(triple.readline())
+tot = (int)(train_list.readline())
 for i in range(tot):
-	content = triple.readline()
+	content = train_list.readline()
 	h,t,r = content.strip().split()
 	if not (h,r) in lef:
 		lef[(h,r)] = []
@@ -24,9 +24,9 @@ for i in range(tot):
 	rellef[r][h] = 1
 	relrig[r][t] = 1
 
-tot = (int)(valid.readline())
+tot = (int)(valid_list.readline())
 for i in range(tot):
-	content = valid.readline()
+	content = valid_list.readline()
 	h,t,r = content.strip().split()
 	if not (h,r) in lef:
 		lef[(h,r)] = []
@@ -41,9 +41,9 @@ for i in range(tot):
 	rellef[r][h] = 1
 	relrig[r][t] = 1
 
-tot = (int)(test.readline())
+tot = (int)(test_list.readline())
 for i in range(tot):
-	content = test.readline()
+	content = test_list.readline()
 	h,t,r = content.strip().split()
 	if not (h,r) in lef:
 		lef[(h,r)] = []
@@ -58,9 +58,9 @@ for i in range(tot):
 	rellef[r][h] = 1
 	relrig[r][t] = 1
 
-test.close()
-valid.close()
-triple.close()
+test_list.close()
+valid_list.close()
+train_list.close()
 
 f = open("type_constrain.txt", "w")
 f.write("%d\n"%(len(rellef)))
