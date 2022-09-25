@@ -90,19 +90,33 @@ valid_list.close()
 train_list.close()
 
 ##################################################
+# 创建 type_constrain.txt
+# type_constrain.txt: 类型约束文件, 第一行是关系的个数
+# 下面的行是每个关系的类型限制 (训练集、验证集、测试集中每个关系存在的 head 和 tail 的类型)
+# 每个关系有两行：
+# 第一行：`id of relation` `Number of head types` `head1` `head2` ...
+# 第二行: `id of relation` `number of tail types` `tail1` `tail2` ...
+#
+# For example, the relation with id 1200 has 4 types of head entities, which are 3123, 1034, 58 and 5733
+# The relation with id 1200 has 4 types of tail entities, which are 12123, 4388, 11087 and 11088
+# 1200	4	3123	1034	58	5733
+# 1200	4	12123	4388	11087	11088
+##################################################
 
 f = open("type_constrain.txt", "w")
 f.write("%d\n"%(len(rel_lef)))
 for i in rel_lef:
-	f.write("%s\t%d"%(i,len(rel_lef[i])))
+	f.write("%s\t%d"%(i, len(rel_lef[i])))
 	for j in rel_lef[i]:
 		f.write("\t%s"%(j))
 	f.write("\n")
-	f.write("%s\t%d"%(i,len(rel_rig[i])))
+	f.write("%s\t%d"%(i, len(rel_rig[i])))
 	for j in rel_rig[i]:
 		f.write("\t%s"%(j))
 	f.write("\n")
 f.close()
+
+##################################################
 
 rel_lef = {}
 totlef = {}
