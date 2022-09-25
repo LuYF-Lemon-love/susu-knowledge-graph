@@ -82,7 +82,7 @@ INT test_total, train_total, valid_total, triple_total;
 // triple_list (triple_total): 测试集、训练集、验证集中的三元组集合
 Triple *test_list, *triple_list;
 
-// 统计测试集中各种关系 (0: 1-1, 1: 1-n, 2: n-1, 3: n-n) 的数量
+// 统计测试集中各种三元组 (关系: 1-1, 1-n, n-1, n-n) 的数量
 // nntotal[1]: 1-1, nntotal[2]: 1-n, nntotal[3]: n-1, nntotal[4]: n-n
 INT nntotal[5];
 

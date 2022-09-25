@@ -117,65 +117,97 @@ for i in rel_lef:
 f.close()
 
 ##################################################
+# 创建 1-1.txt、1-n.txt、n-1.txt、n-n.txt、test2id_all.txt
+##################################################
 
+# rel_lef, tot_lef, rel_rig, tot_rig 类型为 <class 'dict'>
+# rel_lef 的 key 为 r, value 为相应 (关系为 r) 三元组 (训练集、验证集、测试集) tail 的个数
+# tot_lef 的 key 为 r, value 为相应 (关系为 r) 三元组 (训练集、验证集、测试集) head 的种类数
+# rel_rig 的 key 为 r, value 为相应 (关系为 r) 三元组 (训练集、验证集、测试集) head 的个数
+# tot_rig 的 key 为 r, value 为相应 (关系为 r) 三元组 (训练集、验证集、测试集) tail 的种类数
 rel_lef = {}
-totlef = {}
+tot_lef = {}
 rel_rig = {}
-totrig = {}
+tot_rig = {}
 
 for i in lef:
 	if not i[1] in rel_lef:
 		rel_lef[i[1]] = 0
-		totlef[i[1]] = 0
+		tot_lef[i[1]] = 0
 	rel_lef[i[1]] += len(lef[i])
-	totlef[i[1]] += 1.0
+	tot_lef[i[1]] += 1.0
 
 for i in rig:
 	if not i[0] in rel_rig:
 		rel_rig[i[0]] = 0
-		totrig[i[0]] = 0
+		tot_rig[i[0]] = 0
 	rel_rig[i[0]] += len(rig[i])
-	totrig[i[0]] += 1.0
+	tot_rig[i[0]] += 1.0
 
-s11=0
-s1n=0
-sn1=0
-snn=0
+# 统计测试集中各种三元组 (关系: 1-1, 1-n, n-1, n-n) 的数量
+# s11: 1-1
+# s1n: 1-n
+# sn1: n-1
+# snn: n-n
+s11 = 0
+s1n = 0
+sn1 = 0
+snn = 0
+
 f = open("test2id.txt", "r")
 tot = (int)(f.readline())
+
 for i in range(tot):
+
 	content = f.readline()
-	h,t,r = content.strip().split()
-	rign = rel_lef[r] / totlef[r]
-	lefn = rel_rig[r] / totrig[r]
+	h, t, r = content.strip().split()
+
+	rign = rel_lef[r] / tot_lef[r]
+	lefn = rel_rig[r] / tot_rig[r]
+
 	if (rign <= 1.5 and lefn <= 1.5):
-		s11+=1
+		s11 += 1
 	if (rign > 1.5 and lefn <= 1.5):
-		s1n+=1
+		s1n += 1
 	if (rign <= 1.5 and lefn > 1.5):
-		sn1+=1
+		sn1 += 1
 	if (rign > 1.5 and lefn > 1.5):
-		snn+=1
+		snn += 1
+
 f.close()
 
-
+# 创建 1-1.txt、1-n.txt、n-1.txt、n-n.txt、test2id_all.txt
+# 1-1.txt: 第一行是测试集中关系为 1-1 的三元组的个数，其余行为 (e1, e2, rel) 格式的三元组
+# 1-n.txt: 第一行是测试集中关系为 1-n 的三元组的个数，其余行为 (e1, e2, rel) 格式的三元组
+# n-1.txt: 第一行是测试集中关系为 n-1 的三元组的个数，其余行为 (e1, e2, rel) 格式的三元组
+# n-n.txt: 第一行是测试集中关系为 n-n 的三元组的个数，其余行为 (e1, e2, rel) 格式的三元组
+# test2id_all.txt:
+#     第一行是测试集中三元组的个数
+#     其余行为 `label` `(e1, e2, rel)`
+#     label:
+#         0: 1-1, 1: 1-n, 2: n-1, 3: n-n
 f = open("test2id.txt", "r")
 f11 = open("1-1.txt", "w")
 f1n = open("1-n.txt", "w")
 fn1 = open("n-1.txt", "w")
 fnn = open("n-n.txt", "w")
 fall = open("test2id_all.txt", "w")
+
 tot = (int)(f.readline())
 fall.write("%d\n"%(tot))
 f11.write("%d\n"%(s11))
 f1n.write("%d\n"%(s1n))
 fn1.write("%d\n"%(sn1))
 fnn.write("%d\n"%(snn))
+
 for i in range(tot):
+
 	content = f.readline()
-	h,t,r = content.strip().split()
-	rign = rel_lef[r] / totlef[r]
-	lefn = rel_rig[r] / totrig[r]
+	h, t, r = content.strip().split()
+
+	rign = rel_lef[r] / tot_lef[r]
+	lefn = rel_rig[r] / tot_rig[r]
+
 	if (rign <= 1.5 and lefn <= 1.5):
 		f11.write(content)
 		fall.write("0"+"\t"+content)
@@ -188,6 +220,7 @@ for i in range(tot):
 	if (rign > 1.5 and lefn > 1.5):
 		fnn.write(content)
 		fall.write("3"+"\t"+content)
+
 fall.close()
 f.close()
 f11.close()
