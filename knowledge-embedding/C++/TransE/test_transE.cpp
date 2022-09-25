@@ -8,7 +8,7 @@
 #include <cstdio>           // FILE, fscanf, fopen, fclose
 #include <cstdlib>          // calloc, free, atoi
 #include <cmath>            // fabs
-#include <cstring>          // memcpy, strcmp
+#include <cstring>          // memcpy, strcmp, memset
 #include <fcntl.h>          // open, close, O_RDONLY
 #include <unistd.h>         // stat
 #include <sys/stat.h>       // stat
@@ -32,49 +32,84 @@ std::string in_path = "../data/FB15K/";
 std::string load_path = "./";
 std::string note = "";
 
-// relation_total: 关系总数
-// entity_total: 实体总数
-INT relation_total;
-INT entity_total;
-
-REAL *entity_vec, *relation_vec;
-INT test_total, train_total, valid_total, triple_total;
-
+// 三元组: (head, label, tail)
+// h: head
+// r: label or relationship
+// t: tail
+// label(head-tail, relationship type):
+//     0: 1-1
+//     1: 1-n
+//     2: n-1
+//     3: n-n
+// a relationship of name label between the entities head and tail
 struct Triple {
 	INT h, r, t;
 	INT label;
 };
 
+// 为 std::sort() 定义比较仿函数
+// 以三元组的 head 进行比较
 struct cmp_head {
 	bool operator()(const Triple &a, const Triple &b) {
-		return (a.h < b.h)||(a.h == b.h && a.r < b.r)||(a.h == b.h && a.r == b.r && a.t < b.t);
+		return (a.h < b.h)||(a.h == b.h && a.r < b.r)
+				||(a.h == b.h && a.r == b.r && a.t < b.t);
 	}
 };
 
-Triple *testList, *tripleList;
+// ##################################################
+// 从 test2id_all.txt、train2id.txt、valid2id.txt 中读取三元组
+// prerequisites: 
+//     relation2id.txt, entity2id.txt, test2id_all.txt
+//     train2id.txt、valid2id.txt、type_constrain.txt
+// ##################################################
 
+// relation_total: 关系总数
+// entity_total: 实体总数
+INT relation_total;
+INT entity_total;
+
+// relation_vec (relation_total * dimension): 关系嵌入矩阵
+// entity_vec (entity_total * dimension): 实体嵌入矩阵
+REAL *relation_vec, *entity_vec;
+
+// test_total: 测试集中的三元组总数
+// train_total: 训练集中的三元组总数
+// valid_total: 验证集中的三元组总数
+// triple_total: 测试集、训练集、验证集中的三元组总数，以 head 排序
+INT test_total, train_total, valid_total, triple_total;
+
+// test_list (test_total): 测试集中的三元组集合
+// triple_list (triple_total): 测试集、训练集、验证集中的三元组集合
+Triple *test_list, *triple_list;
+
+// 统计测试集中各种关系 (0: 1-1, 1: 1-n, 2: n-1, 3: n-n) 的数量
 INT nntotal[5];
-INT head_lef[10000];
-INT head_rig[10000];
-INT tail_lef[10000];
-INT tail_rig[10000];
+
+INT head_left[10000];
+INT head_right[10000];
+INT tail_left[10000];
+INT tail_right[10000];
 INT head_type[1000000];
 INT tail_type[1000000];
 
 void init() {
+
 	FILE *fin;
 	INT tmp, h, r, t, label;
 
+	// 为 relation_vec 分配一个内存块，并将其所有位初始化为零
 	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &relation_total);
 	fclose(fin);
 	relation_vec = (REAL *)calloc(relation_total * dimension, sizeof(REAL));
 
+	// 为 entity_vec 分配一个内存块，并将其所有位初始化为零
 	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &entity_total);
 	fclose(fin);
 	entity_vec = (REAL *)calloc(entity_total * dimension, sizeof(REAL));
 
+	// 读取测试集、训练集、验证集中的三元组
 	FILE* f_kb1 = fopen((in_path + "test2id_all.txt").c_str(), "r");
 	FILE* f_kb2 = fopen((in_path + "train2id.txt").c_str(), "r");
 	FILE* f_kb3 = fopen((in_path + "valid2id.txt").c_str(), "r");
@@ -83,9 +118,10 @@ void init() {
 	tmp = fscanf(f_kb2, "%d", &train_total);
 	tmp = fscanf(f_kb3, "%d", &valid_total);
 	triple_total = test_total + train_total + valid_total;
-	testList = (Triple *)calloc(test_total, sizeof(Triple));
-	tripleList = (Triple *)calloc(triple_total, sizeof(Triple));
+	test_list = (Triple *)calloc(test_total, sizeof(Triple));
+	triple_list = (Triple *)calloc(triple_total, sizeof(Triple));
 
+	// 将 nntotal 的内存初始化为 0
 	memset(nntotal, 0, sizeof(nntotal));
 
 	for (INT i = 0; i < test_total; i++) {
@@ -95,63 +131,64 @@ void init() {
 		tmp = fscanf(f_kb1, "%d", &r);
 		label++;
 		nntotal[label]++;
-		testList[i].label = label;
-		testList[i].h = h;
-		testList[i].t = t;
-		testList[i].r = r;
-		tripleList[i].h = h;
-		tripleList[i].t = t;
-		tripleList[i].r = r;
+		test_list[i].label = label;
+		test_list[i].h = h;
+		test_list[i].t = t;
+		test_list[i].r = r;
+		triple_list[i].h = h;
+		triple_list[i].t = t;
+		triple_list[i].r = r;
 	}
 
 	for (INT i = 0; i < train_total; i++) {
 		tmp = fscanf(f_kb2, "%d", &h);
 		tmp = fscanf(f_kb2, "%d", &t);
 		tmp = fscanf(f_kb2, "%d", &r);
-		tripleList[i + test_total].h = h;
-		tripleList[i + test_total].t = t;
-		tripleList[i + test_total].r = r;
+		triple_list[i + test_total].h = h;
+		triple_list[i + test_total].t = t;
+		triple_list[i + test_total].r = r;
 	}
 
 	for (INT i = 0; i < valid_total; i++) {
 		tmp = fscanf(f_kb3, "%d", &h);
 		tmp = fscanf(f_kb3, "%d", &t);
 		tmp = fscanf(f_kb3, "%d", &r);
-		tripleList[i + test_total + train_total].h = h;
-		tripleList[i + test_total + train_total].t = t;
-		tripleList[i + test_total + train_total].r = r;
+		triple_list[i + test_total + train_total].h = h;
+		triple_list[i + test_total + train_total].t = t;
+		triple_list[i + test_total + train_total].r = r;
 	}
 
 	fclose(f_kb1);
 	fclose(f_kb2);
 	fclose(f_kb3);
 
-	std::sort(tripleList, tripleList + triple_total, cmp_head());
+	// triple_list 用 head 排序
+	std::sort(triple_list, triple_list + triple_total, cmp_head());
 
-	INT total_lef = 0;
-	INT total_rig = 0;
+	INT total_left = 0;
+	INT total_right = 0;
 	FILE* f_type = fopen((in_path + "type_constrain.txt").c_str(), "r");
-	tmp = fscanf(f_type, "%d", &tmp);
+	tmp = fscanf(f_type, "%d", &relation_total);
 	
 	for (INT i = 0; i < relation_total; i++) {
 		INT rel, tot;
 		tmp = fscanf(f_type, "%d%d", &rel, &tot);
-		head_lef[rel] = total_lef;
+		head_left[rel] = total_left;
 		for (INT j = 0; j < tot; j++) {
-			tmp = fscanf(f_type, "%d", &head_type[total_lef]);
-			total_lef++;
+			tmp = fscanf(f_type, "%d", &head_type[total_left]);
+			total_left++;
 		}
-		head_rig[rel] = total_lef;
-		std::sort(head_type + head_lef[rel], head_type + head_rig[rel]);
+		head_right[rel] = total_left;
+		std::sort(head_type + head_left[rel], head_type + head_right[rel]);
 
 		tmp = fscanf(f_type, "%d%d", &rel, &tot);
-		tail_lef[rel] = total_rig;
+		tail_left[rel] = total_right;
 		for (INT j = 0; j < tot; j++) {
-			tmp = fscanf(f_type, "%d", &tail_type[total_rig]);
-			total_rig++;
+			tmp = fscanf(f_type, "%d", &tail_type[total_right]);
+			total_right++;
 		}
-		tail_rig[rel] = total_rig;
-		std::sort(tail_type + tail_lef[rel], tail_type + tail_rig[rel]);
+		tail_right[rel] = total_right;
+		std::sort(tail_type + tail_left[rel], tail_type + tail_right[rel]);
 	}
 	fclose(f_type);
 }
@@ -217,10 +254,10 @@ bool find(INT h, INT t, INT r) {
 	INT mid;
 	while (lef + 1 < rig) {
 		INT mid = (lef + rig) >> 1;
-		if ((tripleList[mid].h < h) || (tripleList[mid].h == h && tripleList[mid].r < r) || (tripleList[mid].h == h && tripleList[mid].r == r && tripleList[mid].t < t)) lef = mid; else rig = mid;
+		if ((triple_list[mid].h < h) || (triple_list[mid].h == h && triple_list[mid].r < r) || (triple_list[mid].h == h && triple_list[mid].r == r && triple_list[mid].t < t)) lef = mid; else rig = mid;
 	}
-	if (tripleList[lef].h == h && tripleList[lef].r == r && tripleList[lef].t == t) return true;
-	if (tripleList[rig].h == h && tripleList[rig].r == r && tripleList[rig].t == t) return true;
+	if (triple_list[lef].h == h && triple_list[lef].r == r && triple_list[lef].t == t) return true;
+	if (triple_list[rig].h == h && triple_list[rig].r == r && triple_list[rig].t == t) return true;
 	return false;
 }
 
@@ -234,10 +271,10 @@ void* testMode(void *con) {
 	INT rig = test_total / (threads) * (id + 1) - 1;
 	if (id == threads - 1) rig = test_total - 1;
 	for (INT i = lef; i <= rig; i++) {
-		INT h = testList[i].h;
-		INT t = testList[i].t;
-		INT r = testList[i].r;
-		INT label = testList[i].label;
+		INT h = test_list[i].h;
+		INT t = test_list[i].t;
+		INT r = test_list[i].r;
+		INT label = test_list[i].label;
 		REAL minimal = calc_sum(h, t, r);
 		INT l_filter_s = 0;
 		INT l_s = 0;
@@ -247,7 +284,7 @@ void* testMode(void *con) {
 		INT l_s_constrain = 0;
 		INT r_filter_s_constrain = 0;
 		INT r_s_constrain = 0;
-		INT type_head = head_lef[r], type_tail = tail_lef[r];
+		INT type_head = head_left[r], type_tail = tail_left[r];
 		for (INT j = 0; j < entity_total; j++) {
 			if (j != h) {
 				REAL value = calc_sum(j, t, r);
@@ -256,8 +293,8 @@ void* testMode(void *con) {
 					if (not find(j, t, r))
 						l_filter_s += 1;
 				}
-				while (type_head < head_rig[r] && head_type[type_head] < j) type_head++;
-				if (type_head < head_rig[r] && head_type[type_head] == j) {
+				while (type_head < head_right[r] && head_type[type_head] < j) type_head++;
+				if (type_head < head_right[r] && head_type[type_head] == j) {
 					if (value < minimal) {
 						l_s_constrain += 1;
 						if (not find(j, t, r))
@@ -272,8 +309,8 @@ void* testMode(void *con) {
 					if (not find(h, j, r))
 						r_filter_s += 1;
 				}
-				while (type_tail < tail_rig[r] && tail_type[type_tail] < j) type_tail++;
-				if (type_tail < tail_rig[r] && tail_type[type_tail] == j) {
+				while (type_tail < tail_right[r] && tail_type[type_tail] < j) type_tail++;
+				if (type_tail < tail_right[r] && tail_type[type_tail] == j) {
 					if (value < minimal) {
 						r_s_constrain += 1;
 						if (not find(h, j, r))
