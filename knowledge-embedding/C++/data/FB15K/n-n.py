@@ -1,5 +1,18 @@
+# n-n.py
+# created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+
+##################################################
+
+##################################################
+
+# {[]}, 外层是 <class 'dict'>, 内层是 <class 'list'>
+# lef 外层的 key 为三元组 (训练集、验证集、测试集) (h, r)
+# lef 外层的 value 为 (h, r) 对应的 t 的 list
+# rig 外层的 key 为三元组 (训练集、验证集、测试集) (r, t)
+# rig 外层的 value 为 (r, t) 对应的 h 的 list  
 lef = {}
 rig = {}
+
 rellef = {}
 relrig = {}
 
@@ -9,14 +22,17 @@ test_list = open("test2id.txt", "r")
 
 tot = (int)(train_list.readline())
 for i in range(tot):
+
 	content = train_list.readline()
-	h,t,r = content.strip().split()
-	if not (h,r) in lef:
-		lef[(h,r)] = []
+	h, t, r = content.strip().split()
+
+	if not (h, r) in lef:
+		lef[(h, r)] = []
 	if not (r,t) in rig:
-		rig[(r,t)] = []
-	lef[(h,r)].append(t)
-	rig[(r,t)].append(h)
+		rig[(r, t)] = []
+	lef[(h, r)].append(t)
+	rig[(r, t)].append(h)
+	
 	if not r in rellef:
 		rellef[r] = {}
 	if not r in relrig:
@@ -26,14 +42,17 @@ for i in range(tot):
 
 tot = (int)(valid_list.readline())
 for i in range(tot):
+
 	content = valid_list.readline()
 	h,t,r = content.strip().split()
+
 	if not (h,r) in lef:
 		lef[(h,r)] = []
 	if not (r,t) in rig:
 		rig[(r,t)] = []
 	lef[(h,r)].append(t)
 	rig[(r,t)].append(h)
+
 	if not r in rellef:
 		rellef[r] = {}
 	if not r in relrig:
@@ -43,14 +62,17 @@ for i in range(tot):
 
 tot = (int)(test_list.readline())
 for i in range(tot):
+
 	content = test_list.readline()
 	h,t,r = content.strip().split()
+
 	if not (h,r) in lef:
 		lef[(h,r)] = []
 	if not (r,t) in rig:
 		rig[(r,t)] = []
 	lef[(h,r)].append(t)
 	rig[(r,t)].append(h)
+
 	if not r in rellef:
 		rellef[r] = {}
 	if not r in relrig:
@@ -61,6 +83,8 @@ for i in range(tot):
 test_list.close()
 valid_list.close()
 train_list.close()
+
+##################################################
 
 f = open("type_constrain.txt", "w")
 f.write("%d\n"%(len(rellef)))

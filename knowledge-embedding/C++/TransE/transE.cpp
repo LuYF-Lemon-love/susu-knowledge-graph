@@ -291,6 +291,7 @@ void load_binary() {
 }
 
 void load() {
+	
 	if (load_binary_flag) {
 		load_binary();
 		return;
@@ -576,57 +577,60 @@ void* train() {
 // ##################################################
 
 void out_binary() {
-		INT len, tot;
-		REAL *head;	
-		FILE* f1 = fopen((out_path + "entity2vec" + note + ".bin").c_str(), "wb");
-		FILE* f2 = fopen((out_path + "relation2vec" + note + ".bin").c_str(), "wb");
-
-		// 以二进制形式输出实体嵌入
-		len = entity_total * dimension; tot = 0;
-		head = entity_vec;
-		while (tot < len) {
-			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f1);
-			tot = tot + sum;
-		}
-
-		// 以二进制形式输出关系嵌入
-		len = relation_total * dimension; tot = 0;
-		head = relation_vec;
-		while (tot < len) {
-			INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f2);
-			tot = tot + sum;
-		}
 		
-		fclose(f1);
-		fclose(f2);
+	INT len, tot;
+	REAL *head;	
+	FILE* f1 = fopen((out_path + "entity2vec" + note + ".bin").c_str(), "wb");
+	FILE* f2 = fopen((out_path + "relation2vec" + note + ".bin").c_str(), "wb");
+
+	// 以二进制形式输出实体嵌入
+	len = entity_total * dimension; tot = 0;
+	head = entity_vec;
+	while (tot < len) {
+		INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f1);
+		tot = tot + sum;
+	}
+
+	// 以二进制形式输出关系嵌入
+	len = relation_total * dimension; tot = 0;
+	head = relation_vec;
+	while (tot < len) {
+		INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f2);
+		tot = tot + sum;
+	}
+		
+	fclose(f1);
+	fclose(f2);
 }
 
 void out() {
 
-		if (out_binary_flag) {
-			out_binary(); 
-			return;
-		}
+	if (out_binary_flag) {
+		out_binary(); 
+		return;
+	}
 
-		FILE* f1 = fopen((out_path + "entity2vec" + note + ".vec").c_str(), "w");
-		FILE* f2 = fopen((out_path + "relation2vec" + note + ".vec").c_str(), "w");
+	FILE* f1 = fopen((out_path + "entity2vec" + note + ".vec").c_str(), "w");
+	FILE* f2 = fopen((out_path + "relation2vec" + note + ".vec").c_str(), "w");
 
-		for (INT  i = 0; i < entity_total; i++) {
-			INT last = i * dimension;
-			for (INT j = 0; j < dimension; j++)
-				fprintf(f1, "%.6f\t", entity_vec[last + j] );
-			fprintf(f1,"\n");
-		}
+	// 输出预训练实体嵌入
+	for (INT  i = 0; i < entity_total; i++) {
+		INT last = i * dimension;
+		for (INT j = 0; j < dimension; j++)
+			fprintf(f1, "%.6f\t", entity_vec[last + j] );
+		fprintf(f1,"\n");
+	}
 
-		for (INT i=0; i < relation_total; i++) {
-			INT last = dimension * i;
-			for (INT j = 0; j < dimension; j++)
-				fprintf(f2, "%.6f\t", relation_vec[last + j]);
-			fprintf(f2,"\n");
-		}
+	// 输出预训练关系嵌入
+	for (INT i = 0; i < relation_total; i++) {
+		INT last = dimension * i;
+		for (INT j = 0; j < dimension; j++)
+			fprintf(f2, "%.6f\t", relation_vec[last + j]);
+		fprintf(f2,"\n");
+	}
 
-		fclose(f1);
-		fclose(f2);
+	fclose(f1);
+	fclose(f2);
 }
 
 // ##################################################
