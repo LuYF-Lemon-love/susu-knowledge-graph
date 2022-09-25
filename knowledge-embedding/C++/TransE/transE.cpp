@@ -13,6 +13,7 @@
 #include <unistd.h>         // stat
 #include <sys/stat.h>       // stat
 #include <sys/mman.h>       // mmap, munmap
+#include <sys/time.h>       // timeval, gettimeofday
 #include <pthread.h>        // pthread_create, pthread_exit, pthread_join
 #include <string>           // std::string, std::string::c_str
 #include <algorithm>        // std::sort
@@ -163,6 +164,7 @@ void init() {
 	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &relation_total);
 	fclose(fin);
+	printf("relation_total: %d\n", relation_total);
 
 	relation_vec = (REAL *)calloc(relation_total * dimension,
 			sizeof(REAL));
@@ -177,6 +179,7 @@ void init() {
 	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
 	tmp = fscanf(fin, "%d", &entity_total);
 	fclose(fin);
+	printf("entity_total: %d\n", entity_total);
 
 	entity_vec = (REAL *)calloc(entity_total * dimension,
 			sizeof(REAL));
@@ -201,6 +204,7 @@ void init() {
 		train_tail[i] = train_list[i];
 	}
 	fclose(fin);
+	printf("triple_total: %d\n\n", triple_total);
 
 	// train_head 和 train_tail 分别以 head 和 tail 排序
 	std::sort(train_head, train_head + triple_total, cmp_head());
@@ -683,10 +687,24 @@ void setparameters(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+
+	printf("##################################################\n\n");
+	printf("训练开始:\n\n");
+
+	struct timeval start, end;
+	gettimeofday(&start, NULL);
+
 	setparameters(argc, argv);
 	init();
 	if (load_path != "") load();
 	train();
 	if (out_path != "") out();
+
+	gettimeofday(&end, NULL);
+    long double time_use = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+
+	printf("\n训练结束, 用时 %.6Lf 秒.\n\n", time_use/1000000.0);
+	printf("##################################################\n\n");
+
 	return 0;
 }
