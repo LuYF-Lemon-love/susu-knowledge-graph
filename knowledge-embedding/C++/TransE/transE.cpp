@@ -634,8 +634,8 @@ void out() {
 // ##################################################
 
 // 寻找特定参数的位置
-int arg_pos(char *str, int argc, char **argv) {
-	int a;
+INT arg_pos(char *str, INT argc, char **argv) {
+	INT a;
 	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
 		if (a == argc - 1) {
 			printf("Argument missing for %s\n", str);
@@ -669,8 +669,8 @@ int arg_pos(char *str, int argc, char **argv) {
 // -note NOTE           information you want to add to the filename. if unspecified, note will default to ""
 // ##################################################
 
-void setparameters(int argc, char **argv) {
-	int i;
+void setparameters(INT argc, char **argv) {
+	INT i;
 	if ((i = arg_pos((char *)"-bern", argc, argv)) > 0) bern_flag = atoi(argv[i + 1]);
 	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
 	if ((i = arg_pos((char *)"-out-binary", argc, argv)) > 0) out_binary_flag = atoi(argv[i + 1]);
@@ -686,7 +686,7 @@ void setparameters(int argc, char **argv) {
 	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
 
-int main(int argc, char **argv) {
+INT main(INT argc, char **argv) {
 
 	printf("##################################################\n\n");
 	printf("训练开始:\n\n");

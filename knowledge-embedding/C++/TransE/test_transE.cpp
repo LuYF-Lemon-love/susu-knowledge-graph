@@ -53,13 +53,13 @@ struct cmp_head {
 
 Triple *testList, *tripleList;
 
-int nntotal[5];
-int head_lef[10000];
-int head_rig[10000];
-int tail_lef[10000];
-int tail_rig[10000];
-int head_type[1000000];
-int tail_type[1000000];
+INT nntotal[5];
+INT head_lef[10000];
+INT head_rig[10000];
+INT tail_lef[10000];
+INT tail_rig[10000];
+INT head_type[1000000];
+INT tail_type[1000000];
 
 void init() {
 	FILE *fin;
@@ -133,11 +133,11 @@ void init() {
 	FILE* f_type = fopen((in_path + "type_constrain.txt").c_str(), "r");
 	tmp = fscanf(f_type, "%d", &tmp);
 	
-	for (int i = 0; i < relation_total; i++) {
-		int rel, tot;
+	for (INT i = 0; i < relation_total; i++) {
+		INT rel, tot;
 		tmp = fscanf(f_type, "%d%d", &rel, &tot);
 		head_lef[rel] = total_lef;
-		for (int j = 0; j < tot; j++) {
+		for (INT j = 0; j < tot; j++) {
 			tmp = fscanf(f_type, "%d", &head_type[total_lef]);
 			total_lef++;
 		}
@@ -146,7 +146,7 @@ void init() {
 
 		tmp = fscanf(f_type, "%d%d", &rel, &tot);
 		tail_lef[rel] = total_rig;
-		for (int j = 0; j < tot; j++) {
+		for (INT j = 0; j < tot; j++) {
 			tmp = fscanf(f_type, "%d", &tail_type[total_rig]);
 			total_rig++;
 		}
@@ -159,7 +159,7 @@ void init() {
 void prepare_binary() {
 	struct stat statbuf1;
 	if (stat((load_path + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {
-		int fd = open((load_path + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
+		INT fd = open((load_path + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
 		REAL* entity_vec_tmp = (REAL*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
@@ -168,7 +168,7 @@ void prepare_binary() {
 
 	struct stat statbuf2;
 	if (stat((load_path + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {
-		int fd = open((load_path + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
+		INT fd = open((load_path + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
 		REAL* relation_vec_tmp = (REAL*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
@@ -317,7 +317,7 @@ void* testMode(void *con) {
 }
 
 void* test(void *con) {
-	for (int i = 0; i <= 5; i++) {
+	for (INT i = 0; i <= 5; i++) {
 		l_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
 		r_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
 		l_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
@@ -336,7 +336,7 @@ void* test(void *con) {
 		pthread_join(pt[a], NULL);
 	free(pt);
 
-	for (int i = 0; i <= 5; i++)
+	for (INT i = 0; i <= 5; i++)
 		for (INT a = 1; a < threads; a++) {
 			l_filter_tot[i][a] += l_filter_tot[i][a - 1];
 			r_filter_tot[i][a] += r_filter_tot[i][a - 1];
@@ -349,21 +349,21 @@ void* test(void *con) {
 			r_rank[i][a] += r_rank[i][a - 1];
 		}
 
-	for (int i = 0; i <= 0; i++) {
+	for (INT i = 0; i <= 0; i++) {
 		printf("left %f %f\n", l_rank[i][threads - 1] / test_total, l_tot[i][threads - 1] / test_total);
 		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
 		printf("right %f %f\n", r_rank[i][threads - 1] / test_total, r_tot[i][threads - 1] / test_total);
 		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
 	}
 
-	for (int i = 5; i <= 5; i++) {
+	for (INT i = 5; i <= 5; i++) {
 		printf("left %f %f\n", l_rank[i][threads - 1] / test_total, l_tot[i][threads - 1] / test_total);
 		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
 		printf("right %f %f\n", r_rank[i][threads - 1] / test_total, r_tot[i][threads - 1] / test_total);
 		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
 	}
 
-	for (int i = 1; i <= 4; i++) {
+	for (INT i = 1; i <= 4; i++) {
 		printf("left %f %f\n", l_rank[i][threads - 1] / nntotal[i], l_tot[i][threads - 1] / nntotal[i]);
 		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / nntotal[i], l_filter_tot[i][threads - 1] / nntotal[i]);
 		printf("right %f %f\n", r_rank[i][threads - 1] / nntotal[i], r_tot[i][threads - 1] / nntotal[i]);
@@ -393,7 +393,7 @@ void setparameters(INT argc, char **argv) {
 	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
 
-int main(int argc, char **argv) {
+INT main(INT argc, char **argv) {
 	setparameters(argc, argv);
 	init();
 	prepare();
