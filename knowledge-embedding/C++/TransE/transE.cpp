@@ -97,7 +97,7 @@ REAL rand(REAL min, REAL max) {
 }
 
 // 正态分布函数，X ~ N (miu, sigma)
-REAL normal(REAL x, REAL miu,REAL sigma) {
+REAL normal(REAL x, REAL miu, REAL sigma) {
 	return 1.0 / sqrt(2 * pi) / sigma
 		* exp(-1 * (x-miu) * (x-miu) / (2 * sigma * sigma));
 }
