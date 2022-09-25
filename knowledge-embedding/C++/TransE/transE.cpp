@@ -699,9 +699,9 @@ int main(int argc, char **argv) {
 	if (load_path != "") load();
 	train();
 	if (out_path != "") out();
-
-    gettimeofday(&end, NULL);
-    long double time_use = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+	
+	gettimeofday(&end, NULL);
+	long double time_use = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
 
 	printf("\n训练结束, 用时 %.6Lf 秒.\n\n", time_use/1000000.0);
 	printf("##################################################\n\n");
