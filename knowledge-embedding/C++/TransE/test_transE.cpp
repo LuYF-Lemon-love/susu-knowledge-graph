@@ -5,15 +5,16 @@
 // 包含标准库
 // ##################################################
 
-#include <cstdio>           // FILE, fscanf, fwrite, fopen, fclose
-#include <cstdlib>          // calloc, free, atoi, atof, rand, RAND_MAX
-#include <cmath>            // exp, fabs
-#include <cstring>          // memcmp, memcpy, strcmp
+#include <cstdio>           // FILE, fscanf, fopen, fclose
+#include <cstdlib>          // calloc, free, atoi
+#include <cmath>            // fabs
+#include <cstring>          // memcpy, strcmp
 #include <fcntl.h>          // open, close, O_RDONLY
 #include <unistd.h>         // stat
 #include <sys/stat.h>       // stat
 #include <sys/mman.h>       // mmap, munmap
 #include <string>           // std::string, std::string::c_str
+#include <pthread.h>        // pthread_create, pthread_exit, pthread_join
 #include <algorithm>        // std::sort
 #include <iostream>
 #include <map>
@@ -26,9 +27,11 @@
 
 using namespace std;
 
-long load_binary_flag = 0;
-long dimension = 50;
-long threads = 32;
+#define INT int
+
+INT load_binary_flag = 0;
+INT dimension = 50;
+INT threads = 32;
 
 string in_path = "../data/FB15K/";
 string load_path = "./";
@@ -36,15 +39,15 @@ string note = "";
 
 // relation_total: 关系总数
 // entity_total: 实体总数
-long relation_total;
-long entity_total;
+INT relation_total;
+INT entity_total;
 
 float *entity_vec, *relation_vec;
-long test_total, train_total, valid_total, triple_total;
+INT test_total, train_total, valid_total, triple_total;
 
 struct Triple {
-	long h, r, t;
-	long label;
+	INT h, r, t;
+	INT label;
 };
 
 struct cmp_head {
@@ -65,15 +68,15 @@ int tail_type[1000000];
 
 void init() {
 	FILE *fin;
-	long tmp, h, r, t, label;
+	INT tmp, h, r, t, label;
 
 	fin = fopen((in_path + "relation2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%ld", &relation_total);
+	tmp = fscanf(fin, "%d", &relation_total);
 	fclose(fin);
 	relation_vec = (float *)calloc(relation_total * dimension, sizeof(float));
 
 	fin = fopen((in_path + "entity2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%ld", &entity_total);
+	tmp = fscanf(fin, "%d", &entity_total);
 	fclose(fin);
 	entity_vec = (float *)calloc(entity_total * dimension, sizeof(float));
 
@@ -81,20 +84,20 @@ void init() {
 	FILE* f_kb2 = fopen((in_path + "train2id.txt").c_str(), "r");
 	FILE* f_kb3 = fopen((in_path + "valid2id.txt").c_str(), "r");
 
-	tmp = fscanf(f_kb1, "%ld", &test_total);
-	tmp = fscanf(f_kb2, "%ld", &train_total);
-	tmp = fscanf(f_kb3, "%ld", &valid_total);
+	tmp = fscanf(f_kb1, "%d", &test_total);
+	tmp = fscanf(f_kb2, "%d", &train_total);
+	tmp = fscanf(f_kb3, "%d", &valid_total);
 	triple_total = test_total + train_total + valid_total;
 	testList = (Triple *)calloc(test_total, sizeof(Triple));
 	tripleList = (Triple *)calloc(triple_total, sizeof(Triple));
 
 	memset(nntotal, 0, sizeof(nntotal));
 
-	for (long i = 0; i < test_total; i++) {
-		tmp = fscanf(f_kb1, "%ld", &label);
-		tmp = fscanf(f_kb1, "%ld", &h);
-		tmp = fscanf(f_kb1, "%ld", &t);
-		tmp = fscanf(f_kb1, "%ld", &r);
+	for (INT i = 0; i < test_total; i++) {
+		tmp = fscanf(f_kb1, "%d", &label);
+		tmp = fscanf(f_kb1, "%d", &h);
+		tmp = fscanf(f_kb1, "%d", &t);
+		tmp = fscanf(f_kb1, "%d", &r);
 		label++;
 		nntotal[label]++;
 		testList[i].label = label;
@@ -106,19 +109,19 @@ void init() {
 		tripleList[i].r = r;
 	}
 
-	for (long i = 0; i < train_total; i++) {
-		tmp = fscanf(f_kb2, "%ld", &h);
-		tmp = fscanf(f_kb2, "%ld", &t);
-		tmp = fscanf(f_kb2, "%ld", &r);
+	for (INT i = 0; i < train_total; i++) {
+		tmp = fscanf(f_kb2, "%d", &h);
+		tmp = fscanf(f_kb2, "%d", &t);
+		tmp = fscanf(f_kb2, "%d", &r);
 		tripleList[i + test_total].h = h;
 		tripleList[i + test_total].t = t;
 		tripleList[i + test_total].r = r;
 	}
 
-	for (long i = 0; i < valid_total; i++) {
-		tmp = fscanf(f_kb3, "%ld", &h);
-		tmp = fscanf(f_kb3, "%ld", &t);
-		tmp = fscanf(f_kb3, "%ld", &r);
+	for (INT i = 0; i < valid_total; i++) {
+		tmp = fscanf(f_kb3, "%d", &h);
+		tmp = fscanf(f_kb3, "%d", &t);
+		tmp = fscanf(f_kb3, "%d", &r);
 		tripleList[i + test_total + train_total].h = h;
 		tripleList[i + test_total + train_total].t = t;
 		tripleList[i + test_total + train_total].r = r;
@@ -130,10 +133,10 @@ void init() {
 
 	sort(tripleList, tripleList + triple_total, cmp_head());
 
-	long total_lef = 0;
-	long total_rig = 0;
+	INT total_lef = 0;
+	INT total_rig = 0;
 	FILE* f_type = fopen((in_path + "type_constrain.txt").c_str(), "r");
-	tmp = fscanf(f_type, "%ld", &tmp);
+	tmp = fscanf(f_type, "%d", &tmp);
 	
 	for (int i = 0; i < relation_total; i++) {
 		int rel, tot;
@@ -185,40 +188,40 @@ void prepare() {
 	}
 
 	FILE *fin;
-	long tmp;
+	INT tmp;
 	fin = fopen((load_path + "entity2vec" + note + ".vec").c_str(), "r");
-	for (long i = 0; i < entity_total; i++) {
-		long last = i * dimension;
-		for (long j = 0; j < dimension; j++)
+	for (INT i = 0; i < entity_total; i++) {
+		INT last = i * dimension;
+		for (INT j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &entity_vec[last + j]);
 	}
 	fclose(fin);
 
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
-	for (long i = 0; i < relation_total; i++) {
-		long last = i * dimension;
-		for (long j = 0; j < dimension; j++)
+	for (INT i = 0; i < relation_total; i++) {
+		INT last = i * dimension;
+		for (INT j = 0; j < dimension; j++)
 			tmp = fscanf(fin, "%f", &relation_vec[last + j]);
 	}
 	fclose(fin);
 }
 
-float calc_sum(long e1, long e2, long rel) {
+float calc_sum(INT e1, INT e2, INT rel) {
 	float res = 0;
-	long last1 = e1 * dimension;
-	long last2 = e2 * dimension;
-	long lastr = rel * dimension;
-	for (long i = 0; i < dimension; i++)
+	INT last1 = e1 * dimension;
+	INT last2 = e2 * dimension;
+	INT lastr = rel * dimension;
+	for (INT i = 0; i < dimension; i++)
 		res += fabs(entity_vec[last1 + i] + relation_vec[lastr + i] - entity_vec[last2 + i]);
 	return res;
 }
 
-bool find(long h, long t, long r) {
-	long lef = 0;
-	long rig = triple_total - 1;
-	long mid;
+bool find(INT h, INT t, INT r) {
+	INT lef = 0;
+	INT rig = triple_total - 1;
+	INT mid;
 	while (lef + 1 < rig) {
-		long mid = (lef + rig) >> 1;
+		INT mid = (lef + rig) >> 1;
 		if ((tripleList[mid].h < h) || (tripleList[mid].h == h && tripleList[mid].r < r) || (tripleList[mid].h == h && tripleList[mid].r == r && tripleList[mid].t < t)) lef = mid; else rig = mid;
 	}
 	if (tripleList[lef].h == h && tripleList[lef].r == r && tripleList[lef].t == t) return true;
@@ -230,27 +233,27 @@ float *l_filter_tot[6], *r_filter_tot[6], *l_tot[6], *r_tot[6];
 float *l_filter_rank[6], *r_filter_rank[6], *l_rank[6], *r_rank[6];
 
 void* testMode(void *con) {
-	long id;
+	INT id;
 	id = (unsigned long long)(con);
-	long lef = test_total / (threads) * id;
-	long rig = test_total / (threads) * (id + 1) - 1;
+	INT lef = test_total / (threads) * id;
+	INT rig = test_total / (threads) * (id + 1) - 1;
 	if (id == threads - 1) rig = test_total - 1;
-	for (long i = lef; i <= rig; i++) {
-		long h = testList[i].h;
-		long t = testList[i].t;
-		long r = testList[i].r;
-		long label = testList[i].label;
+	for (INT i = lef; i <= rig; i++) {
+		INT h = testList[i].h;
+		INT t = testList[i].t;
+		INT r = testList[i].r;
+		INT label = testList[i].label;
 		float minimal = calc_sum(h, t, r);
-		long l_filter_s = 0;
-		long l_s = 0;
-		long r_filter_s = 0;
-		long r_s = 0;
-		long l_filter_s_constrain = 0;
-		long l_s_constrain = 0;
-		long r_filter_s_constrain = 0;
-		long r_s_constrain = 0;
-		long type_head = head_lef[r], type_tail = tail_lef[r];
-		for (long j = 0; j < entity_total; j++) {
+		INT l_filter_s = 0;
+		INT l_s = 0;
+		INT r_filter_s = 0;
+		INT r_s = 0;
+		INT l_filter_s_constrain = 0;
+		INT l_s_constrain = 0;
+		INT r_filter_s_constrain = 0;
+		INT r_s_constrain = 0;
+		INT type_head = head_lef[r], type_tail = tail_lef[r];
+		for (INT j = 0; j < entity_total; j++) {
 			if (j != h) {
 				float value = calc_sum(j, t, r);
 				if (value < minimal) {
@@ -339,7 +342,7 @@ void* test(void *con) {
 	free(pt);
 
 	for (int i = 0; i <= 5; i++)
-		for (long a = 1; a < threads; a++) {
+		for (INT a = 1; a < threads; a++) {
 			l_filter_tot[i][a] += l_filter_tot[i][a - 1];
 			r_filter_tot[i][a] += r_filter_tot[i][a - 1];
 			l_tot[i][a] += l_tot[i][a - 1];
@@ -373,8 +376,8 @@ void* test(void *con) {
 	}
 }
 
-long ArgPos(char *str, long argc, char **argv) {
-	long a;
+INT ArgPos(char *str, INT argc, char **argv) {
+	INT a;
 	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
 		if (a == argc - 1) {
 			printf("Argument missing for %s\n", str);
@@ -385,8 +388,8 @@ long ArgPos(char *str, long argc, char **argv) {
 	return -1;
 }
 
-void setparameters(long argc, char **argv) {
-	long i;
+void setparameters(INT argc, char **argv) {
+	INT i;
 	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
 	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
