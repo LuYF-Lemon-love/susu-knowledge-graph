@@ -21,9 +21,9 @@ rig = {}
 rel_lef = {}
 rel_rig = {}
 
-train_list = open("train2id.txt", "r")
-valid_list = open("valid2id.txt", "r")
-test_list = open("test2id.txt", "r")
+train_list = open("../data/FB15K/train2id.txt", "r")
+valid_list = open("../data/FB15K/valid2id.txt", "r")
+test_list = open("../data/FB15K/test2id.txt", "r")
 
 tot = (int)(train_list.readline())
 for i in range(tot):
@@ -103,7 +103,7 @@ train_list.close()
 # 1200	4	12123	4388	11087	11088
 ##################################################
 
-f = open("type_constrain.txt", "w")
+f = open("../data/FB15K/type_constrain.txt", "w")
 f.write("%d\n"%(len(rel_lef)))
 for i in rel_lef:
 	f.write("%s\t%d"%(i, len(rel_lef[i])))
@@ -154,7 +154,7 @@ s1n = 0
 sn1 = 0
 snn = 0
 
-f = open("test2id.txt", "r")
+f = open("../data/FB15K/test2id.txt", "r")
 tot = (int)(f.readline())
 
 for i in range(tot):
@@ -186,12 +186,12 @@ f.close()
 #     其余行为 `label` `(e1, e2, rel)`
 #     label:
 #         0: 1-1, 1: 1-n, 2: n-1, 3: n-n
-f = open("test2id.txt", "r")
-f11 = open("1-1.txt", "w")
-f1n = open("1-n.txt", "w")
-fn1 = open("n-1.txt", "w")
-fnn = open("n-n.txt", "w")
-fall = open("test2id_all.txt", "w")
+f = open("../data/FB15K/test2id.txt", "r")
+f11 = open("../data/FB15K/1-1.txt", "w")
+f1n = open("../data/FB15K/1-n.txt", "w")
+fn1 = open("../data/FB15K/n-1.txt", "w")
+fnn = open("../data/FB15K/n-n.txt", "w")
+fall = open("../data/FB15K/test2id_all.txt", "w")
 
 tot = (int)(f.readline())
 fall.write("%d\n"%(tot))

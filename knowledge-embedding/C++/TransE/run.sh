@@ -6,6 +6,9 @@
 # created by LuYF-Lemon-love <luyanfeng@qq.com>
 ##################################################
 
+# 生成临时数据文件
+python3 n-n.py
+
 # train
 g++ transE.cpp -o transE -pthread -O3 -march=native
 ./transE
