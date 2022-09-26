@@ -86,12 +86,19 @@ Triple *test_list, *triple_list;
 // nntotal[1]: 1-1, nntotal[2]: 1-n, nntotal[3]: n-1, nntotal[4]: n-n
 INT nntotal[5];
 
+// head_type: 存储各个关系的 head 类型, 各个关系的 head 类型独立地以升序排列
+// tail_type: 存储各个关系的 tail 类型, 各个关系的 tail 类型独立地以升序排列
+INT head_type[1000000];
+INT tail_type[1000000];
+
+// head_left: 标记各个关系的 head 类型在 head_type 中的第一个位置
+// head_right: 标记各个关系的 head 类型在 head_type 中的最后 +1 的位置
+// tail_left: 标记各个关系的 tail 类型在 tail_type 中的第一个位置
+// tail_right: 标记各个关系的 tail 类型在 tail_type 中的最后 +1 的位置
 INT head_left[10000];
 INT head_right[10000];
 INT tail_left[10000];
 INT tail_right[10000];
-INT head_type[1000000];
-INT tail_type[1000000];
 
 void init() {
 
@@ -166,6 +173,16 @@ void init() {
 	// triple_list 用 head 排序
 	std::sort(triple_list, triple_list + triple_total, cmp_head());
 
+	// type_constrain.txt: 类型约束文件, 第一行是关系的个数
+	// 下面的行是每个关系的类型限制 (训练集、验证集、测试集中每个关系存在的 head 和 tail 的类型)
+	// 每个关系有两行：
+	// 第一行：`id of relation` `Number of head types` `head1` `head2` ...
+	// 第二行: `id of relation` `number of tail types` `tail1` `tail2` ...
+	//
+	// For example, the relation with id 1200 has 4 types of head entities, which are 3123, 1034, 58 and 5733
+	// The relation with id 1200 has 4 types of tail entities, which are 12123, 4388, 11087 and 11088
+	// 1200	4	3123	1034	58	5733
+	// 1200	4	12123	4388	11087	11088
 	INT total_left = 0;
 	INT total_right = 0;
 	FILE* f_type = fopen((in_path + "type_constrain.txt").c_str(), "r");
