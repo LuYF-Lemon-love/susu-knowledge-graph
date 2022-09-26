@@ -7,10 +7,14 @@
 ##################################################
 
 # 生成临时数据文件
-python3 n-n.py
+python3 data_preprocessing.py
 
 # 创建 build 目录
+echo "##################################################"
+echo ""
 mkdir build
+echo "./build 目录创建成功."
+echo ""
 
 # train
 g++ transE.cpp -o ./build/transE -pthread -O3 -march=native

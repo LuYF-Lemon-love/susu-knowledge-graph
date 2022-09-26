@@ -1,6 +1,9 @@
 # n-n.py
 # created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 
+print("##################################################")
+print("\n数据预处理开始...")
+
 ##################################################
 # 从 train2id.txt, valid2id.txt、test2id.txt 读取三元组
 ##################################################
@@ -115,6 +118,8 @@ for i in rel_lef:
 		f.write("\t%s"%(j))
 	f.write("\n")
 f.close()
+print("\n../data/FB15K/type_constrain.txt 创建成功.")
+
 
 ##################################################
 # 创建 1-1.txt、1-n.txt、n-1.txt、n-n.txt、test2id_all.txt
@@ -227,3 +232,5 @@ f11.close()
 f1n.close()
 fn1.close()
 fnn.close()
+print("\n../data/FB15K/1-1.txt ../data/FB15K/1-n.txt ../data/FB15K/n-1.txt ../data/FB15K/n-n.txt ../data/FB15K/test2id_all.txt 创建成功.")
+print("\n数据预处理结束.\n")
