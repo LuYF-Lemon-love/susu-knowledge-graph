@@ -29,7 +29,7 @@ INT dimension = 50;
 INT threads = 32;
 
 std::string in_path = "../data/FB15K/";
-std::string load_path = "./";
+std::string load_path = "./build/";
 std::string note = "";
 
 // 三元组: (head, label, tail)

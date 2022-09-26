@@ -38,7 +38,7 @@ INT epochs = 1000;
 INT threads = 32;
 
 std::string in_path = "../data/FB15K/";
-std::string out_path = "./";
+std::string out_path = "./build/";
 std::string load_path = "";
 std::string note = "";
 
@@ -668,7 +668,7 @@ INT arg_pos(char *str, INT argc, char **argv) {
 // -epochs EPOCHS       number of epochs. if unspecified, epochs will default to 1000
 // -threads THREAD      number of worker threads. if unspecified, threads will default to 32
 // -input INPUT         folder of training data. if unspecified, in_path will default to "../data/FB15K/"
-// -output OUTPUT       folder of outputing results. if unspecified, out_path will default to "./"
+// -output OUTPUT       folder of outputing results. if unspecified, out_path will default to "./build/"
 // -load LOAD           folder of pretrained data. if unspecified, load_path will default to ""
 // -note NOTE           information you want to add to the filename. if unspecified, note will default to ""
 // ##################################################
