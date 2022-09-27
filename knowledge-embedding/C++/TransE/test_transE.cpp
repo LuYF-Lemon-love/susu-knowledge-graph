@@ -91,10 +91,10 @@ INT nntotal[5];
 INT head_type[1000000];
 INT tail_type[1000000];
 
-// head_left: 标记各个关系的 head 类型在 head_type 中的第一个位置
-// head_right: 标记各个关系的 head 类型在 head_type 中的最后 +1 的位置
-// tail_left: 标记各个关系的 tail 类型在 tail_type 中的第一个位置
-// tail_right: 标记各个关系的 tail 类型在 tail_type 中的最后 +1 的位置
+// head_left: 标记各个关系的 head 类型在 head_type 中第一次出现的位置
+// head_right: 标记各个关系的 head 类型在 head_type 中最后一次出现的后一个位置
+// tail_left: 标记各个关系的 tail 类型在 tail_type 中第一次出现的位置
+// tail_right: 标记各个关系的 tail 类型在 tail_type 中最后一次出现的后一个位置
 INT head_left[10000];
 INT head_right[10000];
 INT tail_left[10000];
@@ -211,34 +211,57 @@ void init() {
 	fclose(f_type);
 }
 
-void prepare_binary() {
+// ##################################################
+// 加载 Pretrained Embeddings
+// prerequisites: 
+//     entity2vec + note + .bin
+//     relation2vec + note + .bin
+//     
+//     or
+//
+//     entity2vec + note + .vec
+//     relation2vec + note + .vec
+// ##################################################
+
+void load_binary() {
+
+	// 以二进制形式加载预训练实体嵌入
 	struct stat statbuf1;
-	if (stat((load_path + "entity2vec" + note + ".bin").c_str(), &statbuf1) != -1) {
-		INT fd = open((load_path + "entity2vec" + note + ".bin").c_str(), O_RDONLY);
-		REAL* entity_vec_tmp = (REAL*)mmap(NULL, statbuf1.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (stat((load_path + "entity2vec" + note + ".bin").c_str(),
+			&statbuf1) != -1) {
+		INT fd = open((load_path + "entity2vec" + note + ".bin").c_str(),
+			O_RDONLY);
+		REAL* entity_vec_tmp = (REAL*)mmap(NULL, statbuf1.st_size,
+			PROT_READ, MAP_PRIVATE, fd, 0);
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
 		close(fd);
 	}
 
+	// 以二进制形式加载预训练关系嵌入
 	struct stat statbuf2;
-	if (stat((load_path + "relation2vec" + note + ".bin").c_str(), &statbuf2) != -1) {
-		INT fd = open((load_path + "relation2vec" + note + ".bin").c_str(), O_RDONLY);
-		REAL* relation_vec_tmp = (REAL*)mmap(NULL, statbuf2.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (stat((load_path + "relation2vec" + note + ".bin").c_str(),
+			&statbuf2) != -1) {
+		INT fd = open((load_path + "relation2vec" + note + ".bin").c_str(),
+			O_RDONLY);
+		REAL* relation_vec_tmp = (REAL*)mmap(NULL, statbuf2.st_size,
+			PROT_READ, MAP_PRIVATE, fd, 0);
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
 		close(fd);
 	}
 }
 
-void prepare() {
+void load() {
 	if (load_binary_flag) {
-		prepare_binary();
+		load_binary();
 		return;
 	}
 
 	FILE *fin;
 	INT tmp;
+
+	// 加载预训练实体嵌入
 	fin = fopen((load_path + "entity2vec" + note + ".vec").c_str(), "r");
 	for (INT i = 0; i < entity_total; i++) {
 		INT last = i * dimension;
@@ -247,6 +270,7 @@ void prepare() {
 	}
 	fclose(fin);
 
+	// 加载预训练关系嵌入
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
 	for (INT i = 0; i < relation_total; i++) {
 		INT last = i * dimension;
@@ -256,14 +280,20 @@ void prepare() {
 	fclose(fin);
 }
 
+// ##################################################
+// 多个线程测试
+// ##################################################
+
+// 使用 L1 范数计算距离 d(h + l, t)
 REAL calc_sum(INT e1, INT e2, INT rel) {
-	REAL res = 0;
+	REAL sum = 0;
 	INT last1 = e1 * dimension;
 	INT last2 = e2 * dimension;
 	INT lastr = rel * dimension;
 	for (INT i = 0; i < dimension; i++)
-		res += fabs(entity_vec[last1 + i] + relation_vec[lastr + i] - entity_vec[last2 + i]);
-	return res;
+		sum += fabs(entity_vec[last2 + i] -
+			entity_vec[last1 + i] - relation_vec[lastr + i]);
+	return sum;
 }
 
 bool find(INT h, INT t, INT r) {
@@ -451,7 +481,7 @@ void setparameters(INT argc, char **argv) {
 INT main(INT argc, char **argv) {
 	setparameters(argc, argv);
 	init();
-	prepare();
+	load();
 	test(NULL);
 	return 0;
 }

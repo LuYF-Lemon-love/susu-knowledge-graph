@@ -331,7 +331,7 @@ INT Batch;
 // 线程同步（降低程序性能）获得精确结果
 REAL res;
 
-// 使用 l1 范数计算距离 d(h + l, t)
+// 使用 L1 范数计算距离 d(h + l, t)
 REAL calc_sum(INT e1, INT e2, INT rel) {
 	REAL sum = 0;
 	INT last1 = e1 * dimension;
@@ -436,7 +436,7 @@ INT corrupt_with_head(INT id, INT h, INT r) {
 	if (tmp > train_head[rr].t - rr + ll - 1) return tmp + rr - ll + 1;
 
 	// 第三种：由于 (>= -> rig), (lef + 1 < rig), (tmp + lef - ll + 1)
-	// 因此最终返回取值为 (lef.t, rig.t) 的 tail
+	// 因此最终返回取值为 (train_head[lef].t, train_head[rig].t) 的 tail
 	lef = ll, rig = rr + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
@@ -486,7 +486,7 @@ INT corrupt_with_tail(INT id, INT t, INT r) {
 	if (tmp > train_tail[rr].h - rr + ll - 1) return tmp + rr - ll + 1;
 
 	// 第三种：由于 (>= -> rig), (lef + 1 < rig), (tmp + lef - ll + 1)
-	// 因此最终返回取值为 (lef.h, rig.h) 的 head
+	// 因此最终返回取值为 (train_tail[lef].h, train_tail[rig].h) 的 head
 	lef = ll, rig = rr + 1;
 	while (lef + 1 < rig) {
 		mid = (lef + rig) >> 1;
