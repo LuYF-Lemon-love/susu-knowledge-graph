@@ -290,7 +290,7 @@ void load() {
 // 多个线程测试
 // ##################################################
 
-// 使用 L1 范数计算距离 d(h + l, t)
+// 使用 L1 范数计算能量 d(h + l, t)
 REAL calc_sum(INT e1, INT e2, INT rel) {
 	REAL sum = 0;
 	INT last1 = e1 * dimension;

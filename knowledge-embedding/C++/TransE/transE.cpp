@@ -335,7 +335,7 @@ INT Batch;
 // 线程同步（降低程序性能）获得精确结果
 REAL res;
 
-// 使用 L1 范数计算距离 d(h + l, t)
+// 使用 L1 范数计算能量 d(h + l, t)
 REAL calc_sum(INT e1, INT e2, INT rel) {
 	REAL sum = 0;
 	INT last1 = e1 * dimension;
