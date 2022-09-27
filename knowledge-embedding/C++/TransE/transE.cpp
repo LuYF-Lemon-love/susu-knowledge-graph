@@ -594,6 +594,7 @@ void out_binary() {
 		INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f1);
 		tot = tot + sum;
 	}
+	printf("\n以二进制形式输出实体嵌入成功.\n");
 
 	// 以二进制形式输出关系嵌入
 	len = relation_total * dimension; tot = 0;
@@ -602,6 +603,7 @@ void out_binary() {
 		INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f2);
 		tot = tot + sum;
 	}
+	printf("以二进制形式输出关系嵌入成功.\n");
 		
 	fclose(f1);
 	fclose(f2);
@@ -624,6 +626,7 @@ void out() {
 			fprintf(f1, "%.6f\t", entity_vec[last + j] );
 		fprintf(f1,"\n");
 	}
+	printf("\n输出预训练实体嵌入成功.\n");
 
 	// 输出预训练关系嵌入
 	for (INT i = 0; i < relation_total; i++) {
@@ -632,6 +635,7 @@ void out() {
 			fprintf(f2, "%.6f\t", relation_vec[last + j]);
 		fprintf(f2,"\n");
 	}
+	printf("\n输出预训练关系嵌入成功.\n");
 
 	fclose(f1);
 	fclose(f2);

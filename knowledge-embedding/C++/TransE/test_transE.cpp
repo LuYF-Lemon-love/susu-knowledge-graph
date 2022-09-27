@@ -325,7 +325,7 @@ bool find(INT h, INT t, INT r) {
 REAL *l_filter_tot[6], *r_filter_tot[6], *l_tot[6], *r_tot[6];
 REAL *l_filter_rank[6], *r_filter_rank[6], *l_rank[6], *r_rank[6];
 
-void* testMode(void *con) {
+void* test_mode(void *con) {
 	INT id;
 	id = (unsigned long long)(con);
 	INT lef = test_total / (threads) * id;
@@ -414,7 +414,7 @@ void* testMode(void *con) {
 	pthread_exit(NULL);
 }
 
-void* test(void *con) {
+void* test() {
 	for (INT i = 0; i <= 5; i++) {
 		l_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
 		r_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
@@ -429,7 +429,7 @@ void* test(void *con) {
 
 	pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
 	for (long a = 0; a < threads; a++)
-		pthread_create(&pt[a], NULL, testMode, (void*)a);
+		pthread_create(&pt[a], NULL, test_mode, (void*)a);
 	for (long a = 0; a < threads; a++)
 		pthread_join(pt[a], NULL);
 	free(pt);
@@ -469,7 +469,7 @@ void* test(void *con) {
 	}
 }
 
-INT ArgPos(char *str, INT argc, char **argv) {
+INT arg_pos(char *str, INT argc, char **argv) {
 	INT a;
 	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
 		if (a == argc - 1) {
@@ -483,12 +483,12 @@ INT ArgPos(char *str, INT argc, char **argv) {
 
 void setparameters(INT argc, char **argv) {
 	INT i;
-	if ((i = ArgPos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
-	if ((i = ArgPos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
-	if ((i = ArgPos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+	if ((i = arg_pos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
 
 INT main(INT argc, char **argv) {
@@ -501,7 +501,7 @@ INT main(INT argc, char **argv) {
 	setparameters(argc, argv);
 	init();
 	load();
-	test(NULL);
+	test();
 
 	gettimeofday(&end, NULL);
 	long double time_use = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
