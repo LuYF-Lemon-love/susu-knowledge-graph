@@ -274,7 +274,7 @@ void load_binary() {
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
 		close(fd);
-		printf("以二进制形式加载预训练实体嵌入成功.\n");
+		printf("%s", ("以二进制形式加载预训练实体嵌入 (" + load_path + "entity2vec" + note + ".bin" + ") 成功.\n").c_str());
 	}
 
 	// 以二进制形式加载预训练关系嵌入
@@ -288,7 +288,7 @@ void load_binary() {
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
 		close(fd);
-		printf("以二进制形式加载预训练关系嵌入成功.\n\n");
+		printf("%s", ("以二进制形式加载预训练关系嵌入 (" + load_path + "relation2vec" + note + ".bin" + ") 成功.\n\n").c_str());
 	}
 }
 
@@ -309,7 +309,7 @@ void load() {
 			tmp = fscanf(fin, "%f", &entity_vec[last + j]);
 	}
 	fclose(fin);
-	printf("加载预训练实体嵌入成功.\n");
+	printf("%s", ("加载预训练实体嵌入 (" + load_path + "entity2vec" + note + ".vec" + ") 成功.\n").c_str());
 
 	// 加载预训练关系嵌入
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
@@ -319,7 +319,7 @@ void load() {
 			tmp = fscanf(fin, "%f", &relation_vec[last + j]);
 	}
 	fclose(fin);
-	printf("加载预训练实体嵌入成功.\n\n");
+	printf("%s", ("加载预训练关系嵌入 (" + load_path + "relation2vec" + note + ".vec" + ") 成功.\n\n").c_str());
 }
 
 // ##################################################
@@ -594,7 +594,7 @@ void out_binary() {
 		INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f1);
 		tot = tot + sum;
 	}
-	printf("\n以二进制形式输出实体嵌入成功.\n");
+	printf("%s", ("\n以二进制形式输出实体嵌入 (" + out_path + "entity2vec" + note + ".bin" + ") 成功.\n").c_str());
 
 	// 以二进制形式输出关系嵌入
 	len = relation_total * dimension; tot = 0;
@@ -603,7 +603,7 @@ void out_binary() {
 		INT sum = fwrite(head + tot, sizeof(REAL), len - tot, f2);
 		tot = tot + sum;
 	}
-	printf("以二进制形式输出关系嵌入成功.\n");
+	printf("%s", ("以二进制形式输出关系嵌入 (" + out_path + "relation2vec" + note + ".bin" + ") 成功.\n").c_str());
 		
 	fclose(f1);
 	fclose(f2);
@@ -626,7 +626,7 @@ void out() {
 			fprintf(f1, "%.6f\t", entity_vec[last + j] );
 		fprintf(f1,"\n");
 	}
-	printf("\n输出预训练实体嵌入成功.\n");
+	printf("%s", ("\n输出预训练实体嵌入 (" + out_path + "entity2vec" + note + ".vec" + ") 成功.\n").c_str());
 
 	// 输出预训练关系嵌入
 	for (INT i = 0; i < relation_total; i++) {
@@ -635,7 +635,7 @@ void out() {
 			fprintf(f2, "%.6f\t", relation_vec[last + j]);
 		fprintf(f2,"\n");
 	}
-	printf("\n输出预训练关系嵌入成功.\n");
+	printf("%s", ("输出预训练关系嵌入 (" + out_path + "relation2vec" + note + ".vec" + ") 成功.\n").c_str());
 
 	fclose(f1);
 	fclose(f2);
