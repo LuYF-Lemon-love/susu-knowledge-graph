@@ -113,7 +113,7 @@ REAL randn(REAL miu, REAL sigma, REAL min, REAL max) {
 	return x;
 }
 
-// 归一化函数：使用 l2 范数将输入向量缩放为 unit norm (vector length)
+// 归一化函数：使用 L2 范数将输入向量缩放为 unit norm (vector length)
 void norm(REAL * vec) {
 	REAL x = 0;
 	for (INT i = 0; i < dimension; i++)
@@ -132,16 +132,16 @@ void norm(REAL * vec) {
 
 // relation_total: 关系总数
 // entity_total: 实体总数
-// triple_total: 训练集中的三元组总数
-INT relation_total, entity_total, triple_total;
+// train_triple_total: 训练集中的三元组总数
+INT relation_total, entity_total, train_triple_total;
 
 // relation_vec (relation_total * dimension): 关系嵌入矩阵
 // entity_vec (entity_total * dimension): 实体嵌入矩阵
 REAL *relation_vec, *entity_vec;
 
-// train_head (triple_total): 训练集中的三元组集合，以 head 排序
-// train_tail (triple_total): 训练集中的三元组集合，以 tail 排序
-// train_list (triple_total): 训练集中的三元组集合，未排序
+// train_head (train_triple_total): 训练集中的三元组集合，以 head 排序
+// train_tail (train_triple_total): 训练集中的三元组集合，以 tail 排序
+// train_list (train_triple_total): 训练集中的三元组集合，未排序
 Triple *train_head, *train_tail, *train_list;
 
 // left_head (entity_total): 存储每种实体 (head) 在 train_head 中第一次出现的位置
@@ -192,11 +192,11 @@ void init() {
 
 	// 读取训练集中的三元组
 	fin = fopen((in_path + "train2id.txt").c_str(), "r");
-	tmp = fscanf(fin, "%d", &triple_total);
-	train_head = (Triple *)calloc(triple_total, sizeof(Triple));
-	train_tail = (Triple *)calloc(triple_total, sizeof(Triple));
-	train_list = (Triple *)calloc(triple_total, sizeof(Triple));
-	for (INT i = 0; i < triple_total; i++) {
+	tmp = fscanf(fin, "%d", &train_triple_total);
+	train_head = (Triple *)calloc(train_triple_total, sizeof(Triple));
+	train_tail = (Triple *)calloc(train_triple_total, sizeof(Triple));
+	train_list = (Triple *)calloc(train_triple_total, sizeof(Triple));
+	for (INT i = 0; i < train_triple_total; i++) {
 		tmp = fscanf(fin, "%d", &train_list[i].h);
 		tmp = fscanf(fin, "%d", &train_list[i].t);
 		tmp = fscanf(fin, "%d", &train_list[i].r);
@@ -204,18 +204,18 @@ void init() {
 		train_tail[i] = train_list[i];
 	}
 	fclose(fin);
-	printf("triple_total: %d\n\n", triple_total);
+	printf("train_triple_total: %d\n\n", train_triple_total);
 
 	// train_head 和 train_tail 分别以 head 和 tail 排序
-	std::sort(train_head, train_head + triple_total, cmp_head());
-	std::sort(train_tail, train_tail + triple_total, cmp_tail());
+	std::sort(train_head, train_head + train_triple_total, cmp_head());
+	std::sort(train_tail, train_tail + train_triple_total, cmp_tail());
 
 	// 获得 left_head, right_head, left_tail, right_tail
 	left_head = (INT *)calloc(entity_total, sizeof(INT));
 	right_head = (INT *)calloc(entity_total, sizeof(INT));
 	left_tail = (INT *)calloc(entity_total, sizeof(INT));
 	right_tail = (INT *)calloc(entity_total, sizeof(INT));
-	for (INT i = 1; i < triple_total; i++) {
+	for (INT i = 1; i < train_triple_total; i++) {
 		if (train_head[i].h != train_head[i - 1].h) {
 			right_head[train_head[i - 1].h] = i - 1;
 			left_head[train_head[i].h] = i;
@@ -225,11 +225,11 @@ void init() {
 			left_tail[train_tail[i].t] = i;
 		}
 	}
-	right_head[train_head[triple_total - 1].h] = triple_total - 1;
-	right_tail[train_tail[triple_total - 1].t] = triple_total - 1;
+	right_head[train_head[train_triple_total - 1].h] = train_triple_total - 1;
+	right_tail[train_tail[train_triple_total - 1].t] = train_triple_total - 1;
 
 	// 获得 left_mean、right_mean，为 train_mode 中的 bern_flag 做准备
-	// 在训练过程中，为了负采样，我们能够构建负三元组
+	// 在训练过程中，我们能够构建负三元组进行负采样
 	// bern 算法能根据特定关系的 head 和 tail 种类的比值，选择构建适当的负三元组
 	// train_mode 中的 bern_flag: pr = left_mean / (left_mean + right_mean)
 	// 因此为训练而构建的负三元组比 = tail / (tail + head)
@@ -414,8 +414,7 @@ INT corrupt_with_head(INT id, INT h, INT r) {
 		mid = (lef + rig) >> 1;
 		// 二分查找算法变体
 		// 由于 >= -> rig，所以 rig 最终在第一个 r 的位置
-		if (train_head[mid].r >= r) rig = mid; else
-		lef = mid;
+		if (train_head[mid].r >= r) rig = mid; else lef = mid;
 	}
 	ll = rig;
 
@@ -425,8 +424,7 @@ INT corrupt_with_head(INT id, INT h, INT r) {
 		mid = (lef + rig) >> 1;
 		// 二分查找算法变体
 		// 由于 <= -> lef，所以 lef 最终在最后一个 r 的位置
-		if (train_head[mid].r <= r) lef = mid; else
-		rig = mid;
+		if (train_head[mid].r <= r) lef = mid; else rig = mid;
 	}
 	rr = lef;
 
@@ -465,8 +463,7 @@ INT corrupt_with_tail(INT id, INT t, INT r) {
 		mid = (lef + rig) >> 1;
 		// 二分查找算法变体
 		// 由于 >= -> rig，所以 rig 最终在第一个 r 的位置
-		if (train_tail[mid].r >= r) rig = mid; else
-		lef = mid;
+		if (train_tail[mid].r >= r) rig = mid; else lef = mid;
 	}
 	ll = rig;
 	lef = left_tail[t];
@@ -475,8 +472,7 @@ INT corrupt_with_tail(INT id, INT t, INT r) {
 		mid = (lef + rig) >> 1;
 		// 二分查找算法变体
 		// 由于 <= -> lef，所以 lef 最终在最后一个 r 的位置
-		if (train_tail[mid].r <= r) lef = mid; else
-		rig = mid;
+		if (train_tail[mid].r <= r) lef = mid; else rig = mid;
 	}
 	rr = lef;
 
@@ -548,7 +544,7 @@ void* train_mode(void *thread_id) {
 
 // 训练函数
 void* train() {
-	Len = triple_total;
+	Len = train_triple_total;
 	Batch = Len / nbatches;
 	next_random = (unsigned long long *)calloc(threads, sizeof(unsigned long long));
 
