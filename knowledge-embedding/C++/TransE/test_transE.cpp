@@ -92,10 +92,10 @@ INT nntotal[5];
 INT head_type[1000000];
 INT tail_type[1000000];
 
-// head_left: 标记各个关系的 head 类型在 head_type 中第一次出现的位置
-// head_right: 标记各个关系的 head 类型在 head_type 中最后一次出现的后一个位置
-// tail_left: 标记各个关系的 tail 类型在 tail_type 中第一次出现的位置
-// tail_right: 标记各个关系的 tail 类型在 tail_type 中最后一次出现的后一个位置
+// head_left: 记录各个关系的 head 类型在 head_type 中第一次出现的位置
+// head_right: 记录各个关系的 head 类型在 head_type 中最后一次出现的后一个位置
+// tail_left: 记录各个关系的 tail 类型在 tail_type 中第一次出现的位置
+// tail_right: 记录各个关系的 tail 类型在 tail_type 中最后一次出现的后一个位置
 INT head_left[10000];
 INT head_right[10000];
 INT tail_left[10000];
@@ -322,8 +322,8 @@ bool find(INT h, INT t, INT r) {
 	return false;
 }
 
-REAL *l_filter_tot[6], *r_filter_tot[6], *l_tot[6], *r_tot[6];
-REAL *l_filter_rank[6], *r_filter_rank[6], *l_rank[6], *r_rank[6];
+REAL *l_filter_tot[6], *r_filter_tot[6], *l_raw_tot[6], *r_raw_tot[6];
+REAL *l_filter_rank[6], *r_filter_rank[6], *l_raw_rank[6], *r_raw_rank[6];
 
 void* test_mode(void *thread_id) {
 	INT id;
@@ -362,8 +362,12 @@ void* test_mode(void *thread_id) {
 		INT r_raw_constrain = 0;
 		INT r_filter_constrain = 0;
 
-		INT type_head = head_left[r], type_tail = tail_left[r];
+		// left_head_type: 记录关系 r 的 head 类型在 head_type 中第一次出现的位置
+		// left_tail_type: 记录关系 r 的 tail 类型在 tail_type 中第一次出现的位置
+		INT left_head_type = head_left[r], left_tail_type = tail_left[r];
 		for (INT j = 0; j < entity_total; j++) {
+
+			// 替换 head
 			if (j != h) {
 				REAL value = calc_sum(j, t, r);
 				if (value < minimal) {
@@ -371,8 +375,8 @@ void* test_mode(void *thread_id) {
 					if (not find(j, t, r))
 						l_filter += 1;
 				}
-				while (type_head < head_right[r] && head_type[type_head] < j) type_head++;
-				if (type_head < head_right[r] && head_type[type_head] == j) {
+				while (left_head_type < head_right[r] && head_type[left_head_type] < j) left_head_type++;
+				if (left_head_type < head_right[r] && head_type[left_head_type] == j) {
 					if (value < minimal) {
 						l_raw_constrain += 1;
 						if (not find(j, t, r))
@@ -380,6 +384,8 @@ void* test_mode(void *thread_id) {
 					}
 				}
 			}
+
+			// 替换 tail
 			if (j != t) {
 				REAL value = calc_sum(h, j, r);
 				if (value < minimal) {
@@ -387,8 +393,8 @@ void* test_mode(void *thread_id) {
 					if (not find(h, j, r))
 						r_filter += 1;
 				}
-				while (type_tail < tail_right[r] && tail_type[type_tail] < j) type_tail++;
-				if (type_tail < tail_right[r] && tail_type[type_tail] == j) {
+				while (left_tail_type < tail_right[r] && tail_type[left_tail_type] < j) left_tail_type++;
+				if (left_tail_type < tail_right[r] && tail_type[left_tail_type] == j) {
 					if (value < minimal) {
 						r_raw_constrain += 1;
 						if (not find(h, j, r))
@@ -397,35 +403,35 @@ void* test_mode(void *thread_id) {
 				}
 			}
 		}
+		if (l_raw < 10) l_raw_tot[0][id] += 1;
 		if (l_filter < 10) l_filter_tot[0][id] += 1;
-		if (l_raw < 10) l_tot[0][id] += 1;
+		if (r_raw < 10) r_raw_tot[0][id] += 1;
 		if (r_filter < 10) r_filter_tot[0][id] += 1;
-		if (r_raw < 10) r_tot[0][id] += 1;
 
+		l_raw_rank[0][id] += l_raw;
 		l_filter_rank[0][id] += l_filter;
+		r_raw_rank[0][id] += r_raw;
 		r_filter_rank[0][id] += r_filter;
-		l_rank[0][id] += l_raw;
-		r_rank[0][id] += r_raw;
 
+		if (l_raw < 10) l_raw_tot[label][id] += 1;
 		if (l_filter < 10) l_filter_tot[label][id] += 1;
-		if (l_raw < 10) l_tot[label][id] += 1;
+		if (r_raw < 10) r_raw_tot[label][id] += 1;
 		if (r_filter < 10) r_filter_tot[label][id] += 1;
-		if (r_raw < 10) r_tot[label][id] += 1;
 
+		l_raw_rank[label][id] += l_raw;
 		l_filter_rank[label][id] += l_filter;
+		r_raw_rank[label][id] += r_raw;
 		r_filter_rank[label][id] += r_filter;
-		l_rank[label][id] += l_raw;
-		r_rank[label][id] += r_raw;
 
+		if (l_raw_constrain < 10) l_raw_tot[5][id] += 1;
 		if (l_filter_constrain < 10) l_filter_tot[5][id] += 1;
-		if (l_raw_constrain < 10) l_tot[5][id] += 1;
+		if (r_raw_constrain < 10) r_raw_tot[5][id] += 1;
 		if (r_filter_constrain < 10) r_filter_tot[5][id] += 1;
-		if (r_raw_constrain < 10) r_tot[5][id] += 1;
 
+		l_raw_rank[5][id] += l_raw_constrain;
 		l_filter_rank[5][id] += l_filter_constrain;
+		r_raw_rank[5][id] += r_raw_constrain;
 		r_filter_rank[5][id] += r_filter_constrain;
-		l_rank[5][id] += l_raw_constrain;
-		r_rank[5][id] += r_raw_constrain;
 	}
 
 	pthread_exit(NULL);
@@ -435,13 +441,13 @@ void* test() {
 	for (INT i = 0; i <= 5; i++) {
 		l_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
 		r_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
-		l_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
-		r_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
+		l_raw_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
+		r_raw_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
 
 		l_filter_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
 		r_filter_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
-		l_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
-		r_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
+		l_raw_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
+		r_raw_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
 	}
 
 	pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
@@ -455,33 +461,33 @@ void* test() {
 		for (INT a = 1; a < threads; a++) {
 			l_filter_tot[i][a] += l_filter_tot[i][a - 1];
 			r_filter_tot[i][a] += r_filter_tot[i][a - 1];
-			l_tot[i][a] += l_tot[i][a - 1];
-			r_tot[i][a] += r_tot[i][a - 1];
+			l_raw_tot[i][a] += l_raw_tot[i][a - 1];
+			r_raw_tot[i][a] += r_raw_tot[i][a - 1];
 
 			l_filter_rank[i][a] += l_filter_rank[i][a - 1];
 			r_filter_rank[i][a] += r_filter_rank[i][a - 1];
-			l_rank[i][a] += l_rank[i][a - 1];
-			r_rank[i][a] += r_rank[i][a - 1];
+			l_raw_rank[i][a] += l_raw_rank[i][a - 1];
+			r_raw_rank[i][a] += r_raw_rank[i][a - 1];
 		}
 
 	for (INT i = 0; i <= 0; i++) {
-		printf("left %f %f\n", l_rank[i][threads - 1] / test_total, l_tot[i][threads - 1] / test_total);
+		printf("left %f %f\n", l_raw_rank[i][threads - 1] / test_total, l_raw_tot[i][threads - 1] / test_total);
 		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
-		printf("right %f %f\n", r_rank[i][threads - 1] / test_total, r_tot[i][threads - 1] / test_total);
+		printf("right %f %f\n", r_raw_rank[i][threads - 1] / test_total, r_raw_tot[i][threads - 1] / test_total);
 		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
 	}
 
 	for (INT i = 5; i <= 5; i++) {
-		printf("left %f %f\n", l_rank[i][threads - 1] / test_total, l_tot[i][threads - 1] / test_total);
+		printf("left %f %f\n", l_raw_rank[i][threads - 1] / test_total, l_raw_tot[i][threads - 1] / test_total);
 		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
-		printf("right %f %f\n", r_rank[i][threads - 1] / test_total, r_tot[i][threads - 1] / test_total);
+		printf("right %f %f\n", r_raw_rank[i][threads - 1] / test_total, r_raw_tot[i][threads - 1] / test_total);
 		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
 	}
 
 	for (INT i = 1; i <= 4; i++) {
-		printf("left %f %f\n", l_rank[i][threads - 1] / nntotal[i], l_tot[i][threads - 1] / nntotal[i]);
+		printf("left %f %f\n", l_raw_rank[i][threads - 1] / nntotal[i], l_raw_tot[i][threads - 1] / nntotal[i]);
 		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / nntotal[i], l_filter_tot[i][threads - 1] / nntotal[i]);
-		printf("right %f %f\n", r_rank[i][threads - 1] / nntotal[i], r_tot[i][threads - 1] / nntotal[i]);
+		printf("right %f %f\n", r_raw_rank[i][threads - 1] / nntotal[i], r_raw_tot[i][threads - 1] / nntotal[i]);
 		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / nntotal[i], r_filter_tot[i][threads - 1] / nntotal[i]);
 	}
 }
