@@ -504,26 +504,26 @@ void* test() {
 	// 总体结果
 	printf("总体结果：\n\n");
 	for (INT i = 0; i <= 0; i++) {
-		printf("left(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / test_total,
+		printf("heads(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / test_total,
 			l_raw_tot[i][threads - 1] / test_total);
-		printf("left(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / test_total,
+		printf("heads(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / test_total,
 			l_filter_tot[i][threads - 1] / test_total);
-		printf("right(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / test_total,
+		printf("tails(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / test_total,
 			r_raw_tot[i][threads - 1] / test_total);
-		printf("right(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / test_total,
+		printf("tails(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / test_total,
 			r_filter_tot[i][threads - 1] / test_total);
 	}
 
 	// 通过 type_constrain.txt 限制的总体结果
 	printf("\n通过 type_constrain.txt 限制的总体结果：\n\n");
 	for (INT i = 5; i <= 5; i++) {
-		printf("left(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / test_total,
+		printf("heads(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / test_total,
 			l_raw_tot[i][threads - 1] / test_total);
-		printf("left(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / test_total,
+		printf("heads(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / test_total,
 			l_filter_tot[i][threads - 1] / test_total);
-		printf("right(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / test_total,
+		printf("tails(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / test_total,
 			r_raw_tot[i][threads - 1] / test_total);
-		printf("right(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / test_total,
+		printf("tails(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / test_total,
 			r_filter_tot[i][threads - 1] / test_total);
 	}
 
@@ -541,13 +541,13 @@ void* test() {
 
 		printf("\n%s:\n\n", relation[i - 1].c_str());
 
-		printf("left(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / nntotal[i],
+		printf("heads(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / nntotal[i],
 			l_raw_tot[i][threads - 1] / nntotal[i]);
-		printf("left(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / nntotal[i],
+		printf("heads(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / nntotal[i],
 			l_filter_tot[i][threads - 1] / nntotal[i]);
-		printf("right(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / nntotal[i],
+		printf("tails(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / nntotal[i],
 			r_raw_tot[i][threads - 1] / nntotal[i]);
-		printf("right(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / nntotal[i],
+		printf("tails(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / nntotal[i],
 			r_filter_tot[i][threads - 1] / nntotal[i]);
 		
 	}
