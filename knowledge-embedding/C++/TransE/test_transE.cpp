@@ -322,8 +322,27 @@ bool find(INT h, INT t, INT r) {
 	return false;
 }
 
-REAL *l_filter_tot[6], *r_filter_tot[6], *l_raw_tot[6], *r_raw_tot[6];
-REAL *l_filter_rank[6], *r_filter_rank[6], *l_raw_rank[6], *r_raw_rank[6];
+// l_raw_tot, l_filter_tot, r_raw_tot, r_filter_tot 的形状为 [6][threads]
+// l_raw_rank, l_filter_rank, r_raw_rank, r_filter_rank 的形状为 [6][threads]
+// 第一维度:
+// 0: 代表全部测试集的结果
+// 1: 代表关系为 1-1 的测试三元组的结果
+// 2: 代表关系为 1-n 的测试三元组的结果
+// 3: 代表关系为 n-1 的测试三元组的结果
+// 4: 代表关系为 n-n 的测试三元组的结果
+// 5: 代表全部测试集的结果, 通过 type_constrain.txt 来构造负三元组
+// 第二维度:
+// 0 ~ (threads - 1): 线程 ID
+// l_raw_tot: 记录排名前 10 的 (替换 head 生成负三元组) 测试三元组个数
+// l_filter_tot: 记录排名前 10 的 (替换 head 生成负三元组) 测试三元组个数, 且负三元组不在数据集中
+// r_raw_tot: 记录排名前 10 的 (替换 tail 生成负三元组) 测试三元组个数
+// r_filter_tot: 记录排名前 10 的 (替换 tail 生成负三元组) 测试三元组个数, 且负三元组不在数据集中
+// l_raw_rank: 记录 (替换 head 生成负三元组) 测试三元组的排名总和 (排名从 0 开始)
+// l_filter_rank: 记录 (替换 head 生成负三元组) 测试三元组的排名总和 (排名从 0 开始), 且负三元组不在数据集中
+// r_raw_rank: 记录 (替换 tail 生成负三元组) 测试三元组的排名总和 (排名从 0 开始)
+// r_filter_rank: 记录 (替换 tail 生成负三元组) 测试三元组的排名总和 (排名从 0 开始), 且负三元组不在数据集中
+REAL *l_raw_tot[6], *l_filter_tot[6], *r_raw_tot[6], *r_filter_tot[6];
+REAL *l_raw_rank[6], *l_filter_rank[6], *r_raw_rank[6], *r_filter_rank[6];
 
 void* test_mode(void *thread_id) {
 	INT id;
@@ -352,7 +371,6 @@ void* test_mode(void *thread_id) {
 		INT r_raw = 0;
 		INT r_filter = 0;
 
-		// type_constrain.txt 来构造负三元组
 		// l_raw_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 head 构造负三元组) 负三元组个数
 		// l_filter_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 head 构造负三元组) 负三元组个数, 且负三元组不在数据集中
 		// r_raw_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 tail 构造负三元组) 负三元组个数
@@ -403,6 +421,8 @@ void* test_mode(void *thread_id) {
 				}
 			}
 		}
+		
+		// 全部测试集
 		if (l_raw < 10) l_raw_tot[0][id] += 1;
 		if (l_filter < 10) l_filter_tot[0][id] += 1;
 		if (r_raw < 10) r_raw_tot[0][id] += 1;
@@ -413,6 +433,7 @@ void* test_mode(void *thread_id) {
 		r_raw_rank[0][id] += r_raw;
 		r_filter_rank[0][id] += r_filter;
 
+		// 1-1, 1-n, n-1, n-n
 		if (l_raw < 10) l_raw_tot[label][id] += 1;
 		if (l_filter < 10) l_filter_tot[label][id] += 1;
 		if (r_raw < 10) r_raw_tot[label][id] += 1;
@@ -423,6 +444,7 @@ void* test_mode(void *thread_id) {
 		r_raw_rank[label][id] += r_raw;
 		r_filter_rank[label][id] += r_filter;
 
+		// 全部测试集的结果, 通过 type_constrain.txt 来构造负三元组
 		if (l_raw_constrain < 10) l_raw_tot[5][id] += 1;
 		if (l_filter_constrain < 10) l_filter_tot[5][id] += 1;
 		if (r_raw_constrain < 10) r_raw_tot[5][id] += 1;
