@@ -553,7 +553,13 @@ void* test() {
 	}
 }
 
+// ##################################################
+// Main function
+// ##################################################
+
+// 寻找特定参数的位置
 INT arg_pos(char *str, INT argc, char **argv) {
+	
 	INT a;
 	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
 		if (a == argc - 1) {
@@ -567,13 +573,27 @@ INT arg_pos(char *str, INT argc, char **argv) {
 
 void setparameters(INT argc, char **argv) {
 	INT i;
+	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
 	if ((i = arg_pos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) threads = atoi(argv[i + 1]);
 	if ((i = arg_pos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
 	if ((i = arg_pos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];
-	if ((i = arg_pos((char *)"-thread", argc, argv)) > 0) threads = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
 	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 }
+
+// ##################################################
+// ./test_transE [-load-binary 0/1] [-size SIZE]
+//          [-threads THREAD] [-input INPUT]
+//          [-load LOAD] [-note NOTE]
+
+// optional arguments:
+// -load-binary [0/1]   [1] 以二进制形式加载预训练嵌入，默认值为 [0]
+// -size SIZE           实体和关系嵌入维度，默认值为 [50]
+// -threads THREAD      number of worker threads. if unspecified, threads will default to 32
+// -input INPUT         folder of training data. if unspecified, in_path will default to "../data/FB15K/"
+// -load LOAD           folder of pretrained data. if unspecified, load_path will default to "./build/"
+// -note NOTE           information you want to add to the filename. if unspecified, note will default to ""
+// ##################################################
 
 INT main(INT argc, char **argv) {
 

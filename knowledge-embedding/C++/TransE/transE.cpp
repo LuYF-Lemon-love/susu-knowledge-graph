@@ -658,8 +658,25 @@ INT arg_pos(char *str, INT argc, char **argv) {
 	return -1;
 }
 
+void setparameters(INT argc, char **argv) {
+	INT i;
+	if ((i = arg_pos((char *)"-bern", argc, argv)) > 0) bern_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-out-binary", argc, argv)) > 0) out_binary_flag = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-margin", argc, argv)) > 0) margin = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-nbatches", argc, argv)) > 0) nbatches = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) threads = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-output", argc, argv)) > 0) out_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];	
+	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+}
+
 // ##################################################
-// ./transX [-bern 0/1] [-load-binary 0/1] [-out-binary 0/1]
+// ./transE [-bern 0/1] [-load-binary 0/1] [-out-binary 0/1]
 //          [-size SIZE] [-alpha ALPHA] [-margin MARGIN]
 //          [-nbatches NBATCHES] [-epochs EPOCHS]
 //          [-threads THREAD] [-input INPUT] [-output OUTPUT]
@@ -680,23 +697,6 @@ INT arg_pos(char *str, INT argc, char **argv) {
 // -load LOAD           folder of pretrained data. if unspecified, load_path will default to ""
 // -note NOTE           information you want to add to the filename. if unspecified, note will default to ""
 // ##################################################
-
-void setparameters(INT argc, char **argv) {
-	INT i;
-	if ((i = arg_pos((char *)"-bern", argc, argv)) > 0) bern_flag = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-load-binary", argc, argv)) > 0) load_binary_flag = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-out-binary", argc, argv)) > 0) out_binary_flag = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-size", argc, argv)) > 0) dimension = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
-	if ((i = arg_pos((char *)"-margin", argc, argv)) > 0) margin = atof(argv[i + 1]);
-	if ((i = arg_pos((char *)"-nbatches", argc, argv)) > 0) nbatches = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) threads = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-input", argc, argv)) > 0) in_path = argv[i + 1];
-	if ((i = arg_pos((char *)"-output", argc, argv)) > 0) out_path = argv[i + 1];
-	if ((i = arg_pos((char *)"-load", argc, argv)) > 0) load_path = argv[i + 1];	
-	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
-}
 
 INT main(INT argc, char **argv) {
 
