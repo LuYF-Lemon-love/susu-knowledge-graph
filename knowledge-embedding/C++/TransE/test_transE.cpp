@@ -236,6 +236,7 @@ void load_binary() {
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
 		close(fd);
+		printf("以二进制形式加载预训练实体嵌入成功.\n");
 	}
 
 	// 以二进制形式加载预训练关系嵌入
@@ -249,10 +250,12 @@ void load_binary() {
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
 		close(fd);
+		printf("以二进制形式加载预训练关系嵌入成功.\n\n");
 	}
 }
 
 void load() {
+
 	if (load_binary_flag) {
 		load_binary();
 		return;
@@ -269,6 +272,7 @@ void load() {
 			tmp = fscanf(fin, "%f", &entity_vec[last + j]);
 	}
 	fclose(fin);
+	printf("加载预训练实体嵌入成功.\n");
 
 	// 加载预训练关系嵌入
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
@@ -278,6 +282,7 @@ void load() {
 			tmp = fscanf(fin, "%f", &relation_vec[last + j]);
 	}
 	fclose(fin);
+	printf("加载预训练实体嵌入成功.\n\n");
 }
 
 // ##################################################
@@ -296,16 +301,23 @@ REAL calc_sum(INT e1, INT e2, INT rel) {
 	return sum;
 }
 
+// 检查数据集中是否存在 (h, t, r)
 bool find(INT h, INT t, INT r) {
 	INT lef = 0;
 	INT rig = triple_total - 1;
 	INT mid;
 	while (lef + 1 < rig) {
 		INT mid = (lef + rig) >> 1;
-		if ((triple_list[mid].h < h) || (triple_list[mid].h == h && triple_list[mid].r < r) || (triple_list[mid].h == h && triple_list[mid].r == r && triple_list[mid].t < t)) lef = mid; else rig = mid;
+		if ((triple_list[mid].h < h) 
+			|| (triple_list[mid].h == h && triple_list[mid].r < r) 
+			|| (triple_list[mid].h == h && triple_list[mid].r == r 
+					&& triple_list[mid].t < t)) 
+				lef = mid; else rig = mid;
 	}
-	if (triple_list[lef].h == h && triple_list[lef].r == r && triple_list[lef].t == t) return true;
-	if (triple_list[rig].h == h && triple_list[rig].r == r && triple_list[rig].t == t) return true;
+	if (triple_list[lef].h == h && triple_list[lef].r == r 
+		&& triple_list[lef].t == t) return true;
+	if (triple_list[rig].h == h && triple_list[rig].r == r 
+		&& triple_list[rig].t == t) return true;
 	return false;
 }
 

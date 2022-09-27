@@ -274,6 +274,7 @@ void load_binary() {
 		memcpy(entity_vec, entity_vec_tmp, statbuf1.st_size);
 		munmap(entity_vec_tmp, statbuf1.st_size);
 		close(fd);
+		printf("以二进制形式加载预训练实体嵌入成功.\n");
 	}
 
 	// 以二进制形式加载预训练关系嵌入
@@ -287,6 +288,7 @@ void load_binary() {
 		memcpy(relation_vec, relation_vec_tmp, statbuf2.st_size);
 		munmap(relation_vec_tmp, statbuf2.st_size);
 		close(fd);
+		printf("以二进制形式加载预训练关系嵌入成功.\n\n");
 	}
 }
 
@@ -307,6 +309,7 @@ void load() {
 			tmp = fscanf(fin, "%f", &entity_vec[last + j]);
 	}
 	fclose(fin);
+	printf("加载预训练实体嵌入成功.\n");
 
 	// 加载预训练关系嵌入
 	fin = fopen((load_path + "relation2vec" + note + ".vec").c_str(), "r");
@@ -316,6 +319,7 @@ void load() {
 			tmp = fscanf(fin, "%f", &relation_vec[last + j]);
 	}
 	fclose(fin);
+	printf("加载预训练实体嵌入成功.\n\n");
 }
 
 // ##################################################
