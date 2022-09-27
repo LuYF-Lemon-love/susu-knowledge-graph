@@ -325,90 +325,107 @@ bool find(INT h, INT t, INT r) {
 REAL *l_filter_tot[6], *r_filter_tot[6], *l_tot[6], *r_tot[6];
 REAL *l_filter_rank[6], *r_filter_rank[6], *l_rank[6], *r_rank[6];
 
-void* test_mode(void *con) {
+void* test_mode(void *thread_id) {
 	INT id;
-	id = (unsigned long long)(con);
+
+	// id: 线程 ID
+	id = (unsigned long long)(thread_id);
 	INT lef = test_total / (threads) * id;
 	INT rig = test_total / (threads) * (id + 1) - 1;
 	if (id == threads - 1) rig = test_total - 1;
+
 	for (INT i = lef; i <= rig; i++) {
+
 		INT h = test_list[i].h;
 		INT t = test_list[i].t;
 		INT r = test_list[i].r;
 		INT label = test_list[i].label;
+
 		REAL minimal = calc_sum(h, t, r);
-		INT l_filter_s = 0;
-		INT l_s = 0;
-		INT r_filter_s = 0;
-		INT r_s = 0;
-		INT l_filter_s_constrain = 0;
-		INT l_s_constrain = 0;
-		INT r_filter_s_constrain = 0;
-		INT r_s_constrain = 0;
+
+		// l_raw: 记录能量 (d(h + l, t)) 小于测试三元组的 (替换 head) 负三元组个数
+		// l_filter: 记录能量 (d(h + l, t)) 小于测试三元组的 (替换 head) 负三元组个数, 且负三元组不在数据集中
+		// r_raw: 记录能量 (d(h + l, t)) 小于测试三元组的 (替换 tail) 负三元组个数
+		// r_filter: 记录能量 (d(h + l, t)) 小于测试三元组的 (替换 tail) 负三元组个数, 且负三元组不在数据集中
+		INT l_raw = 0;
+		INT l_filter = 0;
+		INT r_raw = 0;
+		INT r_filter = 0;
+
+		// type_constrain.txt 来构造负三元组
+		// l_raw_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 head 构造负三元组) 负三元组个数
+		// l_filter_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 head 构造负三元组) 负三元组个数, 且负三元组不在数据集中
+		// r_raw_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 tail 构造负三元组) 负三元组个数
+		// r_filter_constrain: 记录能量 (d(h + l, t)) 小于测试三元组的 (通过 type_constrain.txt 替换 tail 构造负三元组) 负三元组个数, 且负三元组不在数据集中
+		INT l_raw_constrain = 0;
+		INT l_filter_constrain = 0;
+		INT r_raw_constrain = 0;
+		INT r_filter_constrain = 0;
+
 		INT type_head = head_left[r], type_tail = tail_left[r];
 		for (INT j = 0; j < entity_total; j++) {
 			if (j != h) {
 				REAL value = calc_sum(j, t, r);
 				if (value < minimal) {
-					l_s += 1;
+					l_raw += 1;
 					if (not find(j, t, r))
-						l_filter_s += 1;
+						l_filter += 1;
 				}
 				while (type_head < head_right[r] && head_type[type_head] < j) type_head++;
 				if (type_head < head_right[r] && head_type[type_head] == j) {
 					if (value < minimal) {
-						l_s_constrain += 1;
+						l_raw_constrain += 1;
 						if (not find(j, t, r))
-							l_filter_s_constrain += 1;
+							l_filter_constrain += 1;
 					}
 				}
 			}
 			if (j != t) {
 				REAL value = calc_sum(h, j, r);
 				if (value < minimal) {
-					r_s += 1;
+					r_raw += 1;
 					if (not find(h, j, r))
-						r_filter_s += 1;
+						r_filter += 1;
 				}
 				while (type_tail < tail_right[r] && tail_type[type_tail] < j) type_tail++;
 				if (type_tail < tail_right[r] && tail_type[type_tail] == j) {
 					if (value < minimal) {
-						r_s_constrain += 1;
+						r_raw_constrain += 1;
 						if (not find(h, j, r))
-							r_filter_s_constrain += 1;
+							r_filter_constrain += 1;
 					}
 				}
 			}
 		}
-		if (l_filter_s < 10) l_filter_tot[0][id] += 1;
-		if (l_s < 10) l_tot[0][id] += 1;
-		if (r_filter_s < 10) r_filter_tot[0][id] += 1;
-		if (r_s < 10) r_tot[0][id] += 1;
+		if (l_filter < 10) l_filter_tot[0][id] += 1;
+		if (l_raw < 10) l_tot[0][id] += 1;
+		if (r_filter < 10) r_filter_tot[0][id] += 1;
+		if (r_raw < 10) r_tot[0][id] += 1;
 
-		l_filter_rank[0][id] += l_filter_s;
-		r_filter_rank[0][id] += r_filter_s;
-		l_rank[0][id] += l_s;
-		r_rank[0][id] += r_s;
+		l_filter_rank[0][id] += l_filter;
+		r_filter_rank[0][id] += r_filter;
+		l_rank[0][id] += l_raw;
+		r_rank[0][id] += r_raw;
 
-		if (l_filter_s < 10) l_filter_tot[label][id] += 1;
-		if (l_s < 10) l_tot[label][id] += 1;
-		if (r_filter_s < 10) r_filter_tot[label][id] += 1;
-		if (r_s < 10) r_tot[label][id] += 1;
+		if (l_filter < 10) l_filter_tot[label][id] += 1;
+		if (l_raw < 10) l_tot[label][id] += 1;
+		if (r_filter < 10) r_filter_tot[label][id] += 1;
+		if (r_raw < 10) r_tot[label][id] += 1;
 
-		l_filter_rank[label][id] += l_filter_s;
-		r_filter_rank[label][id] += r_filter_s;
-		l_rank[label][id] += l_s;
-		r_rank[label][id] += r_s;
+		l_filter_rank[label][id] += l_filter;
+		r_filter_rank[label][id] += r_filter;
+		l_rank[label][id] += l_raw;
+		r_rank[label][id] += r_raw;
 
-		if (l_filter_s_constrain < 10) l_filter_tot[5][id] += 1;
-		if (l_s_constrain < 10) l_tot[5][id] += 1;
-		if (r_filter_s_constrain < 10) r_filter_tot[5][id] += 1;
-		if (r_s_constrain < 10) r_tot[5][id] += 1;
+		if (l_filter_constrain < 10) l_filter_tot[5][id] += 1;
+		if (l_raw_constrain < 10) l_tot[5][id] += 1;
+		if (r_filter_constrain < 10) r_filter_tot[5][id] += 1;
+		if (r_raw_constrain < 10) r_tot[5][id] += 1;
 
-		l_filter_rank[5][id] += l_filter_s_constrain;
-		r_filter_rank[5][id] += r_filter_s_constrain;
-		l_rank[5][id] += l_s_constrain;
-		r_rank[5][id] += r_s_constrain;
+		l_filter_rank[5][id] += l_filter_constrain;
+		r_filter_rank[5][id] += r_filter_constrain;
+		l_rank[5][id] += l_raw_constrain;
+		r_rank[5][id] += r_raw_constrain;
 	}
 
 	pthread_exit(NULL);
