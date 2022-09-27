@@ -344,6 +344,7 @@ bool find(INT h, INT t, INT r) {
 REAL *l_raw_tot[6], *l_filter_tot[6], *r_raw_tot[6], *r_filter_tot[6];
 REAL *l_raw_rank[6], *l_filter_rank[6], *r_raw_rank[6], *r_filter_rank[6];
 
+// 单个线程内运行的任务
 void* test_mode(void *thread_id) {
 	INT id;
 
@@ -459,19 +460,24 @@ void* test_mode(void *thread_id) {
 	pthread_exit(NULL);
 }
 
+// 测试函数
 void* test() {
-	for (INT i = 0; i <= 5; i++) {
-		l_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
-		r_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
-		l_raw_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
-		r_raw_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
 
-		l_filter_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
-		r_filter_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
+	for (INT i = 0; i <= 5; i++) {
+
+		l_raw_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
+		l_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
+		r_raw_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
+		r_filter_tot[i] = (REAL *)calloc(threads, sizeof(REAL));
+
 		l_raw_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
+		l_filter_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
 		r_raw_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
+		r_filter_rank[i] = (REAL *)calloc(threads, sizeof(REAL));
+		
 	}
 
+	// 开启多线程测试
 	pthread_t *pt = (pthread_t *)malloc(threads * sizeof(pthread_t));
 	for (long a = 0; a < threads; a++)
 		pthread_create(&pt[a], NULL, test_mode, (void*)a);
@@ -479,38 +485,71 @@ void* test() {
 		pthread_join(pt[a], NULL);
 	free(pt);
 
+	// 将各个线程的结果累加
 	for (INT i = 0; i <= 5; i++)
 		for (INT a = 1; a < threads; a++) {
-			l_filter_tot[i][a] += l_filter_tot[i][a - 1];
-			r_filter_tot[i][a] += r_filter_tot[i][a - 1];
+
 			l_raw_tot[i][a] += l_raw_tot[i][a - 1];
+			l_filter_tot[i][a] += l_filter_tot[i][a - 1];
 			r_raw_tot[i][a] += r_raw_tot[i][a - 1];
+			r_filter_tot[i][a] += r_filter_tot[i][a - 1];
 
-			l_filter_rank[i][a] += l_filter_rank[i][a - 1];
-			r_filter_rank[i][a] += r_filter_rank[i][a - 1];
 			l_raw_rank[i][a] += l_raw_rank[i][a - 1];
+			l_filter_rank[i][a] += l_filter_rank[i][a - 1];
 			r_raw_rank[i][a] += r_raw_rank[i][a - 1];
+			r_filter_rank[i][a] += r_filter_rank[i][a - 1];
+			
 		}
-
+	
+	// 总体结果
+	printf("总体结果：\n\n");
 	for (INT i = 0; i <= 0; i++) {
-		printf("left %f %f\n", l_raw_rank[i][threads - 1] / test_total, l_raw_tot[i][threads - 1] / test_total);
-		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
-		printf("right %f %f\n", r_raw_rank[i][threads - 1] / test_total, r_raw_tot[i][threads - 1] / test_total);
-		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
+		printf("left(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / test_total,
+			l_raw_tot[i][threads - 1] / test_total);
+		printf("left(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / test_total,
+			l_filter_tot[i][threads - 1] / test_total);
+		printf("right(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / test_total,
+			r_raw_tot[i][threads - 1] / test_total);
+		printf("right(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / test_total,
+			r_filter_tot[i][threads - 1] / test_total);
 	}
 
+	// 通过 type_constrain.txt 限制的总体结果
+	printf("\n通过 type_constrain.txt 限制的总体结果：\n\n");
 	for (INT i = 5; i <= 5; i++) {
-		printf("left %f %f\n", l_raw_rank[i][threads - 1] / test_total, l_raw_tot[i][threads - 1] / test_total);
-		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / test_total, l_filter_tot[i][threads - 1] / test_total);
-		printf("right %f %f\n", r_raw_rank[i][threads - 1] / test_total, r_raw_tot[i][threads - 1] / test_total);
-		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / test_total, r_filter_tot[i][threads - 1] / test_total);
+		printf("left(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / test_total,
+			l_raw_tot[i][threads - 1] / test_total);
+		printf("left(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / test_total,
+			l_filter_tot[i][threads - 1] / test_total);
+		printf("right(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / test_total,
+			r_raw_tot[i][threads - 1] / test_total);
+		printf("right(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / test_total,
+			r_filter_tot[i][threads - 1] / test_total);
 	}
+
+	// (关系: 1-1, 1-n, n-1, n-n) 测试三元组的结果
+	printf("\n(关系: 1-1, 1-n, n-1, n-n) 测试三元组的结果：\n");
+
+	std::string relation[] = {
+		"关系: 1-1",
+		"关系: 1-n",
+		"关系: n-1",
+		"关系: n-n"
+	};
 
 	for (INT i = 1; i <= 4; i++) {
-		printf("left %f %f\n", l_raw_rank[i][threads - 1] / nntotal[i], l_raw_tot[i][threads - 1] / nntotal[i]);
-		printf("left(filter) %f %f\n", l_filter_rank[i][threads - 1] / nntotal[i], l_filter_tot[i][threads - 1] / nntotal[i]);
-		printf("right %f %f\n", r_raw_rank[i][threads - 1] / nntotal[i], r_raw_tot[i][threads - 1] / nntotal[i]);
-		printf("right(filter) %f %f\n", r_filter_rank[i][threads - 1] / nntotal[i], r_filter_tot[i][threads - 1] / nntotal[i]);
+
+		printf("\n%s:\n\n", relation[i - 1].c_str());
+
+		printf("left(raw) \t\t平均排名: %f, \tHits@10: %f\n", l_raw_rank[i][threads - 1] / nntotal[i],
+			l_raw_tot[i][threads - 1] / nntotal[i]);
+		printf("left(filter) \t\t平均排名: %f, \tHits@10: %f\n", l_filter_rank[i][threads - 1] / nntotal[i],
+			l_filter_tot[i][threads - 1] / nntotal[i]);
+		printf("right(raw) \t\t平均排名: %f, \tHits@10: %f\n", r_raw_rank[i][threads - 1] / nntotal[i],
+			r_raw_tot[i][threads - 1] / nntotal[i]);
+		printf("right(filter) \t\t平均排名: %f, \tHits@10: %f\n", r_filter_rank[i][threads - 1] / nntotal[i],
+			r_filter_tot[i][threads - 1] / nntotal[i]);
+		
 	}
 }
 
