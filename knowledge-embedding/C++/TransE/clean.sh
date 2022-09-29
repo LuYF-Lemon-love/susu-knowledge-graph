@@ -4,6 +4,8 @@
 # clean.sh
 # 使用方法：$ bash clean.sh
 # created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+#
+# 该 Shell 脚本用于清理临时文件
 ##################################################
 
 # 删除目标文件和嵌入文件
