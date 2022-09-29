@@ -4,25 +4,25 @@
 
 ## 数据
 
-### FB15K
+### [FB15K](./data/FB15K/)
 
 该数据集是 Wikilinks database 的子集, 该子集中的实体和关系在 Freebase 至少出现了 100 次. 并且移除了 ’!/people/person/nationality’ 的关系, 因为它是关系 ’/people/person/nationality’ head 和 tail 的颠倒. 一共 592,213 个三元组, 14,951 种实体, 1,345 种关系, 被随机分成了训练集 (483,142 个), 验证集 (50,000 个), 测试集 (59,071 个).
 
-- entity2id.txt: 第一行是实体种类数. 其余行是实体名和对应的实体 ID, 每行一个.
+- [entity2id.txt](./data/FB15K/entity2id.txt): 第一行是实体种类数. 其余行是实体名和对应的实体 ID, 每行一个.
 
-- relation2id.txt: 第一行是关系种类数. 其余行是关系名和对应的关系 ID, 每行一个.
+- [relation2id.txt](./data/FB15K/relation2id.txt): 第一行是关系种类数. 其余行是关系名和对应的关系 ID, 每行一个.
 
-- train2id.txt: 训练文件. 第一行是训练集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
+- [train2id.txt](./data/FB15K/train2id.txt): 训练文件. 第一行是训练集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
 
-- valid2id.txt: 验证文件. 第一行是验证集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
+- [valid2id.txt](./data/FB15K/valid2id.txt): 验证文件. 第一行是验证集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
 
-- test2id.txt: 测试文件. 第一行是测试集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
+- [test2id.txt](./data/FB15K/test2id.txt): 测试文件. 第一行是测试集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
 
 ## TransE
 
 **TransE** 是一个基于能量 *(energy-based)* 的学习**实体低维度嵌入向量**的模型, **关系**被表示**嵌入空间**的**平移**: 如果 *(h, r, t)* 成立, *t* 的嵌入应该接近于 *h* 的嵌入加上某个**向量**, 某个向量就是**关系的嵌入**.
 
-**TransE** 原论文链接：[Translating Embeddings for Modeling Multi-relational Data](https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf)
+**TransE** 原论文链接：[Translating Embeddings for Modeling Multi-relational Data](https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf).
 
 ### 使用
 
@@ -204,3 +204,19 @@ optional arguments:
 -load LOAD           folder of pretrained data. if unspecified, load_path will default to "./build/"
 -note NOTE           information you want to add to the filename. if unspecified, note will default to ""
 ```
+
+### 文件
+
+- [data_preprocessing.py](./TransE/data_preprocessing.py): 该 Python 脚本用于创建下面这些临时数据文件.
+
+```
+../data/FB15K/1-1.txt ../data/FB15K/1-n.txt ../data/FB15K/n-1.txt ../data/FB15K/n-n.txt ../data/FB15K/test2id_all.txt ../data/FB15K/type_constrain.txt
+```
+
+- [transE.cpp](./TransE/transE.cpp): 该 C++ 文件用于模型训练.
+
+- [test_transE.cpp](./TransE/test_transE.cpp): 该 C++ 文件用于模型测试.
+
+- [run.sh](./TransE/run.sh): 该 Shell 脚本用于模型训练和模型测试.
+
+- [clean.sh](./TransE/clean.sh): 该 Shell 脚本用于清理临时文件.
