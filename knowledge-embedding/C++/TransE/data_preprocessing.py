@@ -1,5 +1,12 @@
-# n-n.py
+# data_preprocessing.py
+# 使用方法: $ python3 data_preprocessing.py
 # created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+#
+# 该 Python 脚本用于创建下面这些临时数据文件
+# ../data/FB15K/1-1.txt ../data/FB15K/1-n.txt ../data/FB15K/n-1.txt ../data/FB15K/n-n.txt ../data/FB15K/test2id_all.txt ../data/FB15K/type_constrain.txt
+#
+# prerequisites: 
+#     train2id.txt, valid2id.txt、test2id.txt
 
 print("\n##################################################")
 print("\n数据预处理开始...")
