@@ -20,7 +20,7 @@
 
 ## TransE
 
-**TransE** 是一个基于能量 *(energy-based)* 的学习**实体低维度嵌入向量**的模型, **关系**被表示**嵌入空间**的**平移**: 如果 *$(h, \ell, t)$* 成立, *t* 的嵌入应该接近于 *h* 的嵌入加上某个**向量**, 某个向量就是**关系的嵌入**.
+**TransE** 是一个基于能量 *(energy-based)* 的学习**实体低维度嵌入向量**的模型, **关系**被表示**嵌入空间**的**平移**: 如果 *(h, r, t)* 成立, *t* 的嵌入应该接近于 *h* 的嵌入加上某个**向量**, 某个向量就是**关系的嵌入**.
 
 **TransE** 原论文链接：[Translating Embeddings for Modeling Multi-relational Data](https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf)
 
@@ -160,4 +160,47 @@ $ bash clean.sh
 
 $ ls
 clean.sh  data_preprocessing.py  run.sh  test_transE.cpp  transE.cpp
+```
+
+### 训练和测试的参数
+
+#### transE.cpp
+
+```
+./transE [-bern 0/1] [-load-binary 0/1] [-out-binary 0/1]
+         [-size SIZE] [-alpha ALPHA] [-margin MARGIN]
+         [-nbatches NBATCHES] [-epochs EPOCHS]
+         [-threads THREAD] [-input INPUT] [-output OUTPUT]
+         [-load LOAD] [-note NOTE]
+
+optional arguments:
+-bern [0/1]          [1] 使用 bern 算法进行负采样，默认值为 [1]
+-load-binary [0/1]   [1] 以二进制形式加载预训练嵌入，默认值为 [0]
+-out-binary [0/1]    [1] 以二进制形式输出嵌入，默认值为 [0]
+-size SIZE           实体和关系嵌入维度，默认值为 [50]
+-alpha ALPHA         学习率，默认值为 0.01
+-margin MARGIN       margin in max-margin loss for pairwise training，默认值为 1.0
+-nbatches NBATCHES   number of batches for each epoch. if unspecified, nbatches will default to 1
+-epochs EPOCHS       number of epochs. if unspecified, epochs will default to 1000
+-threads THREAD      number of worker threads. if unspecified, threads will default to 32
+-input INPUT         folder of training data. if unspecified, in_path will default to "../data/FB15K/"
+-output OUTPUT       folder of outputing results. if unspecified, out_path will default to "./build/"
+-load LOAD           folder of pretrained data. if unspecified, load_path will default to ""
+-note NOTE           information you want to add to the filename. if unspecified, note will default to ""
+```
+
+#### test_transE.cpp
+
+```
+./test_transE [-load-binary 0/1] [-size SIZE]
+         [-threads THREAD] [-input INPUT]
+         [-load LOAD] [-note NOTE]
+
+optional arguments:
+-load-binary [0/1]   [1] 以二进制形式加载预训练嵌入，默认值为 [0]
+-size SIZE           实体和关系嵌入维度，默认值为 [50]
+-threads THREAD      number of worker threads. if unspecified, threads will default to 32
+-input INPUT         folder of training data. if unspecified, in_path will default to "../data/FB15K/"
+-load LOAD           folder of pretrained data. if unspecified, load_path will default to "./build/"
+-note NOTE           information you want to add to the filename. if unspecified, note will default to ""
 ```
