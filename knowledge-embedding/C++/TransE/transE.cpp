@@ -1,5 +1,36 @@
 // transE.cpp
+// 使用方法:
+//     编译:
+//           $ g++ transE.cpp -o ./build/transE -pthread -O3 -march=native
+//     运行:
+//           $ ./build/transE
+//           
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+//
+// 该 C++ 文件用于模型训练
+//
+// prerequisites:
+//     relation2id.txt, entity2id.txt, train2id.txt
+//
+// 加载 Pretrained Embeddings (可选)
+// prerequisites: 
+//     entity2vec + note + .bin
+//     relation2vec + note + .bin
+//     
+//     or
+//
+//     entity2vec + note + .vec
+//     relation2vec + note + .vec
+//
+// 输出实体嵌入和关系嵌入
+// output: 
+//     entity2vec + note + .bin
+//     relation2vec + note + .bin
+//     
+//     or
+//
+//     entity2vec + note + .vec
+//     relation2vec + note + .vec
 
 // ##################################################
 // 包含标准库
