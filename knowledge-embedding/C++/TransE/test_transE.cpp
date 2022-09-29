@@ -1,5 +1,27 @@
 // test_transE.cpp
+// 使用方法:
+//     编译:
+//           $ g++ test_transE.cpp -o ./build/test_transE -pthread -O3 -march=native
+//     运行:
+//           $ ./build/test_transE
+//
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+//
+// 该 C++ 文件用于模型测试
+//
+// prerequisites: 
+//     relation2id.txt, entity2id.txt, test2id_all.txt
+//     train2id.txt、valid2id.txt、type_constrain.txt
+//
+// 加载 Pretrained Embeddings
+// prerequisites: 
+//     entity2vec + note + .bin
+//     relation2vec + note + .bin
+//     
+//     or
+//
+//     entity2vec + note + .vec
+//     relation2vec + note + .vec
 
 // ##################################################
 // 包含标准库
