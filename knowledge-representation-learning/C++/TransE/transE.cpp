@@ -39,7 +39,7 @@
 #include <cstdio>           // FILE, fscanf, fwrite, fopen, fclose
 #include <cstdlib>          // calloc, free, atoi, atof, rand, RAND_MAX
 #include <cmath>            // exp, fabs
-#include <cstring>          // memcmp, memcpy, strcmp
+#include <cstring>          // memcpy, strcmp
 #include <fcntl.h>          // open, close, O_RDONLY
 #include <unistd.h>         // stat
 #include <sys/stat.h>       // stat
