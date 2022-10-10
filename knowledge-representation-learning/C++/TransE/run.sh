@@ -3,7 +3,7 @@
 ##################################################
 # run.sh
 # 使用方法：$ bash run.sh
-# created by LuYF-Lemon-love <luyanfeng@qq.com>
+# created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 #
 # 该 Shell 脚本用于模型训练和模型测试
 ##################################################

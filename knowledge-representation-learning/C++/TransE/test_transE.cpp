@@ -28,7 +28,7 @@
 // ##################################################
 
 #include <cstdio>           // FILE, fscanf, fopen, fclose
-#include <cstdlib>          // calloc, free, atoi
+#include <cstdlib>          // malloc, calloc, free, atoi
 #include <cmath>            // fabs
 #include <cstring>          // memcpy, strcmp, memset
 #include <fcntl.h>          // open, close, O_RDONLY

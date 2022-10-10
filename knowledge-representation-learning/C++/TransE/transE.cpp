@@ -37,7 +37,7 @@
 // ##################################################
 
 #include <cstdio>           // FILE, fscanf, fwrite, fopen, fclose
-#include <cstdlib>          // calloc, free, atoi, atof, rand, RAND_MAX
+#include <cstdlib>          // malloc, calloc, free, atoi, atof, rand, RAND_MAX
 #include <cmath>            // exp, fabs
 #include <cstring>          // memcpy, strcmp
 #include <fcntl.h>          // open, close, O_RDONLY
