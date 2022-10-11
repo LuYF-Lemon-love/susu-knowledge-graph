@@ -6,7 +6,7 @@
 # ../data/FB15K/1-1.txt ../data/FB15K/1-n.txt ../data/FB15K/n-1.txt ../data/FB15K/n-n.txt ../data/FB15K/test2id_all.txt ../data/FB15K/type_constrain.txt
 #
 # prerequisites: 
-#     train2id.txt, valid2id.txt、test2id.txt
+#     train2id.txt, valid2id.txt, test2id.txt
 
 print("\n##################################################")
 print("\n数据预处理开始...")
