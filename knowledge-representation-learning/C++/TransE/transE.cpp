@@ -104,7 +104,7 @@ struct cmp_tail {
 // 一些用于程序初始化的数学函数
 // ##################################################
 
-// 为每一个线程存储独立的随机种子
+// 为每一个线程保存独立的随机种子
 unsigned long long *next_random;
 
 // 更新第 id[0, threads) 线程的随机种子
@@ -144,7 +144,46 @@ REAL randn(REAL miu, REAL sigma, REAL min, REAL max) {
 	return x;
 }
 
-// 归一化函数：使用 L2 范数将输入向量缩放为 unit norm (vector length)
+// 最大范数正则化函数: 如果输入向量的 L2 范数 > 1, 将输入向量的压缩, 使的其 L2 范数 = 1
+// 可以参考: https://tensorflow.google.cn/api_docs/python/tf/keras/constraints/MaxNorm
+/*
+@keras_export("keras.constraints.MaxNorm", "keras.constraints.max_norm")
+class MaxNorm(Constraint):
+    """MaxNorm weight constraint.
+    Constrains the weights incident to each hidden unit
+    to have a norm less than or equal to a desired value.
+    Also available via the shortcut function `tf.keras.constraints.max_norm`.
+    Args:
+      max_value: the maximum norm value for the incoming weights.
+      axis: integer, axis along which to calculate weight norms.
+        For instance, in a `Dense` layer the weight matrix
+        has shape `(input_dim, output_dim)`,
+        set `axis` to `0` to constrain each weight vector
+        of length `(input_dim,)`.
+        In a `Conv2D` layer with `data_format="channels_last"`,
+        the weight tensor has shape
+        `(rows, cols, input_depth, output_depth)`,
+        set `axis` to `[0, 1, 2]`
+        to constrain the weights of each filter tensor of size
+        `(rows, cols, input_depth)`.
+    """
+
+    def __init__(self, max_value=2, axis=0):
+        self.max_value = max_value
+        self.axis = axis
+
+    @doc_controls.do_not_generate_docs
+    def __call__(self, w):
+        norms = backend.sqrt(
+            tf.reduce_sum(tf.square(w), axis=self.axis, keepdims=True)
+        )
+        desired = backend.clip(norms, 0, self.max_value)
+        return w * (desired / (backend.epsilon() + norms))
+
+    @doc_controls.do_not_generate_docs
+    def get_config(self):
+        return {"max_value": self.max_value, "axis": self.axis}
+*/
 void norm(REAL * vec) {
 	REAL x = 0;
 	for (INT i = 0; i < dimension; i++)
