@@ -6,11 +6,11 @@
 
 ### [FB15K](./data/FB15K/)
 
-该数据集是 Wikilinks database 的子集, 该子集中的实体和关系在 Freebase 至少出现了 100 次. 并且移除了 ’!/people/person/nationality’ 的关系, 因为它是关系 ’/people/person/nationality’ head 和 tail 的颠倒. 一共 592,213 个三元组, 14,951 种实体, 1,345 种关系, 被随机分成了训练集 (483,142 个), 验证集 (50,000 个), 测试集 (59,071 个).
+该数据集是 Wikilinks database 的实体子集, 该子集中的实体和关系在 Freebase 至少出现了 100 次. 并且移除了像 ’!/people/person/nationality’ 这样的关系, 因为它是关系 ’/people/person/nationality’ head 和 tail 的颠倒. 一共 592,213 个三元组, 14,951 个实体, 1,345 个关系, 被随机地分成了训练集 (483,142 个), 验证集 (50,000 个), 测试集 (59,071 个).
 
-- [entity2id.txt](./data/FB15K/entity2id.txt): 第一行是实体种类数. 其余行是实体名和对应的实体 ID, 每行一个.
+- [entity2id.txt](./data/FB15K/entity2id.txt): 第一行是实体个数. 其余行是实体名和对应的实体 ID, 每行一个.
 
-- [relation2id.txt](./data/FB15K/relation2id.txt): 第一行是关系种类数. 其余行是关系名和对应的关系 ID, 每行一个.
+- [relation2id.txt](./data/FB15K/relation2id.txt): 第一行是关系个数. 其余行是关系名和对应的关系 ID, 每行一个.
 
 - [train2id.txt](./data/FB15K/train2id.txt): 训练文件. 第一行是训练集三元组的个数. 其余行是 (e1, e2, rel) 格式的三元组, 每行一个. e1, e2 是实体 ID, rel 是关系 ID.
 
@@ -20,7 +20,9 @@
 
 ## TransE
 
-**TransE** 是一个基于能量 *(energy-based)* 的学习**实体低维度嵌入向量**的模型, **关系**被表示**嵌入空间**的**平移**: 如果 *(h, r, t)* 成立, *t* 的嵌入应该接近于 *h* 的嵌入加上某个**向量**, 某个向量就是**关系的嵌入**.
+**TransE** 是一个基于能量 *(energy-based)* 的学习**实体低维度嵌入向量**的模型, **关系**被表示**嵌入空间**的**平移**: 如果 *(h, r, t)* 成立, *t* 的嵌入应该接近于 *h* 的嵌入向量加上某个**向量**, 某个向量就是**关系的嵌入向量**.
+
+对应的博客: https://www.luyf-lemon-love.space/1560426839/ .
 
 **TransE** 原论文链接：[Translating Embeddings for Modeling Multi-relational Data](https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf).
 
@@ -220,3 +222,9 @@ optional arguments:
 - [run.sh](./TransE/run.sh): 该 Shell 脚本用于模型训练和模型测试.
 
 - [clean.sh](./TransE/clean.sh): 该 Shell 脚本用于清理临时文件.
+
+## Reference
+
+[1] Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran, Jason Weston, Oksana Yakhnenko. Translating embeddings for modeling multi-relational data. Proceedings of NIPS, 2013.
+
+[2] Yankai Lin, Zhiyuan Liu, Maosong Sun, Yang Liu, Xuan Zhu. Learning Entity and Relation Embeddings for Knowledge Graph Completion. The 29th AAAI Conference on Artificial Intelligence, 2015.
