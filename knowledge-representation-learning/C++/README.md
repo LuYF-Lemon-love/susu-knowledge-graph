@@ -223,8 +223,12 @@ optional arguments:
 
 - [clean.sh](./TransE/clean.sh): 该 Shell 脚本用于清理临时文件.
 
+## [papers](./papers/)
+
+- [TransE.pdf](./papers/TransE.pdf): 已经读过的 TransE 论文.
+
 ## Reference
 
 [1] Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran, Jason Weston, Oksana Yakhnenko. Translating embeddings for modeling multi-relational data. Proceedings of NIPS, 2013.
 
-[2] Yankai Lin, Zhiyuan Liu, Maosong Sun, Yang Liu, Xuan Zhu. Learning Entity and Relation Embeddings for Knowledge Graph Completion. The 29th AAAI Conference on Artificial Intelligence, 2015.
+[2] Yankai Lin, Zhiyuan Liu, Maosong Sun, Yang Liu, Xuan Zhu. Learning entity and relation embeddings for knowledge graph completion. The 29th AAAI Conference on Artificial Intelligence, 2015.
