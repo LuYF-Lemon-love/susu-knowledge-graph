@@ -60,10 +60,10 @@ std::string note = "";
 // r: label or relationship
 // t: tail
 // label(head-tail, relationship type):
-//     0: 1-1
-//     1: 1-n
-//     2: n-1
-//     3: n-n
+//     1: 1-1
+//     2: 1-n
+//     3: n-1
+//     4: n-n
 // a relationship of name label between the entities head and tail
 struct Triple {
 	INT h, r, t;
