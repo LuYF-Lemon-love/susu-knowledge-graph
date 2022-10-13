@@ -18,9 +18,9 @@
 void preprocess()
 {
 
-	matrixRelation = (REAL *)calloc(dimensionC * relationTotal, sizeof(REAL));
-	matrixRelationPr = (REAL *)calloc(relationTotal, sizeof(REAL));
-	matrixRelationPrDao = (REAL *)calloc(relationTotal, sizeof(REAL));
+	matrixRelation = (REAL *)calloc(dimensionC * relation_total, sizeof(REAL));
+	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
+	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
 	positionVecE1 = (REAL *)calloc(PositionTotalE1 * dimensionWPE, sizeof(REAL));
 	positionVecE2 = (REAL *)calloc(PositionTotalE2 * dimensionWPE, sizeof(REAL));
@@ -30,8 +30,8 @@ void preprocess()
 	matrixW1PositionE2 = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
 	matrixB1 = (REAL*)calloc(dimensionC, sizeof(REAL));
 	
-	att_W.resize(relationTotal);
-	for (INT i=0; i<relationTotal; i++)
+	att_W.resize(relation_total);
+	for (INT i=0; i<relation_total; i++)
 	{
 		att_W[i].resize(dimensionC);
 		for (INT j=0; j<dimensionC; j++)
@@ -53,12 +53,12 @@ void preprocess()
 	fclose(fout);
 
 	fout = fopen(("./out/matrixRl.txt"+version).c_str(), "r");
-	fscanf(fout,"%d%d", &relationTotal, &dimensionC);
-	for (INT i = 0; i < relationTotal; i++) {
+	fscanf(fout,"%d%d", &relation_total, &dimensionC);
+	for (INT i = 0; i < relation_total; i++) {
 		for (INT j = 0; j < dimensionC; j++)
 			fscanf(fout, "%f", &matrixRelation[i * dimensionC + j]);
 	}
-	for (INT i = 0; i < relationTotal; i++) 
+	for (INT i = 0; i < relation_total; i++) 
 		fscanf(fout, "%f", &matrixRelationPr[i]);
 	fclose(fout);
 
@@ -83,8 +83,8 @@ void preprocess()
 	}
 	fclose(fout);
 	fout = fopen(("./out/att_W.txt"+version).c_str(), "r");
-	fscanf(fout,"%d%d", &relationTotal, &dimensionC);
-	for (INT r1 = 0; r1 < relationTotal; r1++) {
+	fscanf(fout,"%d%d", &relation_total, &dimensionC);
+	for (INT r1 = 0; r1 < relation_total; r1++) {
 		for (INT i = 0; i < dimensionC; i++)
 		{
 			for (INT j = 0; j < dimensionC; j++)

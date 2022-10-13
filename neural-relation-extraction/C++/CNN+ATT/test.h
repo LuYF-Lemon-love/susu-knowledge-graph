@@ -41,7 +41,7 @@ vector<double> test(INT *sentence, INT *testPositionE1, INT *testPositionE2, INT
 		r[i] = CalcTanh(r[i]);
 	vector<double> res;
 	double tmp = 0;
-	for (INT j = 0; j < relationTotal; j++) {
+	for (INT j = 0; j < relation_total; j++) {
 		REAL s = 0;
 		for (INT i = 0; i < dimensionC; i++)
 			s +=  0.5 * matrixRelation[j * dimensionC + i] * r[i];
@@ -50,7 +50,7 @@ vector<double> test(INT *sentence, INT *testPositionE1, INT *testPositionE2, INT
 		tmp+=s;
 		res.push_back(s);
 	}
-	for (INT j = 0; j < relationTotal; j++) 
+	for (INT j = 0; j < relation_total; j++) 
 		res[j]/=tmp;
 	return res;
 }
@@ -75,11 +75,11 @@ bool cmp1(pair<double,INT> a, pair<double,INT> b)
 }
 void output(pair<double,INT> a)
 {
-	cout<<"weight:\t"<<a.first<<' ';
+	std::cout<<"weight:\t"<<a.first<<' ';
 	INT i = a.second;
 	for (INT j=0; j<testtrainLength[i]; j++)
-		cout<<id2word[testtrainLists[i][j]]<<' ';
-	cout<<endl;
+		std::cout<<id2word[testtrainLists[i][j]]<<' ';
+	std::cout<<std::endl;
 }
 
 
@@ -91,7 +91,7 @@ void* testMode(void *id )
 		rr = b.size();
 	else
 		rr = ll_test[(long long)id+1];
-	//cout<<ll<<' '<<rr<<' '<<((long long)id)<<endl;
+	//std::cout<<ll<<' '<<rr<<' '<<((long long)id)<<std::endl;
 	REAL *r = (REAL *)calloc(dimensionC, sizeof(REAL));
 	double eps = 0.1;
 	for (INT ii = ll; ii < rr; ii++)
@@ -99,7 +99,7 @@ void* testMode(void *id )
 		vector<double> sum;
 		vector<double> r_sum;
 		r_sum.resize(dimensionC);
-		for (INT j = 0; j < relationTotal; j++)
+		for (INT j = 0; j < relation_total; j++)
 			sum.push_back(0.0);
 		map<INT,INT> ok;
 		ok.clear();
@@ -118,7 +118,7 @@ void* testMode(void *id )
 				rList.push_back(r_tmp);
 			}
 		}
-		for (INT j = 0; j < relationTotal; j++) {
+		for (INT j = 0; j < relation_total; j++) {
 			vector<REAL> weight;
 			REAL weight_sum = 0;
 			for (INT k=0; k<bags_size; k++)
@@ -146,7 +146,7 @@ void* testMode(void *id )
 					r[i] += rList[k][i] * weight[k];
 			vector<REAL> res;
 			double tmp = 0;
-			for (INT j1 = 0; j1 < relationTotal; j1++) {
+			for (INT j1 = 0; j1 < relation_total; j1++) {
 				REAL s = 0;
 				for (INT i1 = 0; i1 < dimensionC; i1++)
 					s +=  0.5 * matrixRelation[j1 * dimensionC + i1] * r[i1];
@@ -158,10 +158,10 @@ void* testMode(void *id )
 			sum[j] = max(sum[j],res[j]/tmp);
 		}
 		pthread_mutex_lock (&mutex);
-		for (INT j = 1; j < relationTotal; j++) 
+		for (INT j = 1; j < relation_total; j++) 
 		{
 			INT i = bags_test[b[ii]][0];
-			aa.push_back(make_pair(b[ii]+"\t"+nam[j],make_pair(ok.count(j),sum[j])));
+			aa.push_back(make_pair(b[ii]+"\t"+id2relation[j],make_pair(ok.count(j),sum[j])));
 		}
 		pthread_mutex_unlock(&mutex);
 	}
@@ -172,7 +172,7 @@ void* testMode(void *id )
 double max_pre = 0;
 
 void test() {
-	cout<<endl;
+	std::cout<<std::endl;
 	aa.clear();
 	b.clear();
 	tot = 0;
@@ -209,13 +209,13 @@ void test() {
 			ll_test[now] = i;
 			now+=1;
 		}
-	cout<<"tot:\t"<<tot<<endl;
+	std::cout<<"tot:\t"<<tot<<std::endl;
 	pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 	for (INT a = 0; a < num_threads; a++)
 		pthread_create(&pt[a], NULL, testMode,  (void *)a);
 	for (INT a = 0; a < num_threads; a++)
 		pthread_join(pt[a], NULL);
-	//cout<<"begin sort"<<endl;
+	//std::cout<<"begin sort"<<std::endl;
 	free(pt);
 	sort(aa.begin(),aa.end(),cmp);
 	double correct=0;
@@ -227,7 +227,7 @@ void test() {
 		REAL precision = correct1/(i+1);
 		REAL recall = correct1/tot;
 		if (i%100==0)
-			cout<<"precision:\t"<<correct1/(i+1)<<'\t'<<"recall:\t"<<correct1/tot<<endl;	
+			std::cout<<"precision:\t"<<correct1/(i+1)<<'\t'<<"recall:\t"<<correct1/tot<<std::endl;	
 	}
 	//assert(version!="");
 	{
@@ -254,13 +254,13 @@ void test() {
 		fclose(fout);
 
 		fout = fopen(("./out/matrixRl.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n", relationTotal, dimensionC);
-		for (INT i = 0; i < relationTotal; i++) {
+		fprintf(fout,"%d\t%d\n", relation_total, dimensionC);
+		for (INT i = 0; i < relation_total; i++) {
 			for (INT j = 0; j < dimensionC; j++)
 				fprintf(fout, "%f\t", matrixRelation[i * dimensionC + j]);
 			fprintf(fout, "\n");
 		}
-		for (INT i = 0; i < relationTotal; i++) 
+		for (INT i = 0; i < relation_total; i++) 
 			fprintf(fout, "%f\t",matrixRelationPr[i]);
 		fprintf(fout, "\n");
 		fclose(fout);
@@ -289,8 +289,8 @@ void test() {
 		}
 		fclose(fout);
 		fout = fopen(("./out/att_W.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n", relationTotal, dimensionC);
-		for (INT r1 = 0; r1 < relationTotal; r1++) {
+		fprintf(fout,"%d\t%d\n", relation_total, dimensionC);
+		for (INT r1 = 0; r1 < relation_total; r1++) {
 			for (INT i = 0; i < dimensionC; i++)
 			{
 				for (INT j = 0; j < dimensionC; j++)

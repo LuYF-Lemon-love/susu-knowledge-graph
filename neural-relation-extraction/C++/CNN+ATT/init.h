@@ -45,28 +45,33 @@ REAL rate = 1;
 
 // word_total: 词汇总数, 包括 "UNK"
 // dimension: 词嵌入维度
-INT word_total, dimension, relationTotal;
-
 // word_vec (word_total * dimension): 词嵌入矩阵
-REAL *word_vec;
-
 // id2word (word_total): id2word[id] -> id 对应的词汇名
 // word2id (word_total): word2id[name] -> name 对应的词汇 id
-vector<std::string> id2word;
+INT word_total, dimension;
+REAL *word_vec;
+std::vector<std::string> id2word;
 std::map<std::string, INT> word2id;
+
+// relation_total: 关系总数
+// id2relation (relation_total): id2relation[id] -> id 对应的关系名
+// relation2id (relation_total): relation2id[name] -> name 对应的关系 id
+INT relation_total;
+std::vector<std::string> id2relation;
+std::map<std::string, INT> relation2id;
+
 
 INT PositionMinE1, PositionMaxE1, PositionTotalE1,PositionMinE2, PositionMaxE2, PositionTotalE2;
 
 
 
-std::map<std::string,INT> relationMapping;
+
 std::vector<INT *> trainLists, trainPositionE1, trainPositionE2;
 std::vector<INT> trainLength;
 std::vector<INT> headList, tailList, relationList;
 std::vector<INT *> testtrainLists, testPositionE1, testPositionE2;
 std::vector<INT> testtrainLength;
 std::vector<INT> testheadList, testtailList, testrelationList;
-std::vector<std::string> nam;
 
 std::map<std::string, std::vector<INT> > bags_train, bags_test;
 
@@ -74,13 +79,12 @@ void init() {
 
 	INT tmp;
 
+	// 读取预训练词嵌入
 	FILE *f = fopen("../data/vec.bin", "rb");
-
 	tmp = fscanf(f, "%d", &word_total);
 	tmp = fscanf(f, "%d", &dimension);
-
-	std::cout << "word_total (exclude \"UNK\") =\t" << word_total << endl;
-	std::cout << "word dimension =\t" << dimension << endl;
+	std::cout << "word_total (exclude \"UNK\") = " << word_total << std::endl;
+	std::cout << "word dimension = " << dimension << std::endl;
 
 	PositionMinE1 = 0;
 	PositionMaxE1 = 0;
@@ -91,19 +95,14 @@ void init() {
 	id2word.resize(word_total + 1);
 	id2word[0] = "UNK";
 	word2id["UNK"] = 0;
-
 	for (INT i = 1; i <= word_total; i++) {
-
 		std::string name = "";
 		while (1) {
-
 			char ch = fgetc(f);
 			if (feof(f) || ch == ' ') break;
 			if (ch != '\n') name = name + ch;
-
 		}
 		long long last = i * dimension;
-
 		REAL sum = 0;
 		for (INT a = 0; a < dimension; a++) {
 			tmp = fread(&word_vec[a + last], sizeof(REAL), 1, f);
@@ -111,27 +110,27 @@ void init() {
 		}
 		sum = sqrt(sum);
 		for (INT a = 0; a< dimension; a++)
-			word_vec[a+last] = word_vec[a+last] / sum;
-		
+			word_vec[a+last] = word_vec[a+last] / sum;		
 		word2id[name] = i;
 		id2word[i] = name;
-
 	}
 	word_total+=1;
 	fclose(f);
 
+	// 读取 relation2id.txt 文件
 	char buffer[1000];
 	f = fopen("../data/RE/relation2id.txt", "r");
 	while (fscanf(f,"%s",buffer)==1) {
 		INT id;
-		fscanf(f,"%d",&id);
-		relationMapping[(string)(buffer)] = id;
-		relationTotal++;
-		nam.push_back((std::string)(buffer));
+		tmp = fscanf(f, "%d", &id);
+		relation2id[(std::string)(buffer)] = id;
+		relation_total++;
+		id2relation.push_back((std::string)(buffer));
 	}
 	fclose(f);
-	cout<<"relationTotal:\t"<<relationTotal<<endl;
+	std::cout << "relation_total: " << relation_total << std::endl;
 	
+	// 读取训练文件 (train.txt)
 	f = fopen("../data/RE/train.txt", "r");
 	while (fscanf(f,"%s",buffer)==1)  {
 		fscanf(f,"%s",buffer);
@@ -145,7 +144,7 @@ void init() {
 		string tail_s = (string)(buffer);
 		fscanf(f,"%s",buffer);
 		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(headList.size());
-		INT num = relationMapping[(string)(buffer)];
+		INT num = relation2id[(string)(buffer)];
 		INT len = 0, lefnum = 0, rignum = 0;
 		std::vector<INT> tmpp;
 		while (fscanf(f,"%s", buffer)==1) {
@@ -196,7 +195,7 @@ void init() {
 		bags_test[e1+"\t"+e2].push_back(testheadList.size());
 		INT tail = word2id[(string)(buffer)];
 		fscanf(f,"%s",buffer);
-		INT num = relationMapping[(string)(buffer)];
+		INT num = relation2id[(string)(buffer)];
 		INT len = 0 , lefnum = 0, rignum = 0;
 		std::vector<INT> tmpp;
 		while (fscanf(f,"%s", buffer)==1) {
@@ -233,7 +232,7 @@ void init() {
 		testPositionE2.push_back(conr);
 	}
 	fclose(f);
-	cout<<PositionMinE1<<' '<<PositionMaxE1<<' '<<PositionMinE2<<' '<<PositionMaxE2<<endl;
+	std::cout<<PositionMinE1<<' '<<PositionMaxE1<<' '<<PositionMinE2<<' '<<PositionMaxE2<<std::endl;
 
 	for (INT i = 0; i < trainPositionE1.size(); i++) {
 		INT len = trainLength[i];

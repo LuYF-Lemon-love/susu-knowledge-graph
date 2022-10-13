@@ -31,7 +31,7 @@ void time_begin()
 void time_end()
 {
   gettimeofday(&t_end, NULL);
-  cout<<"time(s):\t"<<(double(((long)t_end.tv_sec)*1000+(long)t_end.tv_usec/1000)-double(((long)t_start.tv_sec)*1000+(long)t_start.tv_usec/1000))/1000<<endl;
+  std::cout<<"time(s):\t"<<(double(((long)t_end.tv_sec)*1000+(long)t_end.tv_usec/1000)-double(((long)t_start.tv_sec)*1000+(long)t_start.tv_usec/1000))/1000<<std::endl;
 }
 
 
@@ -153,7 +153,7 @@ REAL train_bags(string bags_name)
 		weight[k] /=weight_sum;
 	
 	REAL sum = 0;
-	for (INT j = 0; j < relationTotal; j++) {	
+	for (INT j = 0; j < relation_total; j++) {	
 		vector<REAL> r;
 		r.resize(dimensionC);
 		for (INT i = 0; i < dimensionC; i++) 
@@ -177,7 +177,7 @@ REAL train_bags(string bags_name)
 		grad[k].resize(dimensionC);
 	vector<REAL> g1_tmp;
 	g1_tmp.resize(dimensionC);
-	for (INT r2 = 0; r2<relationTotal; r2++)
+	for (INT r2 = 0; r2<relation_total; r2++)
 	{	
 		vector<REAL> r;
 		r.resize(dimensionC);
@@ -260,17 +260,17 @@ void* trainMode(void *id ) {
 				break;
 			}
 			score_tmp+=1;
-		//	cout<<score_tmp<<' '<<score_max<<endl;
+		//	std::cout<<score_tmp<<' '<<score_max<<std::endl;
 			pthread_mutex_unlock (&mutex1);
 			INT j = getRand(0, c_train.size());
-			//cout<<j<<'|';
+			//std::cout<<j<<'|';
 			j = c_train[j];
-			//cout<<j<<'|';
+			//std::cout<<j<<'|';
 			//test_tmp+=bags_train[b_train[j]].size();
-			//cout<<test_tmp<<' ';
+			//std::cout<<test_tmp<<' ';
 			score += train_bags(b_train[j]);
 		}
-		//cout<<endl;
+		//std::cout<<std::endl;
 }
 
 void train() {
@@ -285,10 +285,10 @@ void train() {
 		b_train.push_back(it->first);
 		tmp+=it->second.size();
 	}
-	cout<<c_train.size()<<endl;
+	std::cout<<c_train.size()<<std::endl;
 	
-	att_W.resize(relationTotal);
-	for (INT i=0; i<relationTotal; i++)
+	att_W.resize(relation_total);
+	for (INT i=0; i<relation_total; i++)
 	{
 		att_W[i].resize(dimensionC);
 		for (INT j=0; j<dimensionC; j++)
@@ -299,11 +299,11 @@ void train() {
 	}
 	att_W_Dao = att_W;
 
-	REAL con = sqrt(6.0/(dimensionC+relationTotal));
+	REAL con = sqrt(6.0/(dimensionC+relation_total));
 	REAL con1 = sqrt(6.0/((dimensionWPE+dimension)*window));
-	matrixRelation = (REAL *)calloc(dimensionC * relationTotal, sizeof(REAL));
-	matrixRelationPr = (REAL *)calloc(relationTotal, sizeof(REAL));
-	matrixRelationPrDao = (REAL *)calloc(relationTotal, sizeof(REAL));
+	matrixRelation = (REAL *)calloc(dimensionC * relation_total, sizeof(REAL));
+	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
+	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
 	positionVecE1 = (REAL *)calloc(PositionTotalE1 * dimensionWPE, sizeof(REAL));
 	positionVecE2 = (REAL *)calloc(PositionTotalE2 * dimensionWPE, sizeof(REAL));
@@ -329,7 +329,7 @@ void train() {
 		matrixB1[i] = getRandU(-con1, con1);
 	}
 
-	for (INT i = 0; i < relationTotal; i++) 
+	for (INT i = 0; i < relation_total; i++) 
 	{
 		matrixRelationPr[i] = getRandU(-con, con);				//add
 		for (INT j = 0; j < dimensionC; j++)
@@ -352,7 +352,7 @@ void train() {
 		}
 	}
 
-	matrixRelationDao = (REAL *)calloc(dimensionC*relationTotal, sizeof(REAL));
+	matrixRelationDao = (REAL *)calloc(dimensionC*relation_total, sizeof(REAL));
 	matrixW1Dao =  (REAL*)calloc(dimensionC * dimension * window, sizeof(REAL));
 	matrixB1Dao =  (REAL*)calloc(dimensionC, sizeof(REAL));
 	
@@ -378,7 +378,7 @@ void train() {
 		time_begin();
 		for (INT k = 1; k <= npoch; k++) {
 			score_max += batch * num_threads;
-		//	cout<<k<<endl;
+		//	std::cout<<k<<std::endl;
 			memcpy(positionVecDaoE1, positionVecE1, PositionTotalE1 * dimensionWPE* sizeof(REAL));
 			memcpy(positionVecDaoE2, positionVecE2, PositionTotalE2 * dimensionWPE* sizeof(REAL));
 			memcpy(matrixW1PositionE1Dao, matrixW1PositionE1, dimensionC * dimensionWPE * window* sizeof(REAL));
@@ -387,8 +387,8 @@ void train() {
 
 			memcpy(matrixW1Dao, matrixW1, sizeof(REAL) * dimensionC * dimension * window);
 			memcpy(matrixB1Dao, matrixB1, sizeof(REAL) * dimensionC);
-			memcpy(matrixRelationPrDao, matrixRelationPr, relationTotal * sizeof(REAL));				//add
-			memcpy(matrixRelationDao, matrixRelation, dimensionC*relationTotal * sizeof(REAL));
+			memcpy(matrixRelationPrDao, matrixRelationPr, relation_total * sizeof(REAL));				//add
+			memcpy(matrixRelationDao, matrixRelation, dimensionC*relation_total * sizeof(REAL));
 			att_W_Dao = att_W;
 			pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 			for (INT a = 0; a < num_threads; a++)
@@ -398,10 +398,10 @@ void train() {
 			free(pt);
 			if (k%(npoch/5)==0)
 			{
-				cout<<"npoch:\t"<<k<<'/'<<npoch<<endl;
+				std::cout<<"npoch:\t"<<k<<'/'<<npoch<<std::endl;
 				time_end();
 				time_begin();
-				cout<<"score:\t"<<score-score1<<' '<<score_tmp<<endl;
+				std::cout<<"score:\t"<<score-score1<<' '<<score_tmp<<std::endl;
 				score1 = score;
 			}
 		}
@@ -412,16 +412,16 @@ void train() {
 		//	rate=rate*reduce;
 	}
 	test();
-	cout<<"Train End"<<endl;
+	std::cout<<"Train End"<<std::endl;
 }
 
 INT main(INT argc, char ** argv) {
 	output_model = 1;
-	cout<<"Init Begin."<<endl;
+	std::cout<<"Init Begin."<<std::endl;
 	init();
 	//for (map<string,vector<INT> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)
-	//	cout<<it->first<<endl;
-	cout<<bags_train.size()<<' '<<bags_test.size()<<endl;
-	cout<<"Init End."<<endl;
+	//	std::cout<<it->first<<std::endl;
+	std::cout<<bags_train.size()<<' '<<bags_test.size()<<std::endl;
+	std::cout<<"Init End."<<std::endl;
 	train();
 }
