@@ -25,6 +25,8 @@ REAL reduce = 0.98;
 INT dimensionC = 230;
 INT dimensionWPE = 5;
 INT window = 3;
+
+// limit: 限制句子中每个到 (头, 尾) 实体的最大距离
 INT limit = 30;
 REAL *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
 REAL *wordVecDao;
@@ -63,12 +65,18 @@ std::map<std::string, INT> relation2id;
 
 INT PositionMinE1, PositionMaxE1, PositionTotalE1,PositionMinE2, PositionMaxE2, PositionTotalE2;
 
+// head_list: 保存训练集每个句子的头实体 id, 按照训练文件句子的读取顺序排列
+// tail_list: 保存训练集每个句子的尾实体 id, 按照训练文件句子的读取顺序排列
+// relation_list: 保存训练集每个句子的关系 id, 按照训练文件句子的读取顺序排列
+// train_length: 保存训练集每个句子的单词个数, 按照训练文件句子的读取顺序排列
+// train_sentence_list: 保存训练集中的句子, 按照训练文件句子的读取顺序排列
+// train_position_head: 保存训练集每个句子的每个单词相对头实体的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
+// train_position_tail: 保存训练集每个句子的每个单词相对尾实体的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
+std::vector<INT> head_list, tail_list, relation_list;
+std::vector<INT> train_length;
+std::vector<INT *> train_sentence_list, train_position_head, train_position_tail;
 
 
-
-std::vector<INT *> trainLists, trainPositionE1, trainPositionE2;
-std::vector<INT> trainLength;
-std::vector<INT> headList, tailList, relationList;
 std::vector<INT *> testtrainLists, testPositionE1, testPositionE2;
 std::vector<INT> testtrainLength;
 std::vector<INT> testheadList, testtailList, testrelationList;
@@ -133,52 +141,58 @@ void init() {
 	// 读取训练文件 (train.txt)
 	f = fopen("../data/RE/train.txt", "r");
 	while (fscanf(f,"%s",buffer)==1)  {
+		std::string e1 = buffer;
 		tmp = fscanf(f,"%s",buffer);
+		std::string e2 = buffer;
+
 		tmp = fscanf(f,"%s",buffer);
 		string head_s = (string)(buffer);
-		INT head_id = word2id[(string)(buffer)];
-		string e1 = buffer;
-		fscanf(f,"%s",buffer);
-		INT tail = word2id[(string)(buffer)];
-		string e2 = buffer;
+		INT head_id = word2id[head_s];
+		tmp = fscanf(f,"%s",buffer);
 		string tail_s = (string)(buffer);
-		fscanf(f,"%s",buffer);
-		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(headList.size());
-		INT num = relation2id[(string)(buffer)];
-		INT len = 0, lefnum = 0, rignum = 0;
-		std::vector<INT> tmpp;
+		INT tail_id = word2id[tail_s];
+			
+		tmp = fscanf(f,"%s",buffer);
+		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(head_list.size());
+		INT relation_id = relation2id[(string)(buffer)];
+
+		INT len_s = 0, head_pos = 0, tail_pos = 0;
+		std::vector<INT> sentence;
 		while (fscanf(f,"%s", buffer)==1) {
-			std::string con = buffer;
-			if (con=="###END###") break;
-			INT gg = word2id[con];
-			if (con == head_s) lefnum = len;
-			if (con == tail_s) rignum = len;
-			len++;
-			tmpp.push_back(gg);
+			std::string word = buffer;
+			if (word == "###END###") break;
+			INT word_id = word2id[word];
+			if (word == head_s) head_pos = len_s;
+			if (word == tail_s) tail_pos = len_s;
+			len_s++;
+			sentence.push_back(word_id);
 		}
-		headList.push_back(head_id);
-		tailList.push_back(tail);
-		relationList.push_back(num);
-		trainLength.push_back(len);
-		INT *con=(INT *)calloc(len,sizeof(INT));
-		INT *conl=(INT *)calloc(len,sizeof(INT));
-		INT *conr=(INT *)calloc(len,sizeof(INT));
-		for (INT i = 0; i < len; i++) {
-			con[i] = tmpp[i];
-			conl[i] = lefnum - i;
-			conr[i] = rignum - i;
-			if (conl[i] >= limit) conl[i] = limit;
-			if (conr[i] >= limit) conr[i] = limit;
-			if (conl[i] <= -limit) conl[i] = -limit;
-			if (conr[i] <= -limit) conr[i] = -limit;
-			if (conl[i] > PositionMaxE1) PositionMaxE1 = conl[i];
-			if (conr[i] > PositionMaxE2) PositionMaxE2 = conr[i];
-			if (conl[i] < PositionMinE1) PositionMinE1 = conl[i];
-			if (conr[i] < PositionMinE2) PositionMinE2 = conr[i];
+
+		head_list.push_back(head_id);
+		tail_list.push_back(tail_id);
+		relation_list.push_back(relation_id);
+		train_length.push_back(len_s);
+		
+		INT *sentence_ptr = (INT *)calloc(len_s, sizeof(INT));
+		INT *sentence_head_pos = (INT *)calloc(len_s, sizeof(INT));
+		INT *sentence_tail_pos = (INT *)calloc(len_s, sizeof(INT));
+		for (INT i = 0; i < len_s; i++) {
+			sentence_ptr[i] = sentence[i];
+			sentence_head_pos[i] = head_pos - i;
+			sentence_tail_pos[i] = tail_pos - i;
+			if (sentence_head_pos[i] >= limit) sentence_head_pos[i] = limit;
+			if (sentence_tail_pos[i] >= limit) sentence_tail_pos[i] = limit;
+			if (sentence_head_pos[i] <= -limit) sentence_head_pos[i] = -limit;
+			if (sentence_tail_pos[i] <= -limit) sentence_tail_pos[i] = -limit;
+			if (sentence_head_pos[i] > PositionMaxE1) PositionMaxE1 = sentence_head_pos[i];
+			if (sentence_tail_pos[i] > PositionMaxE2) PositionMaxE2 = sentence_tail_pos[i];
+			if (sentence_head_pos[i] < PositionMinE1) PositionMinE1 = sentence_head_pos[i];
+			if (sentence_tail_pos[i] < PositionMinE2) PositionMinE2 = sentence_tail_pos[i];
 		}
-		trainLists.push_back(con);
-		trainPositionE1.push_back(conl);
-		trainPositionE2.push_back(conr);
+
+		train_sentence_list.push_back(sentence_ptr);
+		train_position_head.push_back(sentence_head_pos);
+		train_position_tail.push_back(sentence_tail_pos);
 	}
 	fclose(f);
 
@@ -193,53 +207,53 @@ void init() {
 		string tail_s = (string)(buffer);
 		string e2 = buffer;
 		bags_test[e1+"\t"+e2].push_back(testheadList.size());
-		INT tail = word2id[(string)(buffer)];
+		INT tail_id = word2id[(string)(buffer)];
 		fscanf(f,"%s",buffer);
-		INT num = relation2id[(string)(buffer)];
-		INT len = 0 , lefnum = 0, rignum = 0;
-		std::vector<INT> tmpp;
+		INT relation_id = relation2id[(string)(buffer)];
+		INT len_s = 0 , head_pos = 0, tail_pos = 0;
+		std::vector<INT> sentence;
 		while (fscanf(f,"%s", buffer)==1) {
-			std::string con = buffer;
-			if (con=="###END###") break;
-			INT gg = word2id[con];
-			if (head_s == con) lefnum = len;
-			if (tail_s == con) rignum = len;
-			len++;
-			tmpp.push_back(gg);
+			std::string word = buffer;
+			if (word=="###END###") break;
+			INT gg = word2id[word];
+			if (head_s == word) head_pos = len_s;
+			if (tail_s == word) tail_pos = len_s;
+			len_s++;
+			sentence.push_back(gg);
 		}
 		testheadList.push_back(head_id);
-		testtailList.push_back(tail);
-		testrelationList.push_back(num);
-		testtrainLength.push_back(len);
-		INT *con=(INT *)calloc(len,sizeof(INT));
-		INT *conl=(INT *)calloc(len,sizeof(INT));
-		INT *conr=(INT *)calloc(len,sizeof(INT));
-		for (INT i = 0; i < len; i++) {
-			con[i] = tmpp[i];
-			conl[i] = lefnum - i;
-			conr[i] = rignum - i;
-			if (conl[i] >= limit) conl[i] = limit;
-			if (conr[i] >= limit) conr[i] = limit;
-			if (conl[i] <= -limit) conl[i] = -limit;
-			if (conr[i] <= -limit) conr[i] = -limit;
-			if (conl[i] > PositionMaxE1) PositionMaxE1 = conl[i];
-			if (conr[i] > PositionMaxE2) PositionMaxE2 = conr[i];
-			if (conl[i] < PositionMinE1) PositionMinE1 = conl[i];
-			if (conr[i] < PositionMinE2) PositionMinE2 = conr[i];
+		testtailList.push_back(tail_id);
+		testrelationList.push_back(relation_id);
+		testtrainLength.push_back(len_s);
+		INT *sentence_ptr=(INT *)calloc(len_s,sizeof(INT));
+		INT *sentence_head_pos=(INT *)calloc(len_s,sizeof(INT));
+		INT *sentence_tail_pos=(INT *)calloc(len_s,sizeof(INT));
+		for (INT i = 0; i < len_s; i++) {
+			sentence_ptr[i] = sentence[i];
+			sentence_head_pos[i] = head_pos - i;
+			sentence_tail_pos[i] = tail_pos - i;
+			if (sentence_head_pos[i] >= limit) sentence_head_pos[i] = limit;
+			if (sentence_tail_pos[i] >= limit) sentence_tail_pos[i] = limit;
+			if (sentence_head_pos[i] <= -limit) sentence_head_pos[i] = -limit;
+			if (sentence_tail_pos[i] <= -limit) sentence_tail_pos[i] = -limit;
+			if (sentence_head_pos[i] > PositionMaxE1) PositionMaxE1 = sentence_head_pos[i];
+			if (sentence_tail_pos[i] > PositionMaxE2) PositionMaxE2 = sentence_tail_pos[i];
+			if (sentence_head_pos[i] < PositionMinE1) PositionMinE1 = sentence_head_pos[i];
+			if (sentence_tail_pos[i] < PositionMinE2) PositionMinE2 = sentence_tail_pos[i];
 		}
-		testtrainLists.push_back(con);
-		testPositionE1.push_back(conl);
-		testPositionE2.push_back(conr);
+		testtrainLists.push_back(sentence_ptr);
+		testPositionE1.push_back(sentence_head_pos);
+		testPositionE2.push_back(sentence_tail_pos);
 	}
 	fclose(f);
 	std::cout<<PositionMinE1<<' '<<PositionMaxE1<<' '<<PositionMinE2<<' '<<PositionMaxE2<<std::endl;
 
-	for (INT i = 0; i < trainPositionE1.size(); i++) {
-		INT len = trainLength[i];
-		INT *work1 = trainPositionE1[i];
+	for (INT i = 0; i < train_position_head.size(); i++) {
+		INT len = train_length[i];
+		INT *work1 = train_position_head[i];
 		for (INT j = 0; j < len; j++)
 			work1[j] = work1[j] - PositionMinE1;
-		INT *work2 = trainPositionE2[i];
+		INT *work2 = train_position_tail[i];
 		for (INT j = 0; j < len; j++)
 			work2[j] = work2[j] - PositionMinE2;
 	}

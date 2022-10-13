@@ -36,7 +36,7 @@ void time_end()
 
 
 
-vector<REAL> train(INT *sentence, INT *trainPositionE1, INT *trainPositionE2, INT len, vector<INT> &tip) {
+vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, vector<INT> &tip) {
 	vector<REAL> r;
 	r.resize(dimensionC);
 	for (INT i = 0; i < dimensionC; i++) {
@@ -54,8 +54,8 @@ vector<REAL> train(INT *sentence, INT *trainPositionE1, INT *trainPositionE2, IN
 			 		res += matrixW1Dao[last + tot] * wordVecDao[last1+k];
 			 		tot++;
 			 	}
-			 	INT last2 = trainPositionE1[j] * dimensionWPE;
-			 	INT last3 = trainPositionE2[j] * dimensionWPE;
+			 	INT last2 = train_position_head[j] * dimensionWPE;
+			 	INT last3 = train_position_tail[j] * dimensionWPE;
 			 	for (INT k = 0; k < dimensionWPE; k++) {
 			 		res += matrixW1PositionE1Dao[lastt + tot1] * positionVecDaoE1[last2+k];
 			 		res += matrixW1PositionE2Dao[lastt + tot1] * positionVecDaoE2[last3+k];
@@ -76,7 +76,7 @@ vector<REAL> train(INT *sentence, INT *trainPositionE1, INT *trainPositionE2, IN
 	return r;
 }
 
-void train_gradient(INT *sentence, INT *trainPositionE1, INT *trainPositionE2, INT len, INT e1, INT e2, INT r1, REAL alpha, vector<REAL> &r,vector<INT> &tip, vector<REAL> &grad)
+void train_gradient(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, INT e1, INT e2, INT r1, REAL alpha, vector<REAL> &r,vector<INT> &tip, vector<REAL> &grad)
 {
 	for (INT i = 0; i < dimensionC; i++) {
 		if (fabs(grad[i])<1e-8)
@@ -93,8 +93,8 @@ void train_gradient(INT *sentence, INT *trainPositionE1, INT *trainPositionE2, I
 				word_vec[last1 + k] -= g1 * matrixW1Dao[last + tot];
 				tot++;
 			}
-			INT last2 = trainPositionE1[tip[i] + j] * dimensionWPE;
-			INT last3 = trainPositionE2[tip[i] + j] * dimensionWPE;
+			INT last2 = train_position_head[tip[i] + j] * dimensionWPE;
+			INT last3 = train_position_tail[tip[i] + j] * dimensionWPE;
 			for (INT k = 0; k < dimensionWPE; k++) {
 				matrixW1PositionE1[lastt + tot1] -= g1 * positionVecDaoE1[last2 + k];
 				matrixW1PositionE2[lastt + tot1] -= g1 * positionVecDaoE2[last3 + k];
@@ -120,10 +120,10 @@ REAL train_bags(string bags_name)
 		tipList[k].resize(dimensionC);
 		INT i = bags_train[bags_name][k];
 		if (r1==-1)
-			r1 = relationList[i];
+			r1 = relation_list[i];
 		else
-			assert(r1==relationList[i]);
-		rList.push_back(train(trainLists[i], trainPositionE1[i], trainPositionE2[i], trainLength[i], tipList[k]));
+			assert(r1==relation_list[i]);
+		rList.push_back(train(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], tipList[k]));
 	}
 	
 	vector<REAL> f_r;	
@@ -230,7 +230,7 @@ REAL train_bags(string bags_name)
 	for (INT k=0; k<bags_size; k++)
 	{
 		INT i = bags_train[bags_name][k];
-		train_gradient(trainLists[i], trainPositionE1[i], trainPositionE2[i], trainLength[i], headList[i], tailList[i], relationList[i], alpha1,rList[k], tipList[k], grad[k]);
+		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], head_list[i], tail_list[i], relation_list[i], alpha1,rList[k], tipList[k], grad[k]);
 		
 	}
 	return rt;
@@ -366,7 +366,7 @@ void train() {
 //	return;
 	for (turn = 0; turn < trainTimes; turn ++) {
 
-	//	len = trainLists.size();
+	//	len = train_sentence_list.size();
 		len = c_train.size();
 		npoch  =  len / (batch * num_threads);
 		alpha1 = alpha*rate/batch;

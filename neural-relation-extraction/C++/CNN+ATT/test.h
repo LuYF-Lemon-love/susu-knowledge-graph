@@ -190,8 +190,8 @@ void test() {
 			INT i = it->second[k];
 			if (testrelationList[i]>0)
 				ok[testrelationList[i]]=1;
-			//if (relationList[i]>0)
-			//	ok[relationList[i]]=1;
+			//if (relation_list[i]>0)
+			//	ok[relation_list[i]]=1;
 		}
 		tot+=ok.size();
 		{
