@@ -15,20 +15,14 @@ using namespace std;
 string version = "";
 
 int output_model = 0;
-
 int num_threads = 32;
 int trainTimes = 1;
 float alpha = 0.02;
 float reduce = 0.98;
-int tt,tt1;
-int dimensionC = 230;//1000;
-int dimensionWPE = 5;//25;
+int dimensionC = 230;
+int dimensionWPE = 5;
 int window = 3;
 int limit = 30;
-float marginPositive = 2.5;
-float marginNegative = 0.5;
-float margin = 2;
-float Belt = 0.001;
 float *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
 float *wordVecDao,*wordVec_egs,*wordVec_exs;
 float *positionVecE1, *positionVecE2, *matrixW1PositionE1, *matrixW1PositionE2;
