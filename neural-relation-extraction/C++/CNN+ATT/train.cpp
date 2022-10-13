@@ -305,8 +305,8 @@ void train() {
 	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
 	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
-	positionVecE1 = (REAL *)calloc(PositionTotalE1 * dimensionWPE, sizeof(REAL));
-	positionVecE2 = (REAL *)calloc(PositionTotalE2 * dimensionWPE, sizeof(REAL));
+	positionVecE1 = (REAL *)calloc(position_total_head * dimensionWPE, sizeof(REAL));
+	positionVecE2 = (REAL *)calloc(position_total_tail * dimensionWPE, sizeof(REAL));
 	
 	matrixW1 = (REAL*)calloc(dimensionC * dimension * window, sizeof(REAL));
 	matrixW1PositionE1 = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
@@ -336,7 +336,7 @@ void train() {
 			matrixRelation[i * dimensionC + j] = get_rand_u(-con, con);
 	}
 
-	for (INT i = 0; i < PositionTotalE1; i++) {
+	for (INT i = 0; i < position_total_head; i++) {
 		REAL tmp = 0;
 		for (INT j = 0; j < dimensionWPE; j++) {
 			positionVecE1[i * dimensionWPE + j] = get_rand_u(-con1, con1);
@@ -344,7 +344,7 @@ void train() {
 		}
 	}
 
-	for (INT i = 0; i < PositionTotalE2; i++) {
+	for (INT i = 0; i < position_total_tail; i++) {
 		REAL tmp = 0;
 		for (INT j = 0; j < dimensionWPE; j++) {
 			positionVecE2[i * dimensionWPE + j] = get_rand_u(-con1, con1);
@@ -356,8 +356,8 @@ void train() {
 	matrixW1Dao =  (REAL*)calloc(dimensionC * dimension * window, sizeof(REAL));
 	matrixB1Dao =  (REAL*)calloc(dimensionC, sizeof(REAL));
 	
-	positionVecDaoE1 = (REAL *)calloc(PositionTotalE1 * dimensionWPE, sizeof(REAL));
-	positionVecDaoE2 = (REAL *)calloc(PositionTotalE2 * dimensionWPE, sizeof(REAL));
+	positionVecDaoE1 = (REAL *)calloc(position_total_head * dimensionWPE, sizeof(REAL));
+	positionVecDaoE2 = (REAL *)calloc(position_total_tail * dimensionWPE, sizeof(REAL));
 	matrixW1PositionE1Dao = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
 	matrixW1PositionE2Dao = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
 	/*time_begin();
@@ -379,8 +379,8 @@ void train() {
 		for (INT k = 1; k <= npoch; k++) {
 			score_max += batch * num_threads;
 		//	std::cout<<k<<std::endl;
-			memcpy(positionVecDaoE1, positionVecE1, PositionTotalE1 * dimensionWPE* sizeof(REAL));
-			memcpy(positionVecDaoE2, positionVecE2, PositionTotalE2 * dimensionWPE* sizeof(REAL));
+			memcpy(positionVecDaoE1, positionVecE1, position_total_head * dimensionWPE* sizeof(REAL));
+			memcpy(positionVecDaoE2, positionVecE2, position_total_tail * dimensionWPE* sizeof(REAL));
 			memcpy(matrixW1PositionE1Dao, matrixW1PositionE1, dimensionC * dimensionWPE * window* sizeof(REAL));
 			memcpy(matrixW1PositionE2Dao, matrixW1PositionE2, dimensionC * dimensionWPE * window* sizeof(REAL));
 			memcpy(wordVecDao, word_vec, dimension * word_total * sizeof(REAL));

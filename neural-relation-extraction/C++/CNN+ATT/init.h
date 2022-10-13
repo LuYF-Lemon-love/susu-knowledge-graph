@@ -26,7 +26,7 @@ INT dimensionC = 230;
 INT dimensionWPE = 5;
 INT window = 3;
 
-// limit: 限制句子中每个到 (头, 尾) 实体的最大距离
+// limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 INT limit = 30;
 REAL *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
 REAL *wordVecDao;
@@ -62,31 +62,39 @@ INT relation_total;
 std::vector<std::string> id2relation;
 std::map<std::string, INT> relation2id;
 
+// position_min_head: 保存数据集 (训练集, 测试集) 句子中头实体相对每个单词的最小距离, 理论上取值范围为 -limit
+// position_max_head: 保存数据集 (训练集, 测试集) 句子中头实体相对每个单词的最大距离, 理论上取值范围为 limit
+// position_min_tail: 保存数据集 (训练集, 测试集) 句子中尾实体相对每个单词的最小距离, 理论上取值范围为 -limit
+// position_max_tail: 保存数据集 (训练集, 测试集) 句子中尾实体相对每个单词的最大距离, 理论上取值范围为 limit
+// position_total_head = position_max_head - position_min_head + 1
+// position_total_tail = position_max_tail - position_min_tail + 1
+INT position_min_head, position_max_head, position_min_tail, position_max_tail, position_total_head,position_total_tail;
 
-INT PositionMinE1, PositionMaxE1, PositionTotalE1,PositionMinE2, PositionMaxE2, PositionTotalE2;
-
+// bags_train: key -> (头实体 + "\t" + 尾实体 + "\t" + 关系名), value -> 句子索引 (训练文件中该句子的位置)
 // train_head_list: 保存训练集每个句子的头实体 id, 按照训练文件句子的读取顺序排列
 // train_tail_list: 保存训练集每个句子的尾实体 id, 按照训练文件句子的读取顺序排列
 // train_relation_list: 保存训练集每个句子的关系 id, 按照训练文件句子的读取顺序排列
 // train_length: 保存训练集每个句子的单词个数, 按照训练文件句子的读取顺序排列
 // train_sentence_list: 保存训练集中的句子, 按照训练文件句子的读取顺序排列
-// train_position_head: 保存训练集每个句子的每个单词相对头实体的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
-// train_position_tail: 保存训练集每个句子的每个单词相对尾实体的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
+// train_position_head: 保存训练集每个句子的头实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
+// train_position_tail: 保存训练集每个句子的尾实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
+std::map<std::string, std::vector<INT> > bags_train;
 std::vector<INT> train_head_list, train_tail_list, train_relation_list;
 std::vector<INT> train_length;
 std::vector<INT *> train_sentence_list, train_position_head, train_position_tail;
 
+// bags_test: key -> (头实体 + "\t" + 尾实体), value -> 句子索引 (测试文件中该句子的位置)
 // test_head_list: 保存测试集每个句子的头实体 id, 按照测试文件句子的读取顺序排列
 // test_tail_list: 保存测试集每个句子的尾实体 id, 按照测试文件句子的读取顺序排列
 // test_relation_list: 保存测试集每个句子的关系 id, 按照测试文件句子的读取顺序排列
 // test_length: 保存测试集每个句子的单词个数, 按照测试文件句子的读取顺序排列
+// test_sentence_list: 保存测试集中的句子, 按照测试文件句子的读取顺序排列
+// test_position_head: 保存测试集每个句子的头实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
+// test_position_tail: 保存测试集每个句子的尾实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
+std::map<std::string, std::vector<INT> > bags_test;
 std::vector<INT> test_head_list, test_tail_list, test_relation_list;
 std::vector<INT> test_length;
-std::vector<INT *> testtrainLists, testPositionE1, testPositionE2;
-
-
-
-std::map<std::string, std::vector<INT> > bags_train, bags_test;
+std::vector<INT *> test_sentence_list, test_position_head, test_position_tail;
 
 void init() {
 
@@ -138,10 +146,10 @@ void init() {
 	std::cout << "relation_total: " << relation_total << std::endl;
 	
 	// 读取训练文件 (train.txt)
-	PositionMinE1 = 0;
-	PositionMaxE1 = 0;
-	PositionMinE2 = 0;
-	PositionMaxE2 = 0;
+	position_min_head = 0;
+	position_max_head = 0;
+	position_min_tail = 0;
+	position_max_tail = 0;
 	f = fopen("../data/RE/train.txt", "r");
 	while (fscanf(f,"%s",buffer)==1)  {
 		std::string e1 = buffer;
@@ -187,10 +195,10 @@ void init() {
 			if (sentence_tail_pos[i] >= limit) sentence_tail_pos[i] = limit;
 			if (sentence_head_pos[i] <= -limit) sentence_head_pos[i] = -limit;
 			if (sentence_tail_pos[i] <= -limit) sentence_tail_pos[i] = -limit;
-			if (sentence_head_pos[i] > PositionMaxE1) PositionMaxE1 = sentence_head_pos[i];
-			if (sentence_tail_pos[i] > PositionMaxE2) PositionMaxE2 = sentence_tail_pos[i];
-			if (sentence_head_pos[i] < PositionMinE1) PositionMinE1 = sentence_head_pos[i];
-			if (sentence_tail_pos[i] < PositionMinE2) PositionMinE2 = sentence_tail_pos[i];
+			if (sentence_head_pos[i] > position_max_head) position_max_head = sentence_head_pos[i];
+			if (sentence_tail_pos[i] > position_max_tail) position_max_tail = sentence_tail_pos[i];
+			if (sentence_head_pos[i] < position_min_head) position_min_head = sentence_head_pos[i];
+			if (sentence_tail_pos[i] < position_min_tail) position_min_tail = sentence_tail_pos[i];
 		}
 
 		train_sentence_list.push_back(sentence_ptr);
@@ -233,9 +241,10 @@ void init() {
 		test_tail_list.push_back(tail_id);
 		test_relation_list.push_back(relation_id);
 		test_length.push_back(len_s);
-		INT *sentence_ptr=(INT *)calloc(len_s,sizeof(INT));
-		INT *sentence_head_pos=(INT *)calloc(len_s,sizeof(INT));
-		INT *sentence_tail_pos=(INT *)calloc(len_s,sizeof(INT));
+
+		INT *sentence_ptr=(INT *)calloc(len_s, sizeof(INT));
+		INT *sentence_head_pos=(INT *)calloc(len_s, sizeof(INT));
+		INT *sentence_tail_pos=(INT *)calloc(len_s, sizeof(INT));
 		for (INT i = 0; i < len_s; i++) {
 			sentence_ptr[i] = sentence[i];
 			sentence_head_pos[i] = head_pos - i;
@@ -244,46 +253,56 @@ void init() {
 			if (sentence_tail_pos[i] >= limit) sentence_tail_pos[i] = limit;
 			if (sentence_head_pos[i] <= -limit) sentence_head_pos[i] = -limit;
 			if (sentence_tail_pos[i] <= -limit) sentence_tail_pos[i] = -limit;
-			if (sentence_head_pos[i] > PositionMaxE1) PositionMaxE1 = sentence_head_pos[i];
-			if (sentence_tail_pos[i] > PositionMaxE2) PositionMaxE2 = sentence_tail_pos[i];
-			if (sentence_head_pos[i] < PositionMinE1) PositionMinE1 = sentence_head_pos[i];
-			if (sentence_tail_pos[i] < PositionMinE2) PositionMinE2 = sentence_tail_pos[i];
+			if (sentence_head_pos[i] > position_max_head) position_max_head = sentence_head_pos[i];
+			if (sentence_tail_pos[i] > position_max_tail) position_max_tail = sentence_tail_pos[i];
+			if (sentence_head_pos[i] < position_min_head) position_min_head = sentence_head_pos[i];
+			if (sentence_tail_pos[i] < position_min_tail) position_min_tail = sentence_tail_pos[i];
 		}
-		testtrainLists.push_back(sentence_ptr);
-		testPositionE1.push_back(sentence_head_pos);
-		testPositionE2.push_back(sentence_tail_pos);
+
+		test_sentence_list.push_back(sentence_ptr);
+		test_position_head.push_back(sentence_head_pos);
+		test_position_tail.push_back(sentence_tail_pos);
 	}
 	fclose(f);
-	std::cout<<PositionMinE1<<' '<<PositionMaxE1<<' '<<PositionMinE2<<' '<<PositionMaxE2<<std::endl;
+
+	std::cout << "position_min_head: " << position_min_head << std::endl 
+			  << "position_max_head: " << position_max_head << std::endl
+			  << "position_min_tail: " << position_min_tail << std::endl
+			  << "position_max_tail: " << position_max_tail << std::endl;
 
 	for (INT i = 0; i < train_position_head.size(); i++) {
-		INT len = train_length[i];
-		INT *work1 = train_position_head[i];
-		for (INT j = 0; j < len; j++)
-			work1[j] = work1[j] - PositionMinE1;
-		INT *work2 = train_position_tail[i];
-		for (INT j = 0; j < len; j++)
-			work2[j] = work2[j] - PositionMinE2;
+		INT len_s = train_length[i];
+		INT *position = train_position_head[i];
+		for (INT j = 0; j < len_s; j++)
+			position[j] = position[j] - position_min_head;
+		position = train_position_tail[i];
+		for (INT j = 0; j < len_s; j++)
+			position[j] = position[j] - position_min_tail;
 	}
 
-	for (INT i = 0; i < testPositionE1.size(); i++) {
-		INT len = test_length[i];
-		INT *work1 = testPositionE1[i];
-		for (INT j = 0; j < len; j++)
-			work1[j] = work1[j] - PositionMinE1;
-		INT *work2 = testPositionE2[i];
-		for (INT j = 0; j < len; j++)
-			work2[j] = work2[j] - PositionMinE2;
+	for (INT i = 0; i < test_position_head.size(); i++) {
+		INT len_s = test_length[i];
+		INT *position = test_position_head[i];
+		for (INT j = 0; j < len_s; j++)
+			position[j] = position[j] - position_min_head;
+		position = test_position_tail[i];
+		for (INT j = 0; j < len_s; j++)
+			position[j] = position[j] - position_min_tail;
 	}
-	PositionTotalE1 = PositionMaxE1 - PositionMinE1 + 1;
-	PositionTotalE2 = PositionMaxE2 - PositionMinE2 + 1;
+
+	position_total_head = position_max_head - position_min_head + 1;
+	position_total_tail = position_max_tail - position_min_tail + 1;
+
+	std::cout << "position_total_head: " << position_total_head << std::endl 
+			  << "position_total_tail: " << position_total_tail << std::endl;
 }
 
-REAL calc_tanh(REAL con) {
-	if (con > 20) return 1.0;
-	if (con < -20) return -1.0;
-	REAL sinhx = exp(con) - exp(-con);
-	REAL coshx = exp(con) + exp(-con);
+// 计算双曲正切函数（tanh）
+REAL calc_tanh(REAL value) {
+	if (value > 20) return 1.0;
+	if (value < -20) return -1.0;
+	REAL sinhx = exp(value) - exp(-value);
+	REAL coshx = exp(value) + exp(-value);
 	return sinhx / coshx;
 }
 
@@ -291,7 +310,7 @@ INT get_rand(INT l,INT r) {
 	INT len = r - l;
 	INT res = rand()*rand() % len;
 	if (res < 0)
-		res+=len;
+		res += len;
 	return res + l;
 }
 

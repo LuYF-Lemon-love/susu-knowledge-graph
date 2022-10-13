@@ -22,8 +22,8 @@ void preprocess()
 	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
 	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
-	positionVecE1 = (REAL *)calloc(PositionTotalE1 * dimensionWPE, sizeof(REAL));
-	positionVecE2 = (REAL *)calloc(PositionTotalE2 * dimensionWPE, sizeof(REAL));
+	positionVecE1 = (REAL *)calloc(position_total_head * dimensionWPE, sizeof(REAL));
+	positionVecE2 = (REAL *)calloc(position_total_tail * dimensionWPE, sizeof(REAL));
 	
 	matrixW1 = (REAL*)calloc(dimensionC * dimension * window, sizeof(REAL));
 	matrixW1PositionE1 = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
@@ -63,12 +63,12 @@ void preprocess()
 	fclose(fout);
 
 	fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "r");
-	fscanf(fout,"%d%d%d", &PositionTotalE1, &PositionTotalE2, &dimensionWPE);
-	for (INT i = 0; i < PositionTotalE1; i++) {
+	fscanf(fout,"%d%d%d", &position_total_head, &position_total_tail, &dimensionWPE);
+	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimensionWPE; j++)
 			fscanf(fout, "%f", &positionVecE1[i * dimensionWPE + j]);
 	}
-	for (INT i = 0; i < PositionTotalE2; i++) {
+	for (INT i = 0; i < position_total_tail; i++) {
 		for (INT j = 0; j < dimensionWPE; j++)
 			fscanf(fout, "%f", &positionVecE2[i * dimensionWPE + j]);
 	}

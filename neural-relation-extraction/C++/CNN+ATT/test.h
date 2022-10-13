@@ -7,7 +7,7 @@
 INT tipp = 0;
 REAL ress = 0;
 
-vector<double> test(INT *sentence, INT *testPositionE1, INT *testPositionE2, INT len, REAL *r) {
+vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_tail, INT len, REAL *r) {
 	INT tip[dimensionC];
 		
 	for (INT i = 0; i < dimensionC; i++) {
@@ -24,8 +24,8 @@ vector<double> test(INT *sentence, INT *testPositionE1, INT *testPositionE2, INT
 			 		res += matrixW1[last + tot] * word_vec[last1+k];
 			 		tot++;
 			 	}
-			 	INT last2 = testPositionE1[j] * dimensionWPE;
-			 	INT last3 = testPositionE2[j] * dimensionWPE;
+			 	INT last2 = test_position_head[j] * dimensionWPE;
+			 	INT last3 = test_position_tail[j] * dimensionWPE;
 			 	for (INT k = 0; k < dimensionWPE; k++) {
 			 		res += matrixW1PositionE1[lastt + tot1] * positionVecE1[last2+k];
 			 		res += matrixW1PositionE2[lastt + tot1] * positionVecE2[last3+k];
@@ -78,7 +78,7 @@ void output(pair<double,INT> a)
 	std::cout<<"weight:\t"<<a.first<<' ';
 	INT i = a.second;
 	for (INT j=0; j<test_length[i]; j++)
-		std::cout<<id2word[testtrainLists[i][j]]<<' ';
+		std::cout<<id2word[test_sentence_list[i][j]]<<' ';
 	std::cout<<std::endl;
 }
 
@@ -111,7 +111,7 @@ void* testMode(void *id )
 			INT i = bags_test[b[ii]][k];
 			ok[test_relation_list[i]]=1;
 			{
-				vector<double> score = test(testtrainLists[i],  testPositionE1[i], testPositionE2[i], test_length[i], r);
+				vector<double> score = test(test_sentence_list[i],  test_position_head[i], test_position_tail[i], test_length[i], r);
 				vector<double> r_tmp;
 				for (INT j = 0; j < dimensionC; j++)
 					r_tmp.push_back(r[j]);
@@ -266,13 +266,13 @@ void test() {
 		fclose(fout);
 
 		fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\t%d\n", PositionTotalE1, PositionTotalE2, dimensionWPE);
-		for (INT i = 0; i < PositionTotalE1; i++) {
+		fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimensionWPE);
+		for (INT i = 0; i < position_total_head; i++) {
 			for (INT j = 0; j < dimensionWPE; j++)
 				fprintf(fout, "%f\t", positionVecE1[i * dimensionWPE + j]);
 			fprintf(fout, "\n");
 		}
-		for (INT i = 0; i < PositionTotalE2; i++) {
+		for (INT i = 0; i < position_total_tail; i++) {
 			for (INT j = 0; j < dimensionWPE; j++)
 				fprintf(fout, "%f\t", positionVecE2[i * dimensionWPE + j]);
 			fprintf(fout, "\n");
