@@ -15,33 +15,33 @@
 
 using namespace std;
 
-string version = "";
+std::string version = "";
 
-int output_model = 0;
-int num_threads = 32;
-int trainTimes = 1;
-float alpha = 0.02;
-float reduce = 0.98;
-int dimensionC = 230;
-int dimensionWPE = 5;
-int window = 3;
-int limit = 30;
-float *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
-float *wordVecDao;
-float *positionVecE1, *positionVecE2, *matrixW1PositionE1, *matrixW1PositionE2;
-float *matrixW1PositionE1Dao;
-float *matrixW1PositionE2Dao;
-float *positionVecDaoE1;
-float *positionVecDaoE2;
-float *matrixW1Dao;
-float *matrixB1Dao;
+INT output_model = 0;
+INT num_threads = 32;
+INT trainTimes = 1;
+REAL alpha = 0.02;
+REAL reduce = 0.98;
+INT dimensionC = 230;
+INT dimensionWPE = 5;
+INT window = 3;
+INT limit = 30;
+REAL *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
+REAL *wordVecDao;
+REAL *positionVecE1, *positionVecE2, *matrixW1PositionE1, *matrixW1PositionE2;
+REAL *matrixW1PositionE1Dao;
+REAL *matrixW1PositionE2Dao;
+REAL *positionVecDaoE1;
+REAL *positionVecDaoE2;
+REAL *matrixW1Dao;
+REAL *matrixB1Dao;
 
-vector<vector<vector<float> > > att_W, att_W_Dao;
+std::vector<std::vector<std::vector<REAL> > > att_W, att_W_Dao;
 double mx = 0;
-int batch = 16;
-int npoch;
-int len;
-float rate = 1;
+INT batch = 16;
+INT npoch;
+INT len;
+REAL rate = 1;
 
 // word_total: 词汇总数, 包括 "UNK"
 // dimension: 词嵌入维度
@@ -55,20 +55,20 @@ REAL *word_vec;
 vector<std::string> id2word;
 std::map<std::string, INT> word2id;
 
-int  PositionMinE1, PositionMaxE1, PositionTotalE1,PositionMinE2, PositionMaxE2, PositionTotalE2;
+INT PositionMinE1, PositionMaxE1, PositionTotalE1,PositionMinE2, PositionMaxE2, PositionTotalE2;
 
 
 
-map<string,int> relationMapping;
-vector<int *> trainLists, trainPositionE1, trainPositionE2;
-vector<int> trainLength;
-vector<int> headList, tailList, relationList;
-vector<int *> testtrainLists, testPositionE1, testPositionE2;
-vector<int> testtrainLength;
-vector<int> testheadList, testtailList, testrelationList;
-vector<std::string> nam;
+std::map<std::string,INT> relationMapping;
+std::vector<INT *> trainLists, trainPositionE1, trainPositionE2;
+std::vector<INT> trainLength;
+std::vector<INT> headList, tailList, relationList;
+std::vector<INT *> testtrainLists, testPositionE1, testPositionE2;
+std::vector<INT> testtrainLength;
+std::vector<INT> testheadList, testtailList, testrelationList;
+std::vector<std::string> nam;
 
-map<string,vector<int> > bags_train, bags_test;
+std::map<std::string, std::vector<INT> > bags_train, bags_test;
 
 void init() {
 
@@ -87,7 +87,7 @@ void init() {
 	PositionMinE2 = 0;
 	PositionMaxE2 = 0;
 
-	word_vec = (float *)malloc((word_total+1) * dimension * sizeof(float));
+	word_vec = (REAL *)malloc((word_total+1) * dimension * sizeof(REAL));
 	id2word.resize(word_total + 1);
 	id2word[0] = "UNK";
 	word2id["UNK"] = 0;
@@ -106,7 +106,7 @@ void init() {
 
 		REAL sum = 0;
 		for (INT a = 0; a < dimension; a++) {
-			fread(&word_vec[a + last], sizeof(float), 1, f);
+			tmp = fread(&word_vec[a + last], sizeof(REAL), 1, f);
 			sum += word_vec[a + last] * word_vec[a + last];
 		}
 		sum = sqrt(sum);
@@ -123,7 +123,7 @@ void init() {
 	char buffer[1000];
 	f = fopen("../data/RE/relation2id.txt", "r");
 	while (fscanf(f,"%s",buffer)==1) {
-		int id;
+		INT id;
 		fscanf(f,"%d",&id);
 		relationMapping[(string)(buffer)] = id;
 		relationTotal++;
@@ -137,21 +137,21 @@ void init() {
 		fscanf(f,"%s",buffer);
 		fscanf(f,"%s",buffer);
 		string head_s = (string)(buffer);
-		int head = word2id[(string)(buffer)];
+		INT head = word2id[(string)(buffer)];
 		string e1 = buffer;
 		fscanf(f,"%s",buffer);
-		int tail = word2id[(string)(buffer)];
+		INT tail = word2id[(string)(buffer)];
 		string e2 = buffer;
 		string tail_s = (string)(buffer);
 		fscanf(f,"%s",buffer);
 		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(headList.size());
-		int num = relationMapping[(string)(buffer)];
-		int len = 0, lefnum = 0, rignum = 0;
-		std::vector<int> tmpp;
+		INT num = relationMapping[(string)(buffer)];
+		INT len = 0, lefnum = 0, rignum = 0;
+		std::vector<INT> tmpp;
 		while (fscanf(f,"%s", buffer)==1) {
 			std::string con = buffer;
 			if (con=="###END###") break;
-			int gg = word2id[con];
+			INT gg = word2id[con];
 			if (con == head_s) lefnum = len;
 			if (con == tail_s) rignum = len;
 			len++;
@@ -161,10 +161,10 @@ void init() {
 		tailList.push_back(tail);
 		relationList.push_back(num);
 		trainLength.push_back(len);
-		int *con=(int *)calloc(len,sizeof(int));
-		int *conl=(int *)calloc(len,sizeof(int));
-		int *conr=(int *)calloc(len,sizeof(int));
-		for (int i = 0; i < len; i++) {
+		INT *con=(INT *)calloc(len,sizeof(INT));
+		INT *conl=(INT *)calloc(len,sizeof(INT));
+		INT *conr=(INT *)calloc(len,sizeof(INT));
+		for (INT i = 0; i < len; i++) {
 			con[i] = tmpp[i];
 			conl[i] = lefnum - i;
 			conr[i] = rignum - i;
@@ -188,21 +188,21 @@ void init() {
 		fscanf(f,"%s",buffer);
 		fscanf(f,"%s",buffer);
 		string head_s = (string)(buffer);
-		int head = word2id[(string)(buffer)];
+		INT head = word2id[(string)(buffer)];
 		string e1 = buffer;
 		fscanf(f,"%s",buffer);
 		string tail_s = (string)(buffer);
 		string e2 = buffer;
 		bags_test[e1+"\t"+e2].push_back(testheadList.size());
-		int tail = word2id[(string)(buffer)];
+		INT tail = word2id[(string)(buffer)];
 		fscanf(f,"%s",buffer);
-		int num = relationMapping[(string)(buffer)];
-		int len = 0 , lefnum = 0, rignum = 0;
-		std::vector<int> tmpp;
+		INT num = relationMapping[(string)(buffer)];
+		INT len = 0 , lefnum = 0, rignum = 0;
+		std::vector<INT> tmpp;
 		while (fscanf(f,"%s", buffer)==1) {
 			std::string con = buffer;
 			if (con=="###END###") break;
-			int gg = word2id[con];
+			INT gg = word2id[con];
 			if (head_s == con) lefnum = len;
 			if (tail_s == con) rignum = len;
 			len++;
@@ -212,10 +212,10 @@ void init() {
 		testtailList.push_back(tail);
 		testrelationList.push_back(num);
 		testtrainLength.push_back(len);
-		int *con=(int *)calloc(len,sizeof(int));
-		int *conl=(int *)calloc(len,sizeof(int));
-		int *conr=(int *)calloc(len,sizeof(int));
-		for (int i = 0; i < len; i++) {
+		INT *con=(INT *)calloc(len,sizeof(INT));
+		INT *conl=(INT *)calloc(len,sizeof(INT));
+		INT *conr=(INT *)calloc(len,sizeof(INT));
+		for (INT i = 0; i < len; i++) {
 			con[i] = tmpp[i];
 			conl[i] = lefnum - i;
 			conr[i] = rignum - i;
@@ -235,72 +235,72 @@ void init() {
 	fclose(f);
 	cout<<PositionMinE1<<' '<<PositionMaxE1<<' '<<PositionMinE2<<' '<<PositionMaxE2<<endl;
 
-	for (int i = 0; i < trainPositionE1.size(); i++) {
-		int len = trainLength[i];
-		int *work1 = trainPositionE1[i];
-		for (int j = 0; j < len; j++)
+	for (INT i = 0; i < trainPositionE1.size(); i++) {
+		INT len = trainLength[i];
+		INT *work1 = trainPositionE1[i];
+		for (INT j = 0; j < len; j++)
 			work1[j] = work1[j] - PositionMinE1;
-		int *work2 = trainPositionE2[i];
-		for (int j = 0; j < len; j++)
+		INT *work2 = trainPositionE2[i];
+		for (INT j = 0; j < len; j++)
 			work2[j] = work2[j] - PositionMinE2;
 	}
 
-	for (int i = 0; i < testPositionE1.size(); i++) {
-		int len = testtrainLength[i];
-		int *work1 = testPositionE1[i];
-		for (int j = 0; j < len; j++)
+	for (INT i = 0; i < testPositionE1.size(); i++) {
+		INT len = testtrainLength[i];
+		INT *work1 = testPositionE1[i];
+		for (INT j = 0; j < len; j++)
 			work1[j] = work1[j] - PositionMinE1;
-		int *work2 = testPositionE2[i];
-		for (int j = 0; j < len; j++)
+		INT *work2 = testPositionE2[i];
+		for (INT j = 0; j < len; j++)
 			work2[j] = work2[j] - PositionMinE2;
 	}
 	PositionTotalE1 = PositionMaxE1 - PositionMinE1 + 1;
 	PositionTotalE2 = PositionMaxE2 - PositionMinE2 + 1;
 }
 
-float CalcTanh(float con) {
+REAL CalcTanh(REAL con) {
 	if (con > 20) return 1.0;
 	if (con < -20) return -1.0;
-	float sinhx = exp(con) - exp(-con);
-	float coshx = exp(con) + exp(-con);
+	REAL sinhx = exp(con) - exp(-con);
+	REAL coshx = exp(con) + exp(-con);
 	return sinhx / coshx;
 }
 
-float tanhDao(float con) {
-	float res = CalcTanh(con);
+REAL tanhDao(REAL con) {
+	REAL res = CalcTanh(con);
 	return 1 - res * res;
 }
 
-float sigmod(float con) {
+REAL sigmod(REAL con) {
 	if (con > 20) return 1.0;
 	if (con < -20) return 0.0;
 	con = exp(con);
 	return con / (1 + con);
 }
 
-int getRand(int l,int r) {
-	int len = r - l;
-	int res = rand()*rand() % len;
+INT getRand(INT l,INT r) {
+	INT len = r - l;
+	INT res = rand()*rand() % len;
 	if (res < 0)
 		res+=len;
 	return res + l;
 }
 
-float getRandU(float l, float r) {
-	float len = r - l;
-	float res = (float)(rand()) / RAND_MAX;
+REAL getRandU(REAL l, REAL r) {
+	REAL len = r - l;
+	REAL res = (REAL)(rand()) / RAND_MAX;
 	return res * len + l;
 }
 
-void norm(float* a, int ll, int rr)
+void norm(REAL* a, INT ll, INT rr)
 {
-	float tmp = 0;
-	for (int i=ll; i<rr; i++)
+	REAL tmp = 0;
+	for (INT i=ll; i<rr; i++)
 		tmp+=a[i]*a[i];
 	if (tmp>1)
 	{
 		tmp = sqrt(tmp);
-		for (int i=ll; i<rr; i++)
+		for (INT i=ll; i<rr; i++)
 			a[i]/=tmp;
 	}
 }
@@ -308,12 +308,12 @@ void norm(float* a, int ll, int rr)
 void norm(vector<double> &a)
 {
 	double tmp = 0;
-	for (int i=0; i<a.size(); i++)
+	for (INT i=0; i<a.size(); i++)
 		tmp+=a[i];
 	//if (tmp>1)
 	{
 	//	tmp = sqrt(tmp);
-		for (int i=0; i<a.size(); i++)
+		for (INT i=0; i<a.size(); i++)
 			a[i]/=tmp;
 	}
 }

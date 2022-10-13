@@ -18,35 +18,35 @@
 void preprocess()
 {
 
-	matrixRelation = (float *)calloc(dimensionC * relationTotal, sizeof(float));
-	matrixRelationPr = (float *)calloc(relationTotal, sizeof(float));
-	matrixRelationPrDao = (float *)calloc(relationTotal, sizeof(float));
-	wordVecDao = (float *)calloc(dimension * word_total, sizeof(float));
-	positionVecE1 = (float *)calloc(PositionTotalE1 * dimensionWPE, sizeof(float));
-	positionVecE2 = (float *)calloc(PositionTotalE2 * dimensionWPE, sizeof(float));
+	matrixRelation = (REAL *)calloc(dimensionC * relationTotal, sizeof(REAL));
+	matrixRelationPr = (REAL *)calloc(relationTotal, sizeof(REAL));
+	matrixRelationPrDao = (REAL *)calloc(relationTotal, sizeof(REAL));
+	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
+	positionVecE1 = (REAL *)calloc(PositionTotalE1 * dimensionWPE, sizeof(REAL));
+	positionVecE2 = (REAL *)calloc(PositionTotalE2 * dimensionWPE, sizeof(REAL));
 	
-	matrixW1 = (float*)calloc(dimensionC * dimension * window, sizeof(float));
-	matrixW1PositionE1 = (float *)calloc(dimensionC * dimensionWPE * window, sizeof(float));
-	matrixW1PositionE2 = (float *)calloc(dimensionC * dimensionWPE * window, sizeof(float));
-	matrixB1 = (float*)calloc(dimensionC, sizeof(float));
+	matrixW1 = (REAL*)calloc(dimensionC * dimension * window, sizeof(REAL));
+	matrixW1PositionE1 = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
+	matrixW1PositionE2 = (REAL *)calloc(dimensionC * dimensionWPE * window, sizeof(REAL));
+	matrixB1 = (REAL*)calloc(dimensionC, sizeof(REAL));
 	
 	att_W.resize(relationTotal);
-	for (int i=0; i<relationTotal; i++)
+	for (INT i=0; i<relationTotal; i++)
 	{
 		att_W[i].resize(dimensionC);
-		for (int j=0; j<dimensionC; j++)
+		for (INT j=0; j<dimensionC; j++)
 			att_W[i][j].resize(dimensionC);
 	}
 	version = "";
 	
 	FILE *fout = fopen(("./out/matrixW1+B1.txt"+version).c_str(), "r");
 	fscanf(fout,"%d%d%d%d", &dimensionC, &dimension, &window, &dimensionWPE);
-	for (int i = 0; i < dimensionC; i++) {
-		for (int j = 0; j < dimension * window; j++)
+	for (INT i = 0; i < dimensionC; i++) {
+		for (INT j = 0; j < dimension * window; j++)
 			fscanf(fout, "%f", &matrixW1[i* dimension*window+j]);
-		for (int j = 0; j < dimensionWPE * window; j++)
+		for (INT j = 0; j < dimensionWPE * window; j++)
 			fscanf(fout, "%f", &matrixW1PositionE1[i* dimensionWPE*window+j]);
-		for (int j = 0; j < dimensionWPE * window; j++)
+		for (INT j = 0; j < dimensionWPE * window; j++)
 			fscanf(fout, "%f", &matrixW1PositionE2[i* dimensionWPE*window+j]);
 		fscanf(fout, "%f", &matrixB1[i]);
 	}
@@ -54,47 +54,47 @@ void preprocess()
 
 	fout = fopen(("./out/matrixRl.txt"+version).c_str(), "r");
 	fscanf(fout,"%d%d", &relationTotal, &dimensionC);
-	for (int i = 0; i < relationTotal; i++) {
-		for (int j = 0; j < dimensionC; j++)
+	for (INT i = 0; i < relationTotal; i++) {
+		for (INT j = 0; j < dimensionC; j++)
 			fscanf(fout, "%f", &matrixRelation[i * dimensionC + j]);
 	}
-	for (int i = 0; i < relationTotal; i++) 
+	for (INT i = 0; i < relationTotal; i++) 
 		fscanf(fout, "%f", &matrixRelationPr[i]);
 	fclose(fout);
 
 	fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "r");
 	fscanf(fout,"%d%d%d", &PositionTotalE1, &PositionTotalE2, &dimensionWPE);
-	for (int i = 0; i < PositionTotalE1; i++) {
-		for (int j = 0; j < dimensionWPE; j++)
+	for (INT i = 0; i < PositionTotalE1; i++) {
+		for (INT j = 0; j < dimensionWPE; j++)
 			fscanf(fout, "%f", &positionVecE1[i * dimensionWPE + j]);
 	}
-	for (int i = 0; i < PositionTotalE2; i++) {
-		for (int j = 0; j < dimensionWPE; j++)
+	for (INT i = 0; i < PositionTotalE2; i++) {
+		for (INT j = 0; j < dimensionWPE; j++)
 			fscanf(fout, "%f", &positionVecE2[i * dimensionWPE + j]);
 	}
 	fclose(fout);
 
 	fout = fopen(("./out/word2vec.txt"+version).c_str(), "r");
 	fscanf(fout,"%d%d",&word_total,&dimension);
-	for (int i = 0; i < word_total; i++)
+	for (INT i = 0; i < word_total; i++)
 	{
-		for (int j=0; j<dimension; j++)
+		for (INT j=0; j<dimension; j++)
 			fscanf(fout,"%f", &word_vec[i*dimension+j]);
 	}
 	fclose(fout);
 	fout = fopen(("./out/att_W.txt"+version).c_str(), "r");
 	fscanf(fout,"%d%d", &relationTotal, &dimensionC);
-	for (int r1 = 0; r1 < relationTotal; r1++) {
-		for (int i = 0; i < dimensionC; i++)
+	for (INT r1 = 0; r1 < relationTotal; r1++) {
+		for (INT i = 0; i < dimensionC; i++)
 		{
-			for (int j = 0; j < dimensionC; j++)
+			for (INT j = 0; j < dimensionC; j++)
 				fscanf(fout, "%f", &att_W[r1][i][j]);
 		}
 	}
 	fclose(fout);
 }
 
-int main()
+INT main()
 {
 	init();
 	preprocess();
