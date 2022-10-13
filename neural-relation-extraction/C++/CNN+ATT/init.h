@@ -16,8 +16,8 @@ string version = "";
 
 int output_model = 0;
 
-int num_threads = 10;
-int trainTimes = 15;
+int num_threads = 32;
+int trainTimes = 1;
 float alpha = 0.02;
 float reduce = 0.98;
 int tt,tt1;
@@ -30,11 +30,8 @@ float marginNegative = 0.5;
 float margin = 2;
 float Belt = 0.001;
 float *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
-float *matrixB1_egs, *matrixRelation_egs, *matrixW1_egs, *matrixRelationPr_egs;
-float *matrixB1_exs, *matrixRelation_exs, *matrixW1_exs, *matrixRelationPr_exs;
 float *wordVecDao,*wordVec_egs,*wordVec_exs;
 float *positionVecE1, *positionVecE2, *matrixW1PositionE1, *matrixW1PositionE2;
-float *positionVecE1_egs, *positionVecE2_egs, *matrixW1PositionE1_egs, *matrixW1PositionE2_egs, *positionVecE1_exs, *positionVecE2_exs, *matrixW1PositionE1_exs, *matrixW1PositionE2_exs;
 float *matrixW1PositionE1Dao;
 float *matrixW1PositionE2Dao;
 float *positionVecDaoE1;
@@ -48,7 +45,6 @@ int batch = 16;
 int npoch;
 int len;
 float rate = 1;
-FILE *logg;
 
 float *wordVec;
 int wordTotal, dimension, relationTotal;

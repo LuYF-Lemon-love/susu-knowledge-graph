@@ -26,14 +26,12 @@ long start,end;
 void time_begin()
 {
   
-  gettimeofday(&t_start, NULL); 
-  start = ((long)t_start.tv_sec)*1000+(long)t_start.tv_usec/1000; 
+  gettimeofday(&t_start, NULL);
 }
 void time_end()
 {
-  gettimeofday(&t_end, NULL); 
-  end = ((long)t_end.tv_sec)*1000+(long)t_end.tv_usec/1000; 
-  cout<<"time(s):\t"<<(double(end)-double(start))/1000<<endl;
+  gettimeofday(&t_end, NULL);
+  cout<<"time(s):\t"<<(double(((long)t_end.tv_sec)*1000+(long)t_end.tv_usec/1000)-double(((long)t_start.tv_sec)*1000+(long)t_start.tv_usec/1000))/1000<<endl;
 }
 
 
@@ -419,7 +417,6 @@ void train() {
 
 int main(int argc, char ** argv) {
 	output_model = 1;
-	logg = fopen("log.txt","w");
 	cout<<"Init Begin."<<endl;
 	init();
 	//for (map<string,vector<int> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)
@@ -427,5 +424,4 @@ int main(int argc, char ** argv) {
 	cout<<bags_train.size()<<' '<<bags_test.size()<<endl;
 	cout<<"Init End."<<endl;
 	train();
-	fclose(logg);
 }
