@@ -133,10 +133,10 @@ void init() {
 	// 读取训练文件 (train.txt)
 	f = fopen("../data/RE/train.txt", "r");
 	while (fscanf(f,"%s",buffer)==1)  {
-		fscanf(f,"%s",buffer);
-		fscanf(f,"%s",buffer);
+		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f,"%s",buffer);
 		string head_s = (string)(buffer);
-		INT head = word2id[(string)(buffer)];
+		INT head_id = word2id[(string)(buffer)];
 		string e1 = buffer;
 		fscanf(f,"%s",buffer);
 		INT tail = word2id[(string)(buffer)];
@@ -156,7 +156,7 @@ void init() {
 			len++;
 			tmpp.push_back(gg);
 		}
-		headList.push_back(head);
+		headList.push_back(head_id);
 		tailList.push_back(tail);
 		relationList.push_back(num);
 		trainLength.push_back(len);
@@ -187,7 +187,7 @@ void init() {
 		fscanf(f,"%s",buffer);
 		fscanf(f,"%s",buffer);
 		string head_s = (string)(buffer);
-		INT head = word2id[(string)(buffer)];
+		INT head_id = word2id[(string)(buffer)];
 		string e1 = buffer;
 		fscanf(f,"%s",buffer);
 		string tail_s = (string)(buffer);
@@ -207,7 +207,7 @@ void init() {
 			len++;
 			tmpp.push_back(gg);
 		}
-		testheadList.push_back(head);
+		testheadList.push_back(head_id);
 		testtailList.push_back(tail);
 		testrelationList.push_back(num);
 		testtrainLength.push_back(len);
@@ -257,7 +257,7 @@ void init() {
 	PositionTotalE2 = PositionMaxE2 - PositionMinE2 + 1;
 }
 
-REAL CalcTanh(REAL con) {
+REAL calc_tanh(REAL con) {
 	if (con > 20) return 1.0;
 	if (con < -20) return -1.0;
 	REAL sinhx = exp(con) - exp(-con);
@@ -265,19 +265,7 @@ REAL CalcTanh(REAL con) {
 	return sinhx / coshx;
 }
 
-REAL tanhDao(REAL con) {
-	REAL res = CalcTanh(con);
-	return 1 - res * res;
-}
-
-REAL sigmod(REAL con) {
-	if (con > 20) return 1.0;
-	if (con < -20) return 0.0;
-	con = exp(con);
-	return con / (1 + con);
-}
-
-INT getRand(INT l,INT r) {
+INT get_rand(INT l,INT r) {
 	INT len = r - l;
 	INT res = rand()*rand() % len;
 	if (res < 0)
@@ -285,37 +273,10 @@ INT getRand(INT l,INT r) {
 	return res + l;
 }
 
-REAL getRandU(REAL l, REAL r) {
+REAL get_rand_u(REAL l, REAL r) {
 	REAL len = r - l;
 	REAL res = (REAL)(rand()) / RAND_MAX;
 	return res * len + l;
 }
-
-void norm(REAL* a, INT ll, INT rr)
-{
-	REAL tmp = 0;
-	for (INT i=ll; i<rr; i++)
-		tmp+=a[i]*a[i];
-	if (tmp>1)
-	{
-		tmp = sqrt(tmp);
-		for (INT i=ll; i<rr; i++)
-			a[i]/=tmp;
-	}
-}
-
-void norm(vector<double> &a)
-{
-	double tmp = 0;
-	for (INT i=0; i<a.size(); i++)
-		tmp+=a[i];
-	//if (tmp>1)
-	{
-	//	tmp = sqrt(tmp);
-		for (INT i=0; i<a.size(); i++)
-			a[i]/=tmp;
-	}
-}
-
 
 #endif

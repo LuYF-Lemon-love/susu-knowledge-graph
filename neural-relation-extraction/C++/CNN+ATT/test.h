@@ -38,7 +38,7 @@ vector<double> test(INT *sentence, INT *testPositionE1, INT *testPositionE2, INT
 	}
 
 	for (INT i = 0; i < dimensionC; i++)
-		r[i] = CalcTanh(r[i]);
+		r[i] = calc_tanh(r[i]);
 	vector<double> res;
 	double tmp = 0;
 	for (INT j = 0; j < relation_total; j++) {

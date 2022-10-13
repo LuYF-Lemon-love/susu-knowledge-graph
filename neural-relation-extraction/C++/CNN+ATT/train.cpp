@@ -71,7 +71,7 @@ vector<REAL> train(INT *sentence, INT *trainPositionE1, INT *trainPositionE2, IN
 	}
 
 	for (INT i = 0; i < dimensionC; i++) {
-		r[i] = CalcTanh(r[i]);
+		r[i] = calc_tanh(r[i]);
 	}
 	return r;
 }
@@ -262,7 +262,7 @@ void* trainMode(void *id ) {
 			score_tmp+=1;
 		//	std::cout<<score_tmp<<' '<<score_max<<std::endl;
 			pthread_mutex_unlock (&mutex1);
-			INT j = getRand(0, c_train.size());
+			INT j = get_rand(0, c_train.size());
 			//std::cout<<j<<'|';
 			j = c_train[j];
 			//std::cout<<j<<'|';
@@ -316,30 +316,30 @@ void train() {
 	for (INT i = 0; i < dimensionC; i++) {
 		INT last = i * window * dimension;
 		for (INT j = dimension * window - 1; j >=0; j--)
-			matrixW1[last + j] = getRandU(-con1, con1);
+			matrixW1[last + j] = get_rand_u(-con1, con1);
 		last = i * window * dimensionWPE;
 		REAL tmp1 = 0;
 		REAL tmp2 = 0;
 		for (INT j = dimensionWPE * window - 1; j >=0; j--) {
-			matrixW1PositionE1[last + j] = getRandU(-con1, con1);
+			matrixW1PositionE1[last + j] = get_rand_u(-con1, con1);
 			tmp1 += matrixW1PositionE1[last + j]  * matrixW1PositionE1[last + j] ;
-			matrixW1PositionE2[last + j] = getRandU(-con1, con1);
+			matrixW1PositionE2[last + j] = get_rand_u(-con1, con1);
 			tmp2 += matrixW1PositionE2[last + j]  * matrixW1PositionE2[last + j] ;
 		}
-		matrixB1[i] = getRandU(-con1, con1);
+		matrixB1[i] = get_rand_u(-con1, con1);
 	}
 
 	for (INT i = 0; i < relation_total; i++) 
 	{
-		matrixRelationPr[i] = getRandU(-con, con);				//add
+		matrixRelationPr[i] = get_rand_u(-con, con);				//add
 		for (INT j = 0; j < dimensionC; j++)
-			matrixRelation[i * dimensionC + j] = getRandU(-con, con);
+			matrixRelation[i * dimensionC + j] = get_rand_u(-con, con);
 	}
 
 	for (INT i = 0; i < PositionTotalE1; i++) {
 		REAL tmp = 0;
 		for (INT j = 0; j < dimensionWPE; j++) {
-			positionVecE1[i * dimensionWPE + j] = getRandU(-con1, con1);
+			positionVecE1[i * dimensionWPE + j] = get_rand_u(-con1, con1);
 			tmp += positionVecE1[i * dimensionWPE + j] * positionVecE1[i * dimensionWPE + j];
 		}
 	}
@@ -347,7 +347,7 @@ void train() {
 	for (INT i = 0; i < PositionTotalE2; i++) {
 		REAL tmp = 0;
 		for (INT j = 0; j < dimensionWPE; j++) {
-			positionVecE2[i * dimensionWPE + j] = getRandU(-con1, con1);
+			positionVecE2[i * dimensionWPE + j] = get_rand_u(-con1, con1);
 			tmp += positionVecE2[i * dimensionWPE + j] * positionVecE2[i * dimensionWPE + j];
 		}
 	}
