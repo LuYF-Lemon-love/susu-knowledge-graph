@@ -65,21 +65,26 @@ std::map<std::string, INT> relation2id;
 
 INT PositionMinE1, PositionMaxE1, PositionTotalE1,PositionMinE2, PositionMaxE2, PositionTotalE2;
 
-// head_list: 保存训练集每个句子的头实体 id, 按照训练文件句子的读取顺序排列
-// tail_list: 保存训练集每个句子的尾实体 id, 按照训练文件句子的读取顺序排列
-// relation_list: 保存训练集每个句子的关系 id, 按照训练文件句子的读取顺序排列
+// train_head_list: 保存训练集每个句子的头实体 id, 按照训练文件句子的读取顺序排列
+// train_tail_list: 保存训练集每个句子的尾实体 id, 按照训练文件句子的读取顺序排列
+// train_relation_list: 保存训练集每个句子的关系 id, 按照训练文件句子的读取顺序排列
 // train_length: 保存训练集每个句子的单词个数, 按照训练文件句子的读取顺序排列
 // train_sentence_list: 保存训练集中的句子, 按照训练文件句子的读取顺序排列
 // train_position_head: 保存训练集每个句子的每个单词相对头实体的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
 // train_position_tail: 保存训练集每个句子的每个单词相对尾实体的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
-std::vector<INT> head_list, tail_list, relation_list;
+std::vector<INT> train_head_list, train_tail_list, train_relation_list;
 std::vector<INT> train_length;
 std::vector<INT *> train_sentence_list, train_position_head, train_position_tail;
 
-
+// test_head_list: 保存测试集每个句子的头实体 id, 按照测试文件句子的读取顺序排列
+// test_tail_list: 保存测试集每个句子的尾实体 id, 按照测试文件句子的读取顺序排列
+// test_relation_list: 保存测试集每个句子的关系 id, 按照测试文件句子的读取顺序排列
+// test_length: 保存测试集每个句子的单词个数, 按照测试文件句子的读取顺序排列
+std::vector<INT> test_head_list, test_tail_list, test_relation_list;
+std::vector<INT> test_length;
 std::vector<INT *> testtrainLists, testPositionE1, testPositionE2;
-std::vector<INT> testtrainLength;
-std::vector<INT> testheadList, testtailList, testrelationList;
+
+
 
 std::map<std::string, std::vector<INT> > bags_train, bags_test;
 
@@ -93,12 +98,6 @@ void init() {
 	tmp = fscanf(f, "%d", &dimension);
 	std::cout << "word_total (exclude \"UNK\") = " << word_total << std::endl;
 	std::cout << "word dimension = " << dimension << std::endl;
-
-	PositionMinE1 = 0;
-	PositionMaxE1 = 0;
-	PositionMinE2 = 0;
-	PositionMaxE2 = 0;
-
 	word_vec = (REAL *)malloc((word_total+1) * dimension * sizeof(REAL));
 	id2word.resize(word_total + 1);
 	id2word[0] = "UNK";
@@ -139,6 +138,10 @@ void init() {
 	std::cout << "relation_total: " << relation_total << std::endl;
 	
 	// 读取训练文件 (train.txt)
+	PositionMinE1 = 0;
+	PositionMaxE1 = 0;
+	PositionMinE2 = 0;
+	PositionMaxE2 = 0;
 	f = fopen("../data/RE/train.txt", "r");
 	while (fscanf(f,"%s",buffer)==1)  {
 		std::string e1 = buffer;
@@ -153,7 +156,7 @@ void init() {
 		INT tail_id = word2id[tail_s];
 			
 		tmp = fscanf(f,"%s",buffer);
-		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(head_list.size());
+		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(train_head_list.size());
 		INT relation_id = relation2id[(string)(buffer)];
 
 		INT len_s = 0, head_pos = 0, tail_pos = 0;
@@ -168,9 +171,9 @@ void init() {
 			sentence.push_back(word_id);
 		}
 
-		head_list.push_back(head_id);
-		tail_list.push_back(tail_id);
-		relation_list.push_back(relation_id);
+		train_head_list.push_back(head_id);
+		train_tail_list.push_back(tail_id);
+		train_relation_list.push_back(relation_id);
 		train_length.push_back(len_s);
 		
 		INT *sentence_ptr = (INT *)calloc(len_s, sizeof(INT));
@@ -196,35 +199,40 @@ void init() {
 	}
 	fclose(f);
 
+	// 读取测试文件 (test.txt)
 	f = fopen("../data/RE/test.txt", "r");	
 	while (fscanf(f,"%s",buffer)==1)  {
-		fscanf(f,"%s",buffer);
-		fscanf(f,"%s",buffer);
-		string head_s = (string)(buffer);
-		INT head_id = word2id[(string)(buffer)];
-		string e1 = buffer;
-		fscanf(f,"%s",buffer);
-		string tail_s = (string)(buffer);
-		string e2 = buffer;
-		bags_test[e1+"\t"+e2].push_back(testheadList.size());
-		INT tail_id = word2id[(string)(buffer)];
-		fscanf(f,"%s",buffer);
+		std::string e1 = buffer;
+		tmp = fscanf(f,"%s",buffer);
+		std::string e2 = buffer;
+
+		tmp = fscanf(f,"%s",buffer);
+		std::string head_s = (string)(buffer);
+		INT head_id = word2id[head_s];
+		tmp = fscanf(f,"%s",buffer);
+		std::string tail_s = (string)(buffer);
+		INT tail_id = word2id[tail_s];
+
+		tmp = fscanf(f,"%s",buffer);
+		bags_test[e1+"\t"+e2].push_back(test_head_list.size());	
 		INT relation_id = relation2id[(string)(buffer)];
+
 		INT len_s = 0 , head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;
 		while (fscanf(f,"%s", buffer)==1) {
 			std::string word = buffer;
 			if (word=="###END###") break;
-			INT gg = word2id[word];
+			INT word_id = word2id[word];
 			if (head_s == word) head_pos = len_s;
 			if (tail_s == word) tail_pos = len_s;
 			len_s++;
-			sentence.push_back(gg);
+			sentence.push_back(word_id);
 		}
-		testheadList.push_back(head_id);
-		testtailList.push_back(tail_id);
-		testrelationList.push_back(relation_id);
-		testtrainLength.push_back(len_s);
+
+		test_head_list.push_back(head_id);
+		test_tail_list.push_back(tail_id);
+		test_relation_list.push_back(relation_id);
+		test_length.push_back(len_s);
 		INT *sentence_ptr=(INT *)calloc(len_s,sizeof(INT));
 		INT *sentence_head_pos=(INT *)calloc(len_s,sizeof(INT));
 		INT *sentence_tail_pos=(INT *)calloc(len_s,sizeof(INT));
@@ -259,7 +267,7 @@ void init() {
 	}
 
 	for (INT i = 0; i < testPositionE1.size(); i++) {
-		INT len = testtrainLength[i];
+		INT len = test_length[i];
 		INT *work1 = testPositionE1[i];
 		for (INT j = 0; j < len; j++)
 			work1[j] = work1[j] - PositionMinE1;

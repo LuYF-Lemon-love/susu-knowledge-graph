@@ -120,9 +120,9 @@ REAL train_bags(string bags_name)
 		tipList[k].resize(dimensionC);
 		INT i = bags_train[bags_name][k];
 		if (r1==-1)
-			r1 = relation_list[i];
+			r1 = train_relation_list[i];
 		else
-			assert(r1==relation_list[i]);
+			assert(r1==train_relation_list[i]);
 		rList.push_back(train(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], tipList[k]));
 	}
 	
@@ -230,7 +230,7 @@ REAL train_bags(string bags_name)
 	for (INT k=0; k<bags_size; k++)
 	{
 		INT i = bags_train[bags_name][k];
-		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], head_list[i], tail_list[i], relation_list[i], alpha1,rList[k], tipList[k], grad[k]);
+		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], alpha1,rList[k], tipList[k], grad[k]);
 		
 	}
 	return rt;

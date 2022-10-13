@@ -77,7 +77,7 @@ void output(pair<double,INT> a)
 {
 	std::cout<<"weight:\t"<<a.first<<' ';
 	INT i = a.second;
-	for (INT j=0; j<testtrainLength[i]; j++)
+	for (INT j=0; j<test_length[i]; j++)
 		std::cout<<id2word[testtrainLists[i][j]]<<' ';
 	std::cout<<std::endl;
 }
@@ -109,9 +109,9 @@ void* testMode(void *id )
 		for (INT k=0; k<bags_size; k++)
 		{
 			INT i = bags_test[b[ii]][k];
-			ok[testrelationList[i]]=1;
+			ok[test_relation_list[i]]=1;
 			{
-				vector<double> score = test(testtrainLists[i],  testPositionE1[i], testPositionE2[i], testtrainLength[i], r);
+				vector<double> score = test(testtrainLists[i],  testPositionE1[i], testPositionE2[i], test_length[i], r);
 				vector<double> r_tmp;
 				for (INT j = 0; j < dimensionC; j++)
 					r_tmp.push_back(r[j]);
@@ -188,10 +188,10 @@ void test() {
 		for (INT k=0; k<it->second.size(); k++)
 		{
 			INT i = it->second[k];
-			if (testrelationList[i]>0)
-				ok[testrelationList[i]]=1;
-			//if (relation_list[i]>0)
-			//	ok[relation_list[i]]=1;
+			if (test_relation_list[i]>0)
+				ok[test_relation_list[i]]=1;
+			//if (train_relation_list[i]>0)
+			//	ok[train_relation_list[i]]=1;
 		}
 		tot+=ok.size();
 		{
