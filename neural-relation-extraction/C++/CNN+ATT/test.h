@@ -1,15 +1,23 @@
 #ifndef TEST_H
 #define TEST_H
 #include "init.h"
-#include <algorithm>
-#include <map>
 
-INT tipp = 0;
-REAL ress = 0;
+bool cmp(pair<string, pair<INT,double> > a,pair<string, pair<INT,double> >b)
+{
+    return a.second.second>b.second.second;
+}
+
+vector<string> b;
+double tot;
+vector<pair<string, pair<INT,double> > >aa;
+
+pthread_mutex_t mutex;
+vector<INT> ll_test;
+double max_pre = 0;
 
 vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_tail, INT len, REAL *r) {
+
 	INT tip[dimensionC];
-		
 	for (INT i = 0; i < dimensionC; i++) {
 		INT last = i * dimension * window;
 		INT lastt = i * dimensionWPE * window;
@@ -54,34 +62,6 @@ vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_t
 		res[j]/=tmp;
 	return res;
 }
-
-
-bool cmp(pair<string, pair<INT,double> > a,pair<string, pair<INT,double> >b)
-{
-    return a.second.second>b.second.second;
-}
-
-vector<string> b;
-double tot;
-vector<pair<string, pair<INT,double> > >aa;
-
-pthread_mutex_t mutex;
-vector<INT> ll_test;
-
-
-bool cmp1(pair<double,INT> a, pair<double,INT> b)
-{
-	return a.first<b.first;
-}
-void output(pair<double,INT> a)
-{
-	std::cout<<"weight:\t"<<a.first<<' ';
-	INT i = a.second;
-	for (INT j=0; j<test_length[i]; j++)
-		std::cout<<id2word[test_sentence_list[i][j]]<<' ';
-	std::cout<<std::endl;
-}
-
 
 void* testMode(void *id ) 
 {
@@ -169,8 +149,6 @@ void* testMode(void *id )
 	free(r);
 }
 
-double max_pre = 0;
-
 void test() {
 	std::cout<<std::endl;
 	aa.clear();
@@ -179,7 +157,6 @@ void test() {
 	ll_test.clear();
 	vector<INT> b_sum;
 	b_sum.clear();
-	//for (map<string,vector<INT> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)
 	for (map<string,vector<INT> >:: iterator it = bags_test.begin(); it!=bags_test.end(); it++)
 	{
 		
@@ -190,8 +167,6 @@ void test() {
 			INT i = it->second[k];
 			if (test_relation_list[i]>0)
 				ok[test_relation_list[i]]=1;
-			//if (train_relation_list[i]>0)
-			//	ok[train_relation_list[i]]=1;
 		}
 		tot+=ok.size();
 		{
@@ -215,7 +190,6 @@ void test() {
 		pthread_create(&pt[a], NULL, testMode,  (void *)a);
 	for (INT a = 0; a < num_threads; a++)
 		pthread_join(pt[a], NULL);
-	//std::cout<<"begin sort"<<std::endl;
 	free(pt);
 	sort(aa.begin(),aa.end(),cmp);
 	double correct=0;
@@ -229,7 +203,6 @@ void test() {
 		if (i%100==0)
 			std::cout<<"precision:\t"<<correct1/(i+1)<<'\t'<<"recall:\t"<<correct1/tot<<std::endl;	
 	}
-	//assert(version!="");
 	{
 		FILE* f = fopen(("out/pr"+version+".txt").c_str(), "w");
 		for (INT i=0; i<2000; i++)

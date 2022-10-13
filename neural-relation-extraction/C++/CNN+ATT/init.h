@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <float.h>
 #include <cmath>
+#include <algorithm>
 
 #define INT int
 #define REAL float
