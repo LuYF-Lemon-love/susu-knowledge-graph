@@ -21,7 +21,7 @@ vector<double> test(int *sentence, int *testPositionE1, int *testPositionE2, int
 			for (int j = i1; j < i1 + window; j++)  {
 				int last1 = sentence[j] * dimension;
 			 	for (int k = 0; k < dimension; k++) {
-			 		res += matrixW1[last + tot] * wordVec[last1+k];
+			 		res += matrixW1[last + tot] * word_vec[last1+k];
 			 		tot++;
 			 	}
 			 	int last2 = testPositionE1[j] * dimensionWPE;
@@ -78,7 +78,7 @@ void output(pair<double,int> a)
 	cout<<"weight:\t"<<a.first<<' ';
 	int i = a.second;
 	for (int j=0; j<testtrainLength[i]; j++)
-		cout<<wordList[testtrainLists[i][j]]<<' ';
+		cout<<id2word[testtrainLists[i][j]]<<' ';
 	cout<<endl;
 }
 
@@ -280,11 +280,11 @@ void test() {
 		fclose(fout);
 	
 		fout = fopen(("./out/word2vec.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n",wordTotal,dimension);
-		for (int i = 0; i < wordTotal; i++)
+		fprintf(fout,"%d\t%d\n",word_total,dimension);
+		for (int i = 0; i < word_total; i++)
 		{
 			for (int j=0; j<dimension; j++)
-				fprintf(fout,"%f\t",wordVec[i*dimension+j]);
+				fprintf(fout,"%f\t",word_vec[i*dimension+j]);
 			fprintf(fout,"\n");
 		}
 		fclose(fout);

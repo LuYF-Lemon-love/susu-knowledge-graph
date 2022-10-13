@@ -90,7 +90,7 @@ void train_gradient(int *sentence, int *trainPositionE1, int *trainPositionE2, i
 			int last1 = sentence[tip[i] + j] * dimension;
 			for (int k = 0; k < dimension; k++) {
 				matrixW1[last + tot] -= g1 * wordVecDao[last1+k];
-				wordVec[last1 + k] -= g1 * matrixW1Dao[last + tot];
+				word_vec[last1 + k] -= g1 * matrixW1Dao[last + tot];
 				tot++;
 			}
 			int last2 = trainPositionE1[tip[i] + j] * dimensionWPE;
@@ -304,7 +304,7 @@ void train() {
 	matrixRelation = (float *)calloc(dimensionC * relationTotal, sizeof(float));
 	matrixRelationPr = (float *)calloc(relationTotal, sizeof(float));
 	matrixRelationPrDao = (float *)calloc(relationTotal, sizeof(float));
-	wordVecDao = (float *)calloc(dimension * wordTotal, sizeof(float));
+	wordVecDao = (float *)calloc(dimension * word_total, sizeof(float));
 	positionVecE1 = (float *)calloc(PositionTotalE1 * dimensionWPE, sizeof(float));
 	positionVecE2 = (float *)calloc(PositionTotalE2 * dimensionWPE, sizeof(float));
 	
@@ -383,7 +383,7 @@ void train() {
 			memcpy(positionVecDaoE2, positionVecE2, PositionTotalE2 * dimensionWPE* sizeof(float));
 			memcpy(matrixW1PositionE1Dao, matrixW1PositionE1, dimensionC * dimensionWPE * window* sizeof(float));
 			memcpy(matrixW1PositionE2Dao, matrixW1PositionE2, dimensionC * dimensionWPE * window* sizeof(float));
-			memcpy(wordVecDao, wordVec, dimension * wordTotal * sizeof(float));
+			memcpy(wordVecDao, word_vec, dimension * word_total * sizeof(float));
 
 			memcpy(matrixW1Dao, matrixW1, sizeof(float) * dimensionC * dimension * window);
 			memcpy(matrixB1Dao, matrixB1, sizeof(float) * dimensionC);

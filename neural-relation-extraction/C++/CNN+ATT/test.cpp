@@ -21,7 +21,7 @@ void preprocess()
 	matrixRelation = (float *)calloc(dimensionC * relationTotal, sizeof(float));
 	matrixRelationPr = (float *)calloc(relationTotal, sizeof(float));
 	matrixRelationPrDao = (float *)calloc(relationTotal, sizeof(float));
-	wordVecDao = (float *)calloc(dimension * wordTotal, sizeof(float));
+	wordVecDao = (float *)calloc(dimension * word_total, sizeof(float));
 	positionVecE1 = (float *)calloc(PositionTotalE1 * dimensionWPE, sizeof(float));
 	positionVecE2 = (float *)calloc(PositionTotalE2 * dimensionWPE, sizeof(float));
 	
@@ -75,11 +75,11 @@ void preprocess()
 	fclose(fout);
 
 	fout = fopen(("./out/word2vec.txt"+version).c_str(), "r");
-	fscanf(fout,"%d%d",&wordTotal,&dimension);
-	for (int i = 0; i < wordTotal; i++)
+	fscanf(fout,"%d%d",&word_total,&dimension);
+	for (int i = 0; i < word_total; i++)
 	{
 		for (int j=0; j<dimension; j++)
-			fscanf(fout,"%f", &wordVec[i*dimension+j]);
+			fscanf(fout,"%f", &word_vec[i*dimension+j]);
 	}
 	fclose(fout);
 	fout = fopen(("./out/att_W.txt"+version).c_str(), "r");
