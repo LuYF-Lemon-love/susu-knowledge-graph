@@ -7,13 +7,17 @@ bool cmp(pair<string, pair<INT,double> > a,pair<string, pair<INT,double> >b)
     return a.second.second>b.second.second;
 }
 
-vector<string> b;
-double tot;
-vector<pair<string, pair<INT,double> > >aa;
+// total: 计算测试集中样本数 (每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
+// bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
+// thread_first_bags_test (num_threads + 1): 保存每个线程第一个样本在 bags_test_key 中的位置
+double total;
+std::vector<std::string> bags_test_key;
+std::vector<INT> thread_first_bags_test;
+
+std::vector<std::pair<std::string, std::pair<INT,double> > >aa;
 
 pthread_mutex_t mutex;
-vector<INT> ll_test;
-double max_pre = 0;
+
 
 vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_tail, INT len, REAL *r) {
 
@@ -63,16 +67,18 @@ vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_t
 	return res;
 }
 
-void* testMode(void *id ) 
+void* test_mode(void *thread_id) 
 {
-	INT ll = ll_test[(long long)id];
+	INT id;
+	id = (unsigned long long)(thread_id);
+	INT ll = thread_first_bags_test[id];
 	INT rr;
-	if ((long long)id==num_threads-1)
-		rr = b.size();
+	if (id==num_threads-1)
+		rr = bags_test_key.size();
 	else
-		rr = ll_test[(long long)id+1];
-	//std::cout<<ll<<' '<<rr<<' '<<((long long)id)<<std::endl;
+		rr = thread_first_bags_test[id + 1];
 	REAL *r = (REAL *)calloc(dimensionC, sizeof(REAL));
+
 	double eps = 0.1;
 	for (INT ii = ll; ii < rr; ii++)
 	{
@@ -84,11 +90,11 @@ void* testMode(void *id )
 		map<INT,INT> ok;
 		ok.clear();
 		vector<vector<double> > rList;
-		INT bags_size = bags_test[b[ii]].size();
+		INT bags_size = bags_test[bags_test_key[ii]].size();
 		INT used = 0;
 		for (INT k=0; k<bags_size; k++)
 		{
-			INT i = bags_test[b[ii]][k];
+			INT i = bags_test[bags_test_key[ii]][k];
 			ok[test_relation_list[i]]=1;
 			{
 				vector<double> score = test(test_sentence_list[i],  test_position_head[i], test_position_tail[i], test_length[i], r);
@@ -140,8 +146,8 @@ void* testMode(void *id )
 		pthread_mutex_lock (&mutex);
 		for (INT j = 1; j < relation_total; j++) 
 		{
-			INT i = bags_test[b[ii]][0];
-			aa.push_back(make_pair(b[ii]+"\t"+id2relation[j],make_pair(ok.count(j),sum[j])));
+			INT i = bags_test[bags_test_key[ii]][0];
+			aa.push_back(make_pair(bags_test_key[ii]+"\t"+id2relation[j],make_pair(ok.count(j),sum[j])));
 		}
 		pthread_mutex_unlock(&mutex);
 	}
@@ -149,48 +155,54 @@ void* testMode(void *id )
 	free(r);
 }
 
+// 测试函数
 void test() {
-	std::cout<<std::endl;
 	aa.clear();
-	b.clear();
-	tot = 0;
-	ll_test.clear();
-	vector<INT> b_sum;
-	b_sum.clear();
-	for (map<string,vector<INT> >:: iterator it = bags_test.begin(); it!=bags_test.end(); it++)
+	total = 0;
+	bags_test_key.clear();
+	thread_first_bags_test.clear();
+
+	std::vector<INT> sample_sum;
+	sample_sum.clear();
+	for (std::map<std::string, std::vector<INT> >::iterator it = bags_test.begin();
+		it != bags_test.end(); it++)
 	{
 		
-		map<INT,INT> ok;
-		ok.clear();
-		for (INT k=0; k<it->second.size(); k++)
+		std::map<INT, INT> sample_relation_list;
+		sample_relation_list.clear();
+		for (INT i = 0; i < it->second.size(); i++)
 		{
-			INT i = it->second[k];
-			if (test_relation_list[i]>0)
-				ok[test_relation_list[i]]=1;
+			INT pos = it->second[i];
+			if (test_relation_list[pos] > 0)
+				sample_relation_list[test_relation_list[pos]]=1;
 		}
-		tot+=ok.size();
+		total += sample_relation_list.size();
 		{
-			b.push_back(it->first);
-			b_sum.push_back(it->second.size());
+			bags_test_key.push_back(it->first);
+			sample_sum.push_back(it->second.size());
 		}
 	}
-	for (INT i=1; i<b_sum.size(); i++)
-		b_sum[i] += b_sum[i-1];
-	INT now = 0;
-	ll_test.resize(num_threads+1);
-	for (INT i=0; i<b_sum.size(); i++)
-		if (b_sum[i]>=b_sum[b_sum.size()-1]/num_threads*now)
+
+	for (INT i = 1; i < sample_sum.size(); i++)
+		sample_sum[i] += sample_sum[i-1];
+	
+	INT thread_id = 0;
+	thread_first_bags_test.resize(num_threads+1);
+	for (INT i = 0; i < sample_sum.size(); i++)
+		if (sample_sum[i] >= (sample_sum[sample_sum.size()-1] / num_threads) * thread_id)
 		{
-			ll_test[now] = i;
-			now+=1;
+			thread_first_bags_test[thread_id] = i;
+			thread_id += 1;
 		}
-	std::cout<<"tot:\t"<<tot<<std::endl;
+		
+	std::cout << "total: " << total << std::endl;
 	pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
-	for (INT a = 0; a < num_threads; a++)
-		pthread_create(&pt[a], NULL, testMode,  (void *)a);
-	for (INT a = 0; a < num_threads; a++)
+	for (long a = 0; a < num_threads; a++)
+		pthread_create(&pt[a], NULL, test_mode,  (void *)a);
+	for (long a = 0; a < num_threads; a++)
 		pthread_join(pt[a], NULL);
 	free(pt);
+
 	sort(aa.begin(),aa.end(),cmp);
 	double correct=0;
 	REAL correct1 = 0;
@@ -199,9 +211,9 @@ void test() {
 		if (aa[i].second.first!=0)
 			correct1++;	
 		REAL precision = correct1/(i+1);
-		REAL recall = correct1/tot;
+		REAL recall = correct1/total;
 		if (i%100==0)
-			std::cout<<"precision:\t"<<correct1/(i+1)<<'\t'<<"recall:\t"<<correct1/tot<<std::endl;	
+			std::cout<<"precision:\t"<<correct1/(i+1)<<'\t'<<"recall:\t"<<correct1/total<<std::endl;	
 	}
 	{
 		FILE* f = fopen(("out/pr"+version+".txt").c_str(), "w");
@@ -209,7 +221,7 @@ void test() {
 		{
 			if (aa[i].second.first!=0)
 				correct++;	
-			fprintf(f,"%lf\t%lf\t%lf\t%s\n",correct/(i+1), correct/tot,aa[i].second.second, aa[i].first.c_str());
+			fprintf(f,"%lf\t%lf\t%lf\t%s\n",correct/(i+1), correct/total,aa[i].second.second, aa[i].first.c_str());
 		}
 		fclose(f);
 		if (!output_model)return;
