@@ -22,13 +22,13 @@ void preprocess()
 	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
 	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
-	positionVecE1 = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
-	positionVecE2 = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
+	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
+	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
 	
-	matrixW1 = (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
-	matrixW1PositionE1 = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	matrixW1PositionE2 = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	matrixB1 = (REAL*)calloc(dimension_c, sizeof(REAL));
+	conv_1d_word = (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
+	conv_1d_position_head = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
+	conv_1d_position_tail = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
+	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 	
 	att_W.resize(relation_total);
 	for (INT i=0; i<relation_total; i++)
@@ -43,12 +43,12 @@ void preprocess()
 	fscanf(fout,"%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
 		for (INT j = 0; j < dimension * window; j++)
-			fscanf(fout, "%f", &matrixW1[i* dimension*window+j]);
+			fscanf(fout, "%f", &conv_1d_word[i* dimension*window+j]);
 		for (INT j = 0; j < dimension_pos * window; j++)
-			fscanf(fout, "%f", &matrixW1PositionE1[i* dimension_pos*window+j]);
+			fscanf(fout, "%f", &conv_1d_position_head[i* dimension_pos*window+j]);
 		for (INT j = 0; j < dimension_pos * window; j++)
-			fscanf(fout, "%f", &matrixW1PositionE2[i* dimension_pos*window+j]);
-		fscanf(fout, "%f", &matrixB1[i]);
+			fscanf(fout, "%f", &conv_1d_position_tail[i* dimension_pos*window+j]);
+		fscanf(fout, "%f", &conv_1d_bias[i]);
 	}
 	fclose(fout);
 
@@ -66,11 +66,11 @@ void preprocess()
 	fscanf(fout,"%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
-			fscanf(fout, "%f", &positionVecE1[i * dimension_pos + j]);
+			fscanf(fout, "%f", &position_vec_head[i * dimension_pos + j]);
 	}
 	for (INT i = 0; i < position_total_tail; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
-			fscanf(fout, "%f", &positionVecE2[i * dimension_pos + j]);
+			fscanf(fout, "%f", &position_vec_tail[i * dimension_pos + j]);
 	}
 	fclose(fout);
 

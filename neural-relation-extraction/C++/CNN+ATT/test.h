@@ -16,68 +16,55 @@ std::vector<INT> thread_first_bags_test;
 
 std::vector<std::pair<std::string, std::pair<INT,double> > >aa;
 
+// 互斥锁
 pthread_mutex_t mutex;
 
-
-vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_tail, INT len, REAL *r) {
-
-	INT tip[dimension_c];
+// 计算句子的一维卷机
+void calc_conv_1d(INT *sentence, INT *test_position_head,
+		INT *test_position_tail, INT len, REAL *result) {
 	for (INT i = 0; i < dimension_c; i++) {
-		INT last = i * dimension * window;
-		INT lastt = i * dimension_pos * window;
-		REAL mx = -FLT_MAX;
-		for (INT i1 = 0; i1 <= len - window; i1++) {
-			REAL res = 0;
-			INT tot = 0;
-			INT tot1 = 0;
-			for (INT j = i1; j < i1 + window; j++)  {
-				INT last1 = sentence[j] * dimension;
+		INT last_word = i * window * dimension;
+		INT last_pos = i * window * dimension_pos;
+		REAL max_pool_1d = -FLT_MAX;
+		for (INT last_window = 0; last_window <= len - window; last_window++) {
+			REAL sum = 0;
+			INT tot_word = 0;
+			INT tot_pos = 0;
+			for (INT j = last_window; j < last_window + window; j++)  {
+				INT last_word_vec = sentence[j] * dimension;
 			 	for (INT k = 0; k < dimension; k++) {
-			 		res += matrixW1[last + tot] * word_vec[last1+k];
-			 		tot++;
+			 		sum += conv_1d_word[last_word + tot_word] * word_vec[last_word_vec+k];
+			 		tot_word++;
 			 	}
-			 	INT last2 = test_position_head[j] * dimension_pos;
-			 	INT last3 = test_position_tail[j] * dimension_pos;
+			 	INT last_pos_head = test_position_head[j] * dimension_pos;
+			 	INT last_pos_tail = test_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		res += matrixW1PositionE1[lastt + tot1] * positionVecE1[last2+k];
-			 		res += matrixW1PositionE2[lastt + tot1] * positionVecE2[last3+k];
-			 		tot1++;
+			 		sum += conv_1d_position_head[last_pos + tot_pos] * position_vec_head[last_pos_head+k];
+			 		sum += conv_1d_position_tail[last_pos + tot_pos] * position_vec_tail[last_pos_tail+k];
+			 		tot_pos++;
 			 	}
 			}
-			if (res > mx) mx = res;
+			if (sum > max_pool_1d) max_pool_1d = sum;
 		}
-		r[i] = mx + matrixB1[i];
+		result[i] = max_pool_1d + conv_1d_bias[i];
 	}
 
 	for (INT i = 0; i < dimension_c; i++)
-		r[i] = calc_tanh(r[i]);
-	vector<double> res;
-	double tmp = 0;
-	for (INT j = 0; j < relation_total; j++) {
-		REAL s = 0;
-		for (INT i = 0; i < dimension_c; i++)
-			s +=  0.5 * matrixRelation[j * dimension_c + i] * r[i];
-		s += matrixRelationPr[j];
-		s = exp(s);
-		tmp+=s;
-		res.push_back(s);
-	}
-	for (INT j = 0; j < relation_total; j++) 
-		res[j]/=tmp;
-	return res;
+		result[i] = calc_tanh(result[i]);
 }
 
+// 单个线程内运行的任务
 void* test_mode(void *thread_id) 
 {
 	INT id;
 	id = (unsigned long long)(thread_id);
 	INT ll = thread_first_bags_test[id];
 	INT rr;
-	if (id==num_threads-1)
+	if (id == num_threads-1)
 		rr = bags_test_key.size();
 	else
 		rr = thread_first_bags_test[id + 1];
-	REAL *r = (REAL *)calloc(dimension_c, sizeof(REAL));
+	REAL *result = (REAL *)calloc(dimension_c, sizeof(REAL));
 
 	double eps = 0.1;
 	for (INT ii = ll; ii < rr; ii++)
@@ -97,10 +84,10 @@ void* test_mode(void *thread_id)
 			INT i = bags_test[bags_test_key[ii]][k];
 			ok[test_relation_list[i]]=1;
 			{
-				vector<double> score = test(test_sentence_list[i],  test_position_head[i], test_position_tail[i], test_length[i], r);
+				calc_conv_1d(test_sentence_list[i],  test_position_head[i], test_position_tail[i], test_length[i], result);
 				vector<double> r_tmp;
 				for (INT j = 0; j < dimension_c; j++)
-					r_tmp.push_back(r[j]);
+					r_tmp.push_back(result[j]);
 				rList.push_back(r_tmp);
 			}
 		}
@@ -125,17 +112,17 @@ void* test_mode(void *thread_id)
 			for (INT k=0; k<bags_size; k++)
 				weight[k]/=weight_sum;
 			
-			vector<REAL> r;
-			r.resize(dimension_c);
+			vector<REAL> result;
+			result.resize(dimension_c);
 			for (INT i = 0; i < dimension_c; i++) 
 				for (INT k=0; k<bags_size; k++)
-					r[i] += rList[k][i] * weight[k];
+					result[i] += rList[k][i] * weight[k];
 			vector<REAL> res;
 			double tmp = 0;
 			for (INT j1 = 0; j1 < relation_total; j1++) {
 				REAL s = 0;
 				for (INT i1 = 0; i1 < dimension_c; i1++)
-					s +=  0.5 * matrixRelation[j1 * dimension_c + i1] * r[i1];
+					s +=  0.5 * matrixRelation[j1 * dimension_c + i1] * result[i1];
 				s += matrixRelationPr[j1];
 				s = exp(s);
 				tmp+=s;
@@ -152,7 +139,7 @@ void* test_mode(void *thread_id)
 		pthread_mutex_unlock(&mutex);
 	}
 
-	free(r);
+	free(result);
 }
 
 // 测试函数
@@ -229,12 +216,12 @@ void test() {
 		fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
 		for (INT i = 0; i < dimension_c; i++) {
 			for (INT j = 0; j < dimension * window; j++)
-				fprintf(fout, "%f\t",matrixW1[i* dimension*window+j]);
+				fprintf(fout, "%f\t",conv_1d_word[i* dimension*window+j]);
 			for (INT j = 0; j < dimension_pos * window; j++)
-				fprintf(fout, "%f\t",matrixW1PositionE1[i* dimension_pos*window+j]);
+				fprintf(fout, "%f\t",conv_1d_position_head[i* dimension_pos*window+j]);
 			for (INT j = 0; j < dimension_pos * window; j++)
-				fprintf(fout, "%f\t",matrixW1PositionE2[i* dimension_pos*window+j]);
-			fprintf(fout, "%f\n", matrixB1[i]);
+				fprintf(fout, "%f\t",conv_1d_position_tail[i* dimension_pos*window+j]);
+			fprintf(fout, "%f\n", conv_1d_bias[i]);
 		}
 		fclose(fout);
 
@@ -254,12 +241,12 @@ void test() {
 		fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
 		for (INT i = 0; i < position_total_head; i++) {
 			for (INT j = 0; j < dimension_pos; j++)
-				fprintf(fout, "%f\t", positionVecE1[i * dimension_pos + j]);
+				fprintf(fout, "%f\t", position_vec_head[i * dimension_pos + j]);
 			fprintf(fout, "\n");
 		}
 		for (INT i = 0; i < position_total_tail; i++) {
 			for (INT j = 0; j < dimension_pos; j++)
-				fprintf(fout, "%f\t", positionVecE2[i * dimension_pos + j]);
+				fprintf(fout, "%f\t", position_vec_tail[i * dimension_pos + j]);
 			fprintf(fout, "\n");
 		}
 		fclose(fout);

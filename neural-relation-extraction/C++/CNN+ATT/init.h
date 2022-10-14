@@ -20,7 +20,7 @@ std::string version = "";
 
 INT output_model = 0;
 INT num_threads = 32;
-INT trainTimes = 10;
+INT train_times = 10;
 REAL reduce = 0.98;
 
 // dimension_c: sentence embedding size
@@ -36,18 +36,9 @@ REAL alpha = 0.01;
 
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 INT limit = 30;
-REAL *matrixB1, *matrixRelation, *matrixW1, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
-REAL *wordVecDao;
-REAL *positionVecE1, *positionVecE2, *matrixW1PositionE1, *matrixW1PositionE2;
-REAL *matrixW1PositionE1Dao;
-REAL *matrixW1PositionE2Dao;
-REAL *positionVecDaoE1;
-REAL *positionVecDaoE2;
-REAL *matrixW1Dao;
-REAL *matrixB1Dao;
+
 
 std::vector<std::vector<std::vector<REAL> > > att_W, att_W_Dao;
-double mx = 0;
 INT npoch;
 INT len;
 REAL rate = 1;
@@ -102,6 +93,25 @@ std::map<std::string, std::vector<INT> > bags_test;
 std::vector<INT> test_head_list, test_tail_list, test_relation_list;
 std::vector<INT> test_length;
 std::vector<INT *> test_sentence_list, test_position_head, test_position_tail;
+
+// conv_1d_word (dimension_c * window * dimension): 一维卷机的权重矩阵 (词嵌入)
+// conv_1d_position_head (dimension_c * window * dimension_pos): 一维卷机的权重矩阵 (头实体的位置嵌入)
+// conv_1d_position_tail (dimension_c * window * dimension_pos): 一维卷机的权重矩阵 (尾实体的位置嵌入)
+// conv_1d_bias (dimension_c): 一维卷机的偏置向量
+REAL *conv_1d_word, *conv_1d_position_head, *conv_1d_position_tail, *conv_1d_bias;
+
+// position_vec_head (position_total_head * dimension_pos): 头实体的位置嵌入矩阵
+// position_vec_tail (position_total_tail * dimension_pos): 尾实体的位置嵌入矩阵
+REAL *position_vec_head, *position_vec_tail;
+
+REAL *matrixRelation, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
+REAL *wordVecDao;
+REAL *matrixW1PositionE1Dao;
+REAL *matrixW1PositionE2Dao;
+REAL *positionVecDaoE1;
+REAL *positionVecDaoE2;
+REAL *matrixW1Dao;
+REAL *matrixB1Dao;
 
 void init() {
 

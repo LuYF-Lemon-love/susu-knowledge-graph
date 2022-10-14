@@ -43,7 +43,7 @@ vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_
 		r[i] = 0;
 		INT last = i * dimension * window;
 		INT lastt = i * dimension_pos * window;
-		REAL mx = -FLT_MAX;
+		REAL max_pool_1d = -FLT_MAX;
 		for (INT i1 = 0; i1 <= len - window; i1++) {
 			REAL res = 0;
 			INT tot = 0;
@@ -62,12 +62,12 @@ vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_
 			 		tot1++;
 			 	}
 			}
-			if (res > mx) {
-				mx = res;
+			if (res > max_pool_1d) {
+				max_pool_1d = res;
 				tip[i] = i1;
 			}
 		}
-		r[i] = mx + matrixB1Dao[i];
+		r[i] = max_pool_1d + matrixB1Dao[i];
 	}
 
 	for (INT i = 0; i < dimension_c; i++) {
@@ -89,21 +89,21 @@ void train_gradient(INT *sentence, INT *train_position_head, INT *train_position
 		for (INT j = 0; j < window; j++)  {
 			INT last1 = sentence[tip[i] + j] * dimension;
 			for (INT k = 0; k < dimension; k++) {
-				matrixW1[last + tot] -= g1 * wordVecDao[last1+k];
+				conv_1d_word[last + tot] -= g1 * wordVecDao[last1+k];
 				word_vec[last1 + k] -= g1 * matrixW1Dao[last + tot];
 				tot++;
 			}
 			INT last2 = train_position_head[tip[i] + j] * dimension_pos;
 			INT last3 = train_position_tail[tip[i] + j] * dimension_pos;
 			for (INT k = 0; k < dimension_pos; k++) {
-				matrixW1PositionE1[lastt + tot1] -= g1 * positionVecDaoE1[last2 + k];
-				matrixW1PositionE2[lastt + tot1] -= g1 * positionVecDaoE2[last3 + k];
-				positionVecE1[last2 + k] -= g1 * matrixW1PositionE1Dao[lastt + tot1];
-				positionVecE2[last3 + k] -= g1 * matrixW1PositionE2Dao[lastt + tot1];
+				conv_1d_position_head[lastt + tot1] -= g1 * positionVecDaoE1[last2 + k];
+				conv_1d_position_tail[lastt + tot1] -= g1 * positionVecDaoE2[last3 + k];
+				position_vec_head[last2 + k] -= g1 * matrixW1PositionE1Dao[lastt + tot1];
+				position_vec_tail[last3 + k] -= g1 * matrixW1PositionE2Dao[lastt + tot1];
 				tot1++;
 			}
 		}
-		matrixB1[i] -= g1;
+		conv_1d_bias[i] -= g1;
 	}
 }
 
@@ -305,28 +305,28 @@ void train() {
 	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
 	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
-	positionVecE1 = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
-	positionVecE2 = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
+	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
+	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
 	
-	matrixW1 = (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
-	matrixW1PositionE1 = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	matrixW1PositionE2 = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	matrixB1 = (REAL*)calloc(dimension_c, sizeof(REAL));
+	conv_1d_word = (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
+	conv_1d_position_head = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
+	conv_1d_position_tail = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
+	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 
 	for (INT i = 0; i < dimension_c; i++) {
 		INT last = i * window * dimension;
 		for (INT j = dimension * window - 1; j >=0; j--)
-			matrixW1[last + j] = get_rand_u(-con1, con1);
+			conv_1d_word[last + j] = get_rand_u(-con1, con1);
 		last = i * window * dimension_pos;
 		REAL tmp1 = 0;
 		REAL tmp2 = 0;
 		for (INT j = dimension_pos * window - 1; j >=0; j--) {
-			matrixW1PositionE1[last + j] = get_rand_u(-con1, con1);
-			tmp1 += matrixW1PositionE1[last + j]  * matrixW1PositionE1[last + j] ;
-			matrixW1PositionE2[last + j] = get_rand_u(-con1, con1);
-			tmp2 += matrixW1PositionE2[last + j]  * matrixW1PositionE2[last + j] ;
+			conv_1d_position_head[last + j] = get_rand_u(-con1, con1);
+			tmp1 += conv_1d_position_head[last + j]  * conv_1d_position_head[last + j] ;
+			conv_1d_position_tail[last + j] = get_rand_u(-con1, con1);
+			tmp2 += conv_1d_position_tail[last + j]  * conv_1d_position_tail[last + j] ;
 		}
-		matrixB1[i] = get_rand_u(-con1, con1);
+		conv_1d_bias[i] = get_rand_u(-con1, con1);
 	}
 
 	for (INT i = 0; i < relation_total; i++) 
@@ -339,16 +339,16 @@ void train() {
 	for (INT i = 0; i < position_total_head; i++) {
 		REAL tmp = 0;
 		for (INT j = 0; j < dimension_pos; j++) {
-			positionVecE1[i * dimension_pos + j] = get_rand_u(-con1, con1);
-			tmp += positionVecE1[i * dimension_pos + j] * positionVecE1[i * dimension_pos + j];
+			position_vec_head[i * dimension_pos + j] = get_rand_u(-con1, con1);
+			tmp += position_vec_head[i * dimension_pos + j] * position_vec_head[i * dimension_pos + j];
 		}
 	}
 
 	for (INT i = 0; i < position_total_tail; i++) {
 		REAL tmp = 0;
 		for (INT j = 0; j < dimension_pos; j++) {
-			positionVecE2[i * dimension_pos + j] = get_rand_u(-con1, con1);
-			tmp += positionVecE2[i * dimension_pos + j] * positionVecE2[i * dimension_pos + j];
+			position_vec_tail[i * dimension_pos + j] = get_rand_u(-con1, con1);
+			tmp += position_vec_tail[i * dimension_pos + j] * position_vec_tail[i * dimension_pos + j];
 		}
 	}
 
@@ -364,7 +364,7 @@ void train() {
 	test();
 	time_end();*/
 //	return;
-	for (turn = 0; turn < trainTimes; turn ++) {
+	for (turn = 0; turn < train_times; turn ++) {
 
 	//	len = train_sentence_list.size();
 		len = c_train.size();
@@ -379,14 +379,14 @@ void train() {
 		for (INT k = 1; k <= npoch; k++) {
 			score_max += batch * num_threads;
 		//	std::cout<<k<<std::endl;
-			memcpy(positionVecDaoE1, positionVecE1, position_total_head * dimension_pos* sizeof(REAL));
-			memcpy(positionVecDaoE2, positionVecE2, position_total_tail * dimension_pos* sizeof(REAL));
-			memcpy(matrixW1PositionE1Dao, matrixW1PositionE1, dimension_c * dimension_pos * window* sizeof(REAL));
-			memcpy(matrixW1PositionE2Dao, matrixW1PositionE2, dimension_c * dimension_pos * window* sizeof(REAL));
+			memcpy(positionVecDaoE1, position_vec_head, position_total_head * dimension_pos* sizeof(REAL));
+			memcpy(positionVecDaoE2, position_vec_tail, position_total_tail * dimension_pos* sizeof(REAL));
+			memcpy(matrixW1PositionE1Dao, conv_1d_position_head, dimension_c * dimension_pos * window* sizeof(REAL));
+			memcpy(matrixW1PositionE2Dao, conv_1d_position_tail, dimension_c * dimension_pos * window* sizeof(REAL));
 			memcpy(wordVecDao, word_vec, dimension * word_total * sizeof(REAL));
 
-			memcpy(matrixW1Dao, matrixW1, sizeof(REAL) * dimension_c * dimension * window);
-			memcpy(matrixB1Dao, matrixB1, sizeof(REAL) * dimension_c);
+			memcpy(matrixW1Dao, conv_1d_word, sizeof(REAL) * dimension_c * dimension * window);
+			memcpy(matrixB1Dao, conv_1d_bias, sizeof(REAL) * dimension_c);
 			memcpy(matrixRelationPrDao, matrixRelationPr, relation_total * sizeof(REAL));				//add
 			memcpy(matrixRelationDao, matrixRelation, dimension_c*relation_total * sizeof(REAL));
 			att_W_Dao = att_W;
