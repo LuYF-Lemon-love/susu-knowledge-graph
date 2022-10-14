@@ -217,29 +217,14 @@ void test() {
 
 	if (!output_model)return;
 
-	FILE *fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "w");
-	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
-	for (INT i = 0; i < dimension_c; i++) {
-		for (INT j = 0; j < dimension * window; j++)
-			fprintf(fout, "%f\t",conv_1d_word[i* dimension*window+j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			fprintf(fout, "%f\t",conv_1d_position_head[i* dimension_pos*window+j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			fprintf(fout, "%f\t",conv_1d_position_tail[i* dimension_pos*window+j]);
-		fprintf(fout, "%f\n", conv_1d_bias[i]);
+	FILE *fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "w");
+	fprintf(fout,"%d\t%d\n",word_total,dimension);
+	for (INT i = 0; i < word_total; i++)
+	{
+		for (INT j=0; j<dimension; j++)
+			fprintf(fout,"%f\t",word_vec[i*dimension+j]);
+		fprintf(fout,"\n");
 	}
-	fclose(fout);
-
-	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "w");
-	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
-	for (INT i = 0; i < relation_total; i++) {
-		for (INT j = 0; j < dimension_c; j++)
-			fprintf(fout, "%f\t", relation_matrix[i * dimension_c + j]);
-		fprintf(fout, "\n");
-	}
-	for (INT i = 0; i < relation_total; i++) 
-		fprintf(fout, "%f\t",relation_matrix_bias[i]);
-	fprintf(fout, "\n");
 	fclose(fout);
 
 	fout = fopen(("./out/position_vec" + version + ".txt").c_str(), "w");
@@ -256,16 +241,19 @@ void test() {
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "w");
-	fprintf(fout,"%d\t%d\n",word_total,dimension);
-	for (INT i = 0; i < word_total; i++)
-	{
-		for (INT j=0; j<dimension; j++)
-			fprintf(fout,"%f\t",word_vec[i*dimension+j]);
-		fprintf(fout,"\n");
+	fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "w");
+	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
+	for (INT i = 0; i < dimension_c; i++) {
+		for (INT j = 0; j < dimension * window; j++)
+			fprintf(fout, "%f\t",conv_1d_word[i* dimension*window+j]);
+		for (INT j = 0; j < dimension_pos * window; j++)
+			fprintf(fout, "%f\t",conv_1d_position_head[i* dimension_pos*window+j]);
+		for (INT j = 0; j < dimension_pos * window; j++)
+			fprintf(fout, "%f\t",conv_1d_position_tail[i* dimension_pos*window+j]);
+		fprintf(fout, "%f\n", conv_1d_bias[i]);
 	}
 	fclose(fout);
-	
+
 	fout = fopen(("./out/attention_weights" + version + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
 	for (INT r1 = 0; r1 < relation_total; r1++) {
@@ -277,6 +265,19 @@ void test() {
 		}
 	}
 	fclose(fout);
+
+	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "w");
+	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
+	for (INT i = 0; i < relation_total; i++) {
+		for (INT j = 0; j < dimension_c; j++)
+			fprintf(fout, "%f\t", relation_matrix[i * dimension_c + j]);
+		fprintf(fout, "\n");
+	}
+	for (INT i = 0; i < relation_total; i++) 
+		fprintf(fout, "%f\t",relation_matrix_bias[i]);
+	fprintf(fout, "\n");
+	fclose(fout);
+	
 }
 
 #endif

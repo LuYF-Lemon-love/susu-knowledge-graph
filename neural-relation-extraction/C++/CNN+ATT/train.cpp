@@ -1,15 +1,4 @@
-#include <cstring>
-#include <cstdio>
-#include <vector>
-#include <string>
-#include <cstdlib>
-#include <map>
-#include <cmath>
-#include <pthread.h>
-#include <iostream>
-
 #include<assert.h>
-#include<ctime>
 #include<sys/time.h>
 
 #include "init.h"
@@ -416,7 +405,7 @@ void train() {
 }
 
 INT main(INT argc, char ** argv) {
-	output_model = 1;
+	//output_model = 1;
 	std::cout<<"Init Begin."<<std::endl;
 	init();
 	//for (map<string,vector<INT> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)

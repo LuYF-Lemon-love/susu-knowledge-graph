@@ -24,59 +24,61 @@ void preprocess()
 			attention_weights[i][j].resize(dimension_c);
 	}
 	
-	FILE *fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "r");
-	fscanf(fout,"%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
-	for (INT i = 0; i < dimension_c; i++) {
-		for (INT j = 0; j < dimension * window; j++)
-			fscanf(fout, "%f", &conv_1d_word[i* dimension*window+j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			fscanf(fout, "%f", &conv_1d_position_head[i* dimension_pos*window+j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			fscanf(fout, "%f", &conv_1d_position_tail[i* dimension_pos*window+j]);
-		fscanf(fout, "%f", &conv_1d_bias[i]);
-	}
-	fclose(fout);
+	INT tmp;
 
-	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "r");
-	fscanf(fout,"%d%d", &relation_total, &dimension_c);
-	for (INT i = 0; i < relation_total; i++) {
-		for (INT j = 0; j < dimension_c; j++)
-			fscanf(fout, "%f", &relation_matrix[i * dimension_c + j]);
-	}
-	for (INT i = 0; i < relation_total; i++) 
-		fscanf(fout, "%f", &relation_matrix_bias[i]);
-	fclose(fout);
-
-	fout = fopen(("./out/position_vec" + version + ".txt").c_str(), "r");
-	fscanf(fout,"%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
-	for (INT i = 0; i < position_total_head; i++) {
-		for (INT j = 0; j < dimension_pos; j++)
-			fscanf(fout, "%f", &position_vec_head[i * dimension_pos + j]);
-	}
-	for (INT i = 0; i < position_total_tail; i++) {
-		for (INT j = 0; j < dimension_pos; j++)
-			fscanf(fout, "%f", &position_vec_tail[i * dimension_pos + j]);
-	}
-	fclose(fout);
-
-	fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "r");
-	fscanf(fout,"%d%d",&word_total,&dimension);
+	FILE *fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "r");
+	tmp = fscanf(fout,"%d%d",&word_total,&dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
 		for (INT j=0; j<dimension; j++)
-			fscanf(fout,"%f", &word_vec[i*dimension+j]);
+			tmp = fscanf(fout,"%f", &word_vec[i*dimension+j]);
 	}
 	fclose(fout);
-	
+
+	fout = fopen(("./out/position_vec" + version + ".txt").c_str(), "r");
+	tmp = fscanf(fout,"%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
+	for (INT i = 0; i < position_total_head; i++) {
+		for (INT j = 0; j < dimension_pos; j++)
+			tmp = fscanf(fout, "%f", &position_vec_head[i * dimension_pos + j]);
+	}
+	for (INT i = 0; i < position_total_tail; i++) {
+		for (INT j = 0; j < dimension_pos; j++)
+			tmp = fscanf(fout, "%f", &position_vec_tail[i * dimension_pos + j]);
+	}
+	fclose(fout);
+
+	fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "r");
+	tmp = fscanf(fout,"%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
+	for (INT i = 0; i < dimension_c; i++) {
+		for (INT j = 0; j < dimension * window; j++)
+			tmp = fscanf(fout, "%f", &conv_1d_word[i* dimension*window+j]);
+		for (INT j = 0; j < dimension_pos * window; j++)
+			tmp = fscanf(fout, "%f", &conv_1d_position_head[i* dimension_pos*window+j]);
+		for (INT j = 0; j < dimension_pos * window; j++)
+			tmp = fscanf(fout, "%f", &conv_1d_position_tail[i* dimension_pos*window+j]);
+		tmp = fscanf(fout, "%f", &conv_1d_bias[i]);
+	}
+	fclose(fout);
+
 	fout = fopen(("./out/attention_weights" + version + ".txt").c_str(), "r");
-	fscanf(fout,"%d%d", &relation_total, &dimension_c);
+	tmp = fscanf(fout,"%d%d", &relation_total, &dimension_c);
 	for (INT r1 = 0; r1 < relation_total; r1++) {
 		for (INT i = 0; i < dimension_c; i++)
 		{
 			for (INT j = 0; j < dimension_c; j++)
-				fscanf(fout, "%f", &attention_weights[r1][i][j]);
+				tmp = fscanf(fout, "%f", &attention_weights[r1][i][j]);
 		}
 	}
+	fclose(fout);
+
+	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "r");
+	tmp = fscanf(fout,"%d%d", &relation_total, &dimension_c);
+	for (INT i = 0; i < relation_total; i++) {
+		for (INT j = 0; j < dimension_c; j++)
+			tmp = fscanf(fout, "%f", &relation_matrix[i * dimension_c + j]);
+	}
+	for (INT i = 0; i < relation_total; i++) 
+		tmp = fscanf(fout, "%f", &relation_matrix_bias[i]);
 	fclose(fout);
 }
 

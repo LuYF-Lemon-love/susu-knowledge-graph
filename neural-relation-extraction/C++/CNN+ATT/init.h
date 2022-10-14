@@ -11,9 +11,6 @@
 #include <algorithm>
 #include <pthread.h>
 #include <iostream>
-#include <assert.h>
-#include <ctime>
-#include <sys/time.h>
 
 #define INT int
 #define REAL float
@@ -23,7 +20,7 @@ using namespace std;
 
 std::string version = "";
 
-INT output_model = 1;
+INT output_model = 0;
 INT num_threads = 32;
 INT train_times = 10;
 REAL reduce = 0.98;
@@ -115,6 +112,7 @@ std::vector<std::vector<std::vector<REAL> > > attention_weights, att_W_Dao;
 // relation_matrix (relation_total * dimension_c): the representation matrix of relation
 // relation_matrix_bias (relation_total): the bias vector of the representation matrix of relation
 REAL *relation_matrix, *relation_matrix_bias;
+
 REAL *matrixRelationDao, *matrixRelationPrDao;
 REAL *wordVecDao;
 REAL *matrixW1PositionE1Dao;
