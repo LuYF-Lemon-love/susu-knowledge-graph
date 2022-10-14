@@ -18,7 +18,7 @@ using namespace std;
 
 std::string version = "";
 
-INT output_model = 0;
+INT output_model = 1;
 INT num_threads = 32;
 INT train_times = 10;
 REAL reduce = 0.98;
