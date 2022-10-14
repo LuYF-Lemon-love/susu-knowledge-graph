@@ -2,10 +2,7 @@
 #define TEST_H
 #include "init.h"
 
-bool cmp(pair<string, pair<INT,double> > a,pair<string, pair<INT,double> >b)
-{
-    return a.second.second>b.second.second;
-}
+
 
 // total: 计算测试集中样本数 (每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
 // bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
@@ -14,7 +11,18 @@ double total;
 std::vector<std::string> bags_test_key;
 std::vector<INT> thread_first_bags_test;
 
-std::vector<std::pair<std::string, std::pair<INT,double> > >aa;
+// predict_relation_vector: 每一个元素的 key -> (头实体 + "\t" + 尾实体 + "\t" + 预测关系名)
+// value 的 key -> (0 或 1, 0 表示关系预测错误, 1 表示关系预测正确)
+// value 的 value -> 模型给出的该关系成立的概率
+// 以模型给出的关系成立的概率降序排列
+std::vector<std::pair<std::string, std::pair<INT,double> > > predict_relation_vector;
+
+// 为 std::sort() 定义比较函数
+// 以模型给出的关系成立的概率降序排列
+bool cmp_predict_probability(pair<string, pair<INT,double> > a,pair<string, pair<INT,double> >b)
+{
+    return a.second.second > b.second.second;
+}
 
 // 互斥锁
 pthread_mutex_t mutex;
@@ -134,7 +142,7 @@ void* test_mode(void *thread_id)
 		pthread_mutex_lock (&mutex);
 		for (INT i_r = 1; i_r < relation_total; i_r++) 
 		{
-			aa.push_back(make_pair(bags_test_key[i_sample] + "\t" + id2relation[i_r],
+			predict_relation_vector.push_back(make_pair(bags_test_key[i_sample] + "\t" + id2relation[i_r],
 				make_pair(sample_relation_list.count(i_r), result_final[i_r])));
 		}
 		pthread_mutex_unlock(&mutex);
@@ -145,7 +153,7 @@ void* test_mode(void *thread_id)
 
 // 测试函数
 void test() {
-	aa.clear();
+	predict_relation_vector.clear();
 	total = 0;
 	bags_test_key.clear();
 	thread_first_bags_test.clear();
@@ -189,88 +197,86 @@ void test() {
 		pthread_join(pt[a], NULL);
 	free(pt);
 
-	sort(aa.begin(),aa.end(),cmp);
-	double correct=0;
-	REAL correct1 = 0;
-	for (INT i=0; i<min(2000,INT(aa.size())); i++)
-	{
-		if (aa[i].second.first!=0)
-			correct1++;	
-		REAL precision = correct1/(i+1);
-		REAL recall = correct1/total;
-		if (i%100==0)
-			std::cout<<"precision:\t"<<correct1/(i+1)<<'\t'<<"recall:\t"<<correct1/total<<std::endl;	
-	}
-	{
-		FILE* f = fopen(("out/pr"+version+".txt").c_str(), "w");
-		for (INT i=0; i<2000; i++)
-		{
-			if (aa[i].second.first!=0)
-				correct++;	
-			fprintf(f,"%lf\t%lf\t%lf\t%s\n",correct/(i+1), correct/total,aa[i].second.second, aa[i].first.c_str());
-		}
-		fclose(f);
-		if (!output_model)return;
-		FILE *fout = fopen(("./out/matrixW1+B1.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
-		for (INT i = 0; i < dimension_c; i++) {
-			for (INT j = 0; j < dimension * window; j++)
-				fprintf(fout, "%f\t",conv_1d_word[i* dimension*window+j]);
-			for (INT j = 0; j < dimension_pos * window; j++)
-				fprintf(fout, "%f\t",conv_1d_position_head[i* dimension_pos*window+j]);
-			for (INT j = 0; j < dimension_pos * window; j++)
-				fprintf(fout, "%f\t",conv_1d_position_tail[i* dimension_pos*window+j]);
-			fprintf(fout, "%f\n", conv_1d_bias[i]);
-		}
-		fclose(fout);
+	std::sort(predict_relation_vector.begin(),predict_relation_vector.end(), cmp_predict_probability);
 
-		fout = fopen(("./out/matrixRl.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
-		for (INT i = 0; i < relation_total; i++) {
-			for (INT j = 0; j < dimension_c; j++)
-				fprintf(fout, "%f\t", relation_matrix[i * dimension_c + j]);
-			fprintf(fout, "\n");
-		}
-		for (INT i = 0; i < relation_total; i++) 
-			fprintf(fout, "%f\t",relation_matrix_bias[i]);
+	REAL correct = 0;
+	FILE* f = fopen(("out/pr" + version + ".txt").c_str(), "w");
+	for (INT i = 0; i < min(2000, INT(predict_relation_vector.size())); i++)
+	{
+		if (predict_relation_vector[i].second.first != 0)
+			correct++;	
+		REAL precision = correct/(i+1);
+		REAL recall = correct/total;
+		if (i % 50 == 0)
+			std::cout << "precision:\t" << precision << "\t\t" << "recall:\t" << recall <<std::endl;
+		fprintf(f,"precision: %lf\t\trecall: %lf\t\tcorrect: %ld\t\tpredict_probability: %lf\t\tpredict_triplet: %s\n",
+			precision, recall, predict_relation_vector[i].second.first, predict_relation_vector[i].second.second,
+			predict_relation_vector[i].first.c_str());	
+	}
+	fclose(f);
+
+	if (!output_model)return;
+
+	FILE *fout = fopen(("./out/matrixW1+B1.txt"+version).c_str(), "w");
+	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
+	for (INT i = 0; i < dimension_c; i++) {
+		for (INT j = 0; j < dimension * window; j++)
+			fprintf(fout, "%f\t",conv_1d_word[i* dimension*window+j]);
+		for (INT j = 0; j < dimension_pos * window; j++)
+			fprintf(fout, "%f\t",conv_1d_position_head[i* dimension_pos*window+j]);
+		for (INT j = 0; j < dimension_pos * window; j++)
+			fprintf(fout, "%f\t",conv_1d_position_tail[i* dimension_pos*window+j]);
+		fprintf(fout, "%f\n", conv_1d_bias[i]);
+	}
+	fclose(fout);
+
+	fout = fopen(("./out/matrixRl.txt"+version).c_str(), "w");
+	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
+	for (INT i = 0; i < relation_total; i++) {
+		for (INT j = 0; j < dimension_c; j++)
+			fprintf(fout, "%f\t", relation_matrix[i * dimension_c + j]);
 		fprintf(fout, "\n");
-		fclose(fout);
-
-		fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
-		for (INT i = 0; i < position_total_head; i++) {
-			for (INT j = 0; j < dimension_pos; j++)
-				fprintf(fout, "%f\t", position_vec_head[i * dimension_pos + j]);
-			fprintf(fout, "\n");
-		}
-		for (INT i = 0; i < position_total_tail; i++) {
-			for (INT j = 0; j < dimension_pos; j++)
-				fprintf(fout, "%f\t", position_vec_tail[i * dimension_pos + j]);
-			fprintf(fout, "\n");
-		}
-		fclose(fout);
-	
-		fout = fopen(("./out/word2vec.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n",word_total,dimension);
-		for (INT i = 0; i < word_total; i++)
-		{
-			for (INT j=0; j<dimension; j++)
-				fprintf(fout,"%f\t",word_vec[i*dimension+j]);
-			fprintf(fout,"\n");
-		}
-		fclose(fout);
-		fout = fopen(("./out/att_W.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
-		for (INT r1 = 0; r1 < relation_total; r1++) {
-			for (INT i = 0; i < dimension_c; i++)
-			{
-				for (INT j = 0; j < dimension_c; j++)
-					fprintf(fout, "%f\t", attention_weights[r1][i][j]);
-				fprintf(fout, "\n");
-			}
-		}
-		fclose(fout);
 	}
+	for (INT i = 0; i < relation_total; i++) 
+		fprintf(fout, "%f\t",relation_matrix_bias[i]);
+	fprintf(fout, "\n");
+	fclose(fout);
+
+	fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "w");
+	fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
+	for (INT i = 0; i < position_total_head; i++) {
+		for (INT j = 0; j < dimension_pos; j++)
+			fprintf(fout, "%f\t", position_vec_head[i * dimension_pos + j]);
+		fprintf(fout, "\n");
+	}
+	for (INT i = 0; i < position_total_tail; i++) {
+		for (INT j = 0; j < dimension_pos; j++)
+			fprintf(fout, "%f\t", position_vec_tail[i * dimension_pos + j]);
+		fprintf(fout, "\n");
+	}
+	fclose(fout);
+
+	fout = fopen(("./out/word2vec.txt"+version).c_str(), "w");
+	fprintf(fout,"%d\t%d\n",word_total,dimension);
+	for (INT i = 0; i < word_total; i++)
+	{
+		for (INT j=0; j<dimension; j++)
+			fprintf(fout,"%f\t",word_vec[i*dimension+j]);
+		fprintf(fout,"\n");
+	}
+	fclose(fout);
+	
+	fout = fopen(("./out/att_W.txt"+version).c_str(), "w");
+	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
+	for (INT r1 = 0; r1 < relation_total; r1++) {
+		for (INT i = 0; i < dimension_c; i++)
+		{
+			for (INT j = 0; j < dimension_c; j++)
+				fprintf(fout, "%f\t", attention_weights[r1][i][j]);
+			fprintf(fout, "\n");
+		}
+	}
+	fclose(fout);
 }
 
 #endif
