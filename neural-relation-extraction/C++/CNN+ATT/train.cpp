@@ -9,8 +9,7 @@ using namespace std;
 double score = 0;
 REAL alpha1;
 
-struct timeval t_start,t_end; 
-long start,end;
+struct timeval t_start, t_end;
 
 void time_begin()
 {
@@ -20,7 +19,8 @@ void time_begin()
 void time_end()
 {
   gettimeofday(&t_end, NULL);
-  std::cout<<"time(s):\t"<<(double(((long)t_end.tv_sec)*1000+(long)t_end.tv_usec/1000)-double(((long)t_start.tv_sec)*1000+(long)t_start.tv_usec/1000))/1000<<std::endl;
+  long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
+  std::cout << "time(s):\t" << time_use/1000000.0 << std::endl;
 }
 
 
@@ -238,7 +238,6 @@ INT tot_batch;
 void* trainMode(void *id ) {
 		unsigned long long next_random = (long long)id;
 		test_tmp = 0;
-	//	for (INT k1 = batch; k1 > 0; k1--)
 		while (true)
 		{
 
@@ -249,17 +248,11 @@ void* trainMode(void *id ) {
 				break;
 			}
 			score_tmp+=1;
-		//	std::cout<<score_tmp<<' '<<score_max<<std::endl;
 			pthread_mutex_unlock (&mutex1);
 			INT j = get_rand(0, c_train.size());
-			//std::cout<<j<<'|';
 			j = c_train[j];
-			//std::cout<<j<<'|';
-			//test_tmp+=bags_train[b_train[j]].size();
-			//std::cout<<test_tmp<<' ';
 			score += train_bags(b_train[j]);
 		}
-		//std::cout<<std::endl;
 }
 
 void train() {
@@ -268,7 +261,7 @@ void train() {
 	c_train.clear();
 	for (map<string,vector<INT> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)
 	{
-		INT max_size = 1;//it->second.size()/2;
+		INT max_size = 1;
 		for (INT i=0; i<max(1,max_size); i++)
 			c_train.push_back(b_train.size());
 		b_train.push_back(it->first);
@@ -283,7 +276,7 @@ void train() {
 		for (INT j=0; j<dimension_c; j++)
 		{
 			attention_weights[i][j].resize(dimension_c);
-			attention_weights[i][j][j] = 1.00;//1;
+			attention_weights[i][j][j] = 1.00;
 		}
 	}
 	att_W_Dao = attention_weights;
@@ -349,13 +342,8 @@ void train() {
 	positionVecDaoE2 = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
 	matrixW1PositionE1Dao = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
 	matrixW1PositionE2Dao = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	/*time_begin();
-	test();
-	time_end();*/
-//	return;
-	for (turn = 0; turn < train_times; turn ++) {
 
-	//	len = train_sentence_list.size();
+	for (turn = 0; turn < train_times; turn ++) {
 		len = c_train.size();
 		npoch  =  len / (batch * num_threads);
 		alpha1 = alpha*rate/batch;
@@ -367,7 +355,6 @@ void train() {
 		time_begin();
 		for (INT k = 1; k <= npoch; k++) {
 			score_max += batch * num_threads;
-		//	std::cout<<k<<std::endl;
 			memcpy(positionVecDaoE1, position_vec_head, position_total_head * dimension_pos* sizeof(REAL));
 			memcpy(positionVecDaoE2, position_vec_tail, position_total_tail * dimension_pos* sizeof(REAL));
 			memcpy(matrixW1PositionE1Dao, conv_1d_position_head, dimension_c * dimension_pos * window* sizeof(REAL));
@@ -408,9 +395,7 @@ INT main(INT argc, char ** argv) {
 	//output_model = 1;
 	std::cout<<"Init Begin."<<std::endl;
 	init();
-	//for (map<string,vector<INT> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)
-	//	std::cout<<it->first<<std::endl;
-	std::cout<<bags_train.size()<<' '<<bags_test.size()<<std::endl;
+	std::cout<< bags_train.size() << ' ' << bags_test.size() << std::endl;
 	std::cout<<"Init End."<<std::endl;
 	train();
 }

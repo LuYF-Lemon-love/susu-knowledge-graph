@@ -22,7 +22,7 @@ std::string version = "";
 
 INT output_model = 0;
 INT num_threads = 32;
-INT train_times = 10;
+INT train_times = 25;
 REAL reduce = 0.98;
 
 // dimension_c: sentence embedding size
