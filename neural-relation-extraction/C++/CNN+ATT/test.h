@@ -21,10 +21,10 @@ pthread_mutex_t mutex;
 
 vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_tail, INT len, REAL *r) {
 
-	INT tip[dimensionC];
-	for (INT i = 0; i < dimensionC; i++) {
+	INT tip[dimension_c];
+	for (INT i = 0; i < dimension_c; i++) {
 		INT last = i * dimension * window;
-		INT lastt = i * dimensionWPE * window;
+		INT lastt = i * dimension_pos * window;
 		REAL mx = -FLT_MAX;
 		for (INT i1 = 0; i1 <= len - window; i1++) {
 			REAL res = 0;
@@ -36,9 +36,9 @@ vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_t
 			 		res += matrixW1[last + tot] * word_vec[last1+k];
 			 		tot++;
 			 	}
-			 	INT last2 = test_position_head[j] * dimensionWPE;
-			 	INT last3 = test_position_tail[j] * dimensionWPE;
-			 	for (INT k = 0; k < dimensionWPE; k++) {
+			 	INT last2 = test_position_head[j] * dimension_pos;
+			 	INT last3 = test_position_tail[j] * dimension_pos;
+			 	for (INT k = 0; k < dimension_pos; k++) {
 			 		res += matrixW1PositionE1[lastt + tot1] * positionVecE1[last2+k];
 			 		res += matrixW1PositionE2[lastt + tot1] * positionVecE2[last3+k];
 			 		tot1++;
@@ -49,14 +49,14 @@ vector<double> test(INT *sentence, INT *test_position_head, INT *test_position_t
 		r[i] = mx + matrixB1[i];
 	}
 
-	for (INT i = 0; i < dimensionC; i++)
+	for (INT i = 0; i < dimension_c; i++)
 		r[i] = calc_tanh(r[i]);
 	vector<double> res;
 	double tmp = 0;
 	for (INT j = 0; j < relation_total; j++) {
 		REAL s = 0;
-		for (INT i = 0; i < dimensionC; i++)
-			s +=  0.5 * matrixRelation[j * dimensionC + i] * r[i];
+		for (INT i = 0; i < dimension_c; i++)
+			s +=  0.5 * matrixRelation[j * dimension_c + i] * r[i];
 		s += matrixRelationPr[j];
 		s = exp(s);
 		tmp+=s;
@@ -77,14 +77,14 @@ void* test_mode(void *thread_id)
 		rr = bags_test_key.size();
 	else
 		rr = thread_first_bags_test[id + 1];
-	REAL *r = (REAL *)calloc(dimensionC, sizeof(REAL));
+	REAL *r = (REAL *)calloc(dimension_c, sizeof(REAL));
 
 	double eps = 0.1;
 	for (INT ii = ll; ii < rr; ii++)
 	{
 		vector<double> sum;
 		vector<double> r_sum;
-		r_sum.resize(dimensionC);
+		r_sum.resize(dimension_c);
 		for (INT j = 0; j < relation_total; j++)
 			sum.push_back(0.0);
 		map<INT,INT> ok;
@@ -99,7 +99,7 @@ void* test_mode(void *thread_id)
 			{
 				vector<double> score = test(test_sentence_list[i],  test_position_head[i], test_position_tail[i], test_length[i], r);
 				vector<double> r_tmp;
-				for (INT j = 0; j < dimensionC; j++)
+				for (INT j = 0; j < dimension_c; j++)
 					r_tmp.push_back(r[j]);
 				rList.push_back(r_tmp);
 			}
@@ -110,13 +110,13 @@ void* test_mode(void *thread_id)
 			for (INT k=0; k<bags_size; k++)
 			{
 				REAL s = 0;
-				for (INT i = 0; i < dimensionC; i++) 
+				for (INT i = 0; i < dimension_c; i++) 
 				{
 					REAL tmp = 0;
-					for (INT jj = 0; jj < dimensionC; jj++)
+					for (INT jj = 0; jj < dimension_c; jj++)
 					//	if (i==jj)
 						tmp+=rList[k][jj]*att_W[j][jj][i];
-					s += tmp * matrixRelation[j * dimensionC + i];
+					s += tmp * matrixRelation[j * dimension_c + i];
 				}
 				s = exp(s); 
 				weight.push_back(s);
@@ -126,16 +126,16 @@ void* test_mode(void *thread_id)
 				weight[k]/=weight_sum;
 			
 			vector<REAL> r;
-			r.resize(dimensionC);
-			for (INT i = 0; i < dimensionC; i++) 
+			r.resize(dimension_c);
+			for (INT i = 0; i < dimension_c; i++) 
 				for (INT k=0; k<bags_size; k++)
 					r[i] += rList[k][i] * weight[k];
 			vector<REAL> res;
 			double tmp = 0;
 			for (INT j1 = 0; j1 < relation_total; j1++) {
 				REAL s = 0;
-				for (INT i1 = 0; i1 < dimensionC; i1++)
-					s +=  0.5 * matrixRelation[j1 * dimensionC + i1] * r[i1];
+				for (INT i1 = 0; i1 < dimension_c; i1++)
+					s +=  0.5 * matrixRelation[j1 * dimension_c + i1] * r[i1];
 				s += matrixRelationPr[j1];
 				s = exp(s);
 				tmp+=s;
@@ -226,23 +226,23 @@ void test() {
 		fclose(f);
 		if (!output_model)return;
 		FILE *fout = fopen(("./out/matrixW1+B1.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\t%d\t%d\n", dimensionC, dimension, window, dimensionWPE);
-		for (INT i = 0; i < dimensionC; i++) {
+		fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
+		for (INT i = 0; i < dimension_c; i++) {
 			for (INT j = 0; j < dimension * window; j++)
 				fprintf(fout, "%f\t",matrixW1[i* dimension*window+j]);
-			for (INT j = 0; j < dimensionWPE * window; j++)
-				fprintf(fout, "%f\t",matrixW1PositionE1[i* dimensionWPE*window+j]);
-			for (INT j = 0; j < dimensionWPE * window; j++)
-				fprintf(fout, "%f\t",matrixW1PositionE2[i* dimensionWPE*window+j]);
+			for (INT j = 0; j < dimension_pos * window; j++)
+				fprintf(fout, "%f\t",matrixW1PositionE1[i* dimension_pos*window+j]);
+			for (INT j = 0; j < dimension_pos * window; j++)
+				fprintf(fout, "%f\t",matrixW1PositionE2[i* dimension_pos*window+j]);
 			fprintf(fout, "%f\n", matrixB1[i]);
 		}
 		fclose(fout);
 
 		fout = fopen(("./out/matrixRl.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n", relation_total, dimensionC);
+		fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
 		for (INT i = 0; i < relation_total; i++) {
-			for (INT j = 0; j < dimensionC; j++)
-				fprintf(fout, "%f\t", matrixRelation[i * dimensionC + j]);
+			for (INT j = 0; j < dimension_c; j++)
+				fprintf(fout, "%f\t", matrixRelation[i * dimension_c + j]);
 			fprintf(fout, "\n");
 		}
 		for (INT i = 0; i < relation_total; i++) 
@@ -251,15 +251,15 @@ void test() {
 		fclose(fout);
 
 		fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimensionWPE);
+		fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
 		for (INT i = 0; i < position_total_head; i++) {
-			for (INT j = 0; j < dimensionWPE; j++)
-				fprintf(fout, "%f\t", positionVecE1[i * dimensionWPE + j]);
+			for (INT j = 0; j < dimension_pos; j++)
+				fprintf(fout, "%f\t", positionVecE1[i * dimension_pos + j]);
 			fprintf(fout, "\n");
 		}
 		for (INT i = 0; i < position_total_tail; i++) {
-			for (INT j = 0; j < dimensionWPE; j++)
-				fprintf(fout, "%f\t", positionVecE2[i * dimensionWPE + j]);
+			for (INT j = 0; j < dimension_pos; j++)
+				fprintf(fout, "%f\t", positionVecE2[i * dimension_pos + j]);
 			fprintf(fout, "\n");
 		}
 		fclose(fout);
@@ -274,11 +274,11 @@ void test() {
 		}
 		fclose(fout);
 		fout = fopen(("./out/att_W.txt"+version).c_str(), "w");
-		fprintf(fout,"%d\t%d\n", relation_total, dimensionC);
+		fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
 		for (INT r1 = 0; r1 < relation_total; r1++) {
-			for (INT i = 0; i < dimensionC; i++)
+			for (INT i = 0; i < dimension_c; i++)
 			{
-				for (INT j = 0; j < dimensionC; j++)
+				for (INT j = 0; j < dimension_c; j++)
 					fprintf(fout, "%f\t", att_W[r1][i][j]);
 				fprintf(fout, "\n");
 			}

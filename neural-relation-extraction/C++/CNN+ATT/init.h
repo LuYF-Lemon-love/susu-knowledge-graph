@@ -21,11 +21,18 @@ std::string version = "";
 INT output_model = 0;
 INT num_threads = 32;
 INT trainTimes = 10;
-REAL alpha = 0.02;
 REAL reduce = 0.98;
-INT dimensionC = 230;
-INT dimensionWPE = 5;
+
+// dimension_c: sentence embedding size
+// dimension_pos: position dimension
+// window: window size
+// batch: batch size
+// alpha: learning rate
+INT dimension_c = 230;
+INT dimension_pos = 5;
 INT window = 3;
+INT batch = 160;
+REAL alpha = 0.01;
 
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 INT limit = 30;
@@ -41,7 +48,6 @@ REAL *matrixB1Dao;
 
 std::vector<std::vector<std::vector<REAL> > > att_W, att_W_Dao;
 double mx = 0;
-INT batch = 16;
 INT npoch;
 INT len;
 REAL rate = 1;
