@@ -194,11 +194,11 @@ REAL train_bags(string bags_name)
 			if (dropout[i]!=0)
 			{
 				g1 += g * matrixRelationDao[r2 * dimension_c + i];
-				matrixRelation[r2 * dimension_c + i] -= g * r[i];
+				relation_matrix[r2 * dimension_c + i] -= g * r[i];
 			}
 			g1_tmp[i]+=g1;
 		}
-		matrixRelationPr[r2] -= g;
+		relation_matrix_bias[r2] -= g;
 	}
 		for (INT i = 0; i < dimension_c; i++) 
 		{
@@ -210,9 +210,9 @@ REAL train_bags(string bags_name)
 				for (INT j = 0; j < dimension_c; j++)
 				{
 					grad[k][j]+=g1*rList[k][i]*weight[k]*matrixRelationDao[r1 * dimension_c + i]*att_W_Dao[r1][j][i];
-					matrixRelation[r1 * dimension_c + i] += g1*rList[k][i]*weight[k]*rList[k][j]*att_W_Dao[r1][j][i];
+					relation_matrix[r1 * dimension_c + i] += g1*rList[k][i]*weight[k]*rList[k][j]*att_W_Dao[r1][j][i];
 					if (i==j)
-					  att_W[r1][j][i] += g1*rList[k][i]*weight[k]*rList[k][j]*matrixRelationDao[r1 * dimension_c + i];
+					  attention_weights[r1][j][i] += g1*rList[k][i]*weight[k]*rList[k][j]*matrixRelationDao[r1 * dimension_c + i];
 				}
 				tmp_sum += rList[k][i]*weight[k];
 			}	
@@ -221,9 +221,9 @@ REAL train_bags(string bags_name)
 				for (INT j = 0; j < dimension_c; j++)
 				{
 					grad[k1][j]-=g1*tmp_sum*weight[k1]*matrixRelationDao[r1 * dimension_c + i]*att_W_Dao[r1][j][i];
-					matrixRelation[r1 * dimension_c + i] -= g1*tmp_sum*weight[k1]*rList[k1][j]*att_W_Dao[r1][j][i];
+					relation_matrix[r1 * dimension_c + i] -= g1*tmp_sum*weight[k1]*rList[k1][j]*att_W_Dao[r1][j][i];
 					if (i==j)
-					  att_W[r1][j][i] -= g1*tmp_sum*weight[k1]*rList[k1][j]*matrixRelationDao[r1 * dimension_c + i];
+					  attention_weights[r1][j][i] -= g1*tmp_sum*weight[k1]*rList[k1][j]*matrixRelationDao[r1 * dimension_c + i];
 				}
 			}
 		}
@@ -287,22 +287,22 @@ void train() {
 	}
 	std::cout<<c_train.size()<<std::endl;
 	
-	att_W.resize(relation_total);
+	attention_weights.resize(relation_total);
 	for (INT i=0; i<relation_total; i++)
 	{
-		att_W[i].resize(dimension_c);
+		attention_weights[i].resize(dimension_c);
 		for (INT j=0; j<dimension_c; j++)
 		{
-			att_W[i][j].resize(dimension_c);
-			att_W[i][j][j] = 1.00;//1;
+			attention_weights[i][j].resize(dimension_c);
+			attention_weights[i][j][j] = 1.00;//1;
 		}
 	}
-	att_W_Dao = att_W;
+	att_W_Dao = attention_weights;
 
 	REAL con = sqrt(6.0/(dimension_c+relation_total));
 	REAL con1 = sqrt(6.0/((dimension_pos+dimension)*window));
-	matrixRelation = (REAL *)calloc(dimension_c * relation_total, sizeof(REAL));
-	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
+	relation_matrix = (REAL *)calloc(dimension_c * relation_total, sizeof(REAL));
+	relation_matrix_bias = (REAL *)calloc(relation_total, sizeof(REAL));
 	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
 	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
@@ -331,9 +331,9 @@ void train() {
 
 	for (INT i = 0; i < relation_total; i++) 
 	{
-		matrixRelationPr[i] = get_rand_u(-con, con);				//add
+		relation_matrix_bias[i] = get_rand_u(-con, con);				//add
 		for (INT j = 0; j < dimension_c; j++)
-			matrixRelation[i * dimension_c + j] = get_rand_u(-con, con);
+			relation_matrix[i * dimension_c + j] = get_rand_u(-con, con);
 	}
 
 	for (INT i = 0; i < position_total_head; i++) {
@@ -387,9 +387,9 @@ void train() {
 
 			memcpy(matrixW1Dao, conv_1d_word, sizeof(REAL) * dimension_c * dimension * window);
 			memcpy(matrixB1Dao, conv_1d_bias, sizeof(REAL) * dimension_c);
-			memcpy(matrixRelationPrDao, matrixRelationPr, relation_total * sizeof(REAL));				//add
-			memcpy(matrixRelationDao, matrixRelation, dimension_c*relation_total * sizeof(REAL));
-			att_W_Dao = att_W;
+			memcpy(matrixRelationPrDao, relation_matrix_bias, relation_total * sizeof(REAL));				//add
+			memcpy(matrixRelationDao, relation_matrix, dimension_c*relation_total * sizeof(REAL));
+			att_W_Dao = attention_weights;
 			pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 			for (INT a = 0; a < num_threads; a++)
 				pthread_create(&pt[a], NULL, trainMode,  (void *)a);

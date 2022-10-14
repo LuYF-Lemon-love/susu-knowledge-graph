@@ -18,8 +18,8 @@
 void preprocess()
 {
 
-	matrixRelation = (REAL *)calloc(dimension_c * relation_total, sizeof(REAL));
-	matrixRelationPr = (REAL *)calloc(relation_total, sizeof(REAL));
+	relation_matrix = (REAL *)calloc(dimension_c * relation_total, sizeof(REAL));
+	relation_matrix_bias = (REAL *)calloc(relation_total, sizeof(REAL));
 	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
 	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
 	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
@@ -30,12 +30,12 @@ void preprocess()
 	conv_1d_position_tail = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
 	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 	
-	att_W.resize(relation_total);
+	attention_weights.resize(relation_total);
 	for (INT i=0; i<relation_total; i++)
 	{
-		att_W[i].resize(dimension_c);
+		attention_weights[i].resize(dimension_c);
 		for (INT j=0; j<dimension_c; j++)
-			att_W[i][j].resize(dimension_c);
+			attention_weights[i][j].resize(dimension_c);
 	}
 	version = "";
 	
@@ -56,10 +56,10 @@ void preprocess()
 	fscanf(fout,"%d%d", &relation_total, &dimension_c);
 	for (INT i = 0; i < relation_total; i++) {
 		for (INT j = 0; j < dimension_c; j++)
-			fscanf(fout, "%f", &matrixRelation[i * dimension_c + j]);
+			fscanf(fout, "%f", &relation_matrix[i * dimension_c + j]);
 	}
 	for (INT i = 0; i < relation_total; i++) 
-		fscanf(fout, "%f", &matrixRelationPr[i]);
+		fscanf(fout, "%f", &relation_matrix_bias[i]);
 	fclose(fout);
 
 	fout = fopen(("./out/matrixPosition.txt"+version).c_str(), "r");
@@ -88,7 +88,7 @@ void preprocess()
 		for (INT i = 0; i < dimension_c; i++)
 		{
 			for (INT j = 0; j < dimension_c; j++)
-				fscanf(fout, "%f", &att_W[r1][i][j]);
+				fscanf(fout, "%f", &attention_weights[r1][i][j]);
 		}
 	}
 	fclose(fout);

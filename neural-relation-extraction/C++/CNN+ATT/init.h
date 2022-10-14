@@ -28,17 +28,17 @@ REAL reduce = 0.98;
 // window: window size
 // batch: batch size
 // alpha: learning rate
+// dropout: dropout probability
 INT dimension_c = 230;
 INT dimension_pos = 5;
 INT window = 3;
 INT batch = 160;
 REAL alpha = 0.01;
+REAL dropout = 0.5;
 
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 INT limit = 30;
 
-
-std::vector<std::vector<std::vector<REAL> > > att_W, att_W_Dao;
 INT npoch;
 INT len;
 REAL rate = 1;
@@ -104,7 +104,13 @@ REAL *conv_1d_word, *conv_1d_position_head, *conv_1d_position_tail, *conv_1d_bia
 // position_vec_tail (position_total_tail * dimension_pos): 尾实体的位置嵌入矩阵
 REAL *position_vec_head, *position_vec_tail;
 
-REAL *matrixRelation, *matrixRelationDao, *matrixRelationPr, *matrixRelationPrDao;
+// attention_weights (relation_total * dimension_c * dimension_c): 注意力权重矩阵
+std::vector<std::vector<std::vector<REAL> > > attention_weights, att_W_Dao;
+
+// relation_matrix (relation_total * dimension_c): the representation matrix of relation
+// relation_matrix_bias (relation_total): the bias vector of the representation matrix of relation
+REAL *relation_matrix, *relation_matrix_bias;
+REAL *matrixRelationDao, *matrixRelationPrDao;
 REAL *wordVecDao;
 REAL *matrixW1PositionE1Dao;
 REAL *matrixW1PositionE2Dao;

@@ -58,83 +58,84 @@ void* test_mode(void *thread_id)
 {
 	INT id;
 	id = (unsigned long long)(thread_id);
-	INT ll = thread_first_bags_test[id];
-	INT rr;
+	INT left = thread_first_bags_test[id];
+	INT right;
 	if (id == num_threads-1)
-		rr = bags_test_key.size();
+		right = bags_test_key.size();
 	else
-		rr = thread_first_bags_test[id + 1];
+		right = thread_first_bags_test[id + 1];
 	REAL *result = (REAL *)calloc(dimension_c, sizeof(REAL));
 
-	double eps = 0.1;
-	for (INT ii = ll; ii < rr; ii++)
+	for (INT i_sample = left; i_sample < right; i_sample++)
 	{
-		vector<double> sum;
-		vector<double> r_sum;
-		r_sum.resize(dimension_c);
+		std::vector<double> result_final;
 		for (INT j = 0; j < relation_total; j++)
-			sum.push_back(0.0);
-		map<INT,INT> ok;
-		ok.clear();
-		vector<vector<double> > rList;
-		INT bags_size = bags_test[bags_test_key[ii]].size();
-		INT used = 0;
-		for (INT k=0; k<bags_size; k++)
+			result_final.push_back(0.0);
+
+		std::map<INT,INT> sample_relation_list;
+		sample_relation_list.clear();
+		std::vector<std::vector<double> > result_list;
+
+		INT bags_size = bags_test[bags_test_key[i_sample]].size();
+		for (INT k = 0; k < bags_size; k++)
 		{
-			INT i = bags_test[bags_test_key[ii]][k];
-			ok[test_relation_list[i]]=1;
-			{
-				calc_conv_1d(test_sentence_list[i],  test_position_head[i], test_position_tail[i], test_length[i], result);
-				vector<double> r_tmp;
-				for (INT j = 0; j < dimension_c; j++)
-					r_tmp.push_back(result[j]);
-				rList.push_back(r_tmp);
-			}
+			INT i = bags_test[bags_test_key[i_sample]][k];
+			sample_relation_list[test_relation_list[i]]=1;
+
+			calc_conv_1d(test_sentence_list[i],  test_position_head[i],
+				test_position_tail[i], test_length[i], result);
+			vector<double> result_temp;
+			for (INT j = 0; j < dimension_c; j++)
+				result_temp.push_back(result[j]);
+			result_list.push_back(result_temp);
 		}
-		for (INT j = 0; j < relation_total; j++) {
+
+		for (INT index_r = 0; index_r < relation_total; index_r++) {
 			vector<REAL> weight;
 			REAL weight_sum = 0;
-			for (INT k=0; k<bags_size; k++)
+			for (INT k = 0; k < bags_size; k++)
 			{
 				REAL s = 0;
-				for (INT i = 0; i < dimension_c; i++) 
+				for (INT i_r = 0; i_r < dimension_c; i_r++) 
 				{
-					REAL tmp = 0;
-					for (INT jj = 0; jj < dimension_c; jj++)
-					//	if (i==jj)
-						tmp+=rList[k][jj]*att_W[j][jj][i];
-					s += tmp * matrixRelation[j * dimension_c + i];
+					REAL temp = 0;
+					for (INT i_x = 0; i_x < dimension_c; i_x++)
+						temp += result_list[k][i_x] * attention_weights[index_r][i_x][i_r];
+					s += temp * relation_matrix[index_r * dimension_c + i_r];
 				}
-				s = exp(s); 
+				s = exp(s);
 				weight.push_back(s);
 				weight_sum += s;
 			}
-			for (INT k=0; k<bags_size; k++)
-				weight[k]/=weight_sum;
+
+			for (INT k = 0; k < bags_size; k++)
+				weight[k] /= weight_sum;
 			
-			vector<REAL> result;
-			result.resize(dimension_c);
+			vector<REAL> result_sentence;
+			result_sentence.resize(dimension_c);
 			for (INT i = 0; i < dimension_c; i++) 
-				for (INT k=0; k<bags_size; k++)
-					result[i] += rList[k][i] * weight[k];
-			vector<REAL> res;
-			double tmp = 0;
-			for (INT j1 = 0; j1 < relation_total; j1++) {
+				for (INT k = 0; k < bags_size; k++)
+					result_sentence[i] += result_list[k][i] * weight[k];
+
+			vector<REAL> result_final_r;
+			double temp = 0;
+			for (INT i_r = 0; i_r < relation_total; i_r++) {
 				REAL s = 0;
-				for (INT i1 = 0; i1 < dimension_c; i1++)
-					s +=  0.5 * matrixRelation[j1 * dimension_c + i1] * result[i1];
-				s += matrixRelationPr[j1];
+				for (INT i_s = 0; i_s < dimension_c; i_s++)
+					s +=  dropout * relation_matrix[i_r * dimension_c + i_s] * result_sentence[i_s];
+				s += relation_matrix_bias[i_r];
 				s = exp(s);
-				tmp+=s;
-				res.push_back(s);
+				temp += s;
+				result_final_r.push_back(s);
 			}
-			sum[j] = max(sum[j],res[j]/tmp);
+			result_final[index_r] = max(result_final[index_r], result_final_r[index_r]/temp);
 		}
+
 		pthread_mutex_lock (&mutex);
-		for (INT j = 1; j < relation_total; j++) 
+		for (INT i_r = 1; i_r < relation_total; i_r++) 
 		{
-			INT i = bags_test[bags_test_key[ii]][0];
-			aa.push_back(make_pair(bags_test_key[ii]+"\t"+id2relation[j],make_pair(ok.count(j),sum[j])));
+			aa.push_back(make_pair(bags_test_key[i_sample] + "\t" + id2relation[i_r],
+				make_pair(sample_relation_list.count(i_r), result_final[i_r])));
 		}
 		pthread_mutex_unlock(&mutex);
 	}
@@ -164,10 +165,8 @@ void test() {
 				sample_relation_list[test_relation_list[pos]]=1;
 		}
 		total += sample_relation_list.size();
-		{
-			bags_test_key.push_back(it->first);
-			sample_sum.push_back(it->second.size());
-		}
+		bags_test_key.push_back(it->first);
+		sample_sum.push_back(it->second.size());
 	}
 
 	for (INT i = 1; i < sample_sum.size(); i++)
@@ -229,11 +228,11 @@ void test() {
 		fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
 		for (INT i = 0; i < relation_total; i++) {
 			for (INT j = 0; j < dimension_c; j++)
-				fprintf(fout, "%f\t", matrixRelation[i * dimension_c + j]);
+				fprintf(fout, "%f\t", relation_matrix[i * dimension_c + j]);
 			fprintf(fout, "\n");
 		}
 		for (INT i = 0; i < relation_total; i++) 
-			fprintf(fout, "%f\t",matrixRelationPr[i]);
+			fprintf(fout, "%f\t",relation_matrix_bias[i]);
 		fprintf(fout, "\n");
 		fclose(fout);
 
@@ -266,7 +265,7 @@ void test() {
 			for (INT i = 0; i < dimension_c; i++)
 			{
 				for (INT j = 0; j < dimension_c; j++)
-					fprintf(fout, "%f\t", att_W[r1][i][j]);
+					fprintf(fout, "%f\t", attention_weights[r1][i][j]);
 				fprintf(fout, "\n");
 			}
 		}
