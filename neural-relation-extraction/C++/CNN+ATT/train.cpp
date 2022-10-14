@@ -395,7 +395,8 @@ INT main(INT argc, char ** argv) {
 	//output_model = 1;
 	std::cout<<"Init Begin."<<std::endl;
 	init();
-	std::cout<< bags_train.size() << ' ' << bags_test.size() << std::endl;
+	std::cout<< "bags_train.size: " << bags_train.size() << '\t' 
+	         << "bags_test.size: " << bags_test.size() << std::endl;
 	std::cout<<"Init End."<<std::endl;
 	train();
 }

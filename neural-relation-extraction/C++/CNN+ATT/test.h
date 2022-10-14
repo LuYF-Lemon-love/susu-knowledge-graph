@@ -4,7 +4,7 @@
 
 
 
-// total: 计算测试集中样本数 (每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
+// total: 计算测试集中样本数 (其中 relation 非 NA,每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
 // bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
 // thread_first_bags_test (num_threads + 1): 保存每个线程第一个样本在 bags_test_key 中的位置
 double total;
@@ -163,7 +163,6 @@ void test() {
 	for (std::map<std::string, std::vector<INT> >::iterator it = bags_test.begin();
 		it != bags_test.end(); it++)
 	{
-		
 		std::map<INT, INT> sample_relation_list;
 		sample_relation_list.clear();
 		for (INT i = 0; i < it->second.size(); i++)
