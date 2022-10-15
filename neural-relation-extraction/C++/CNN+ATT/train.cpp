@@ -9,18 +9,27 @@ using namespace std;
 double score = 0;
 REAL alpha1;
 
+INT turn;
+
+INT test_tmp = 0;
+
+std::vector<string> b_train;
+std::vector<INT> c_train;
+double score_tmp = 0, score_max = 0;
+pthread_mutex_t mutex1;
+INT tot_batch;
+
 struct timeval t_start, t_end;
 
 void time_begin()
 {
-  
-  gettimeofday(&t_start, NULL);
+	gettimeofday(&t_start, NULL);
 }
 void time_end()
 {
-  gettimeofday(&t_end, NULL);
-  long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
-  std::cout << "time(s):\t" << time_use/1000000.0 << std::endl;
+	gettimeofday(&t_end, NULL);
+	long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
+	std::cout << "time(s):\t" << time_use/1000000.0 << std::endl;
 }
 
 
@@ -225,16 +234,6 @@ REAL train_bags(string bags_name)
 	return rt;
 }
 
-INT turn;
-
-INT test_tmp = 0;
-
-vector<string> b_train;
-vector<INT> c_train;
-double score_tmp = 0, score_max = 0;
-pthread_mutex_t mutex1;
-
-INT tot_batch;
 void* trainMode(void *id ) {
 		unsigned long long next_random = (long long)id;
 		test_tmp = 0;
@@ -256,10 +255,12 @@ void* trainMode(void *id ) {
 }
 
 void train() {
+
 	INT tmp = 0;
 	b_train.clear();
 	c_train.clear();
-	for (map<string,vector<INT> >:: iterator it = bags_train.begin(); it!=bags_train.end(); it++)
+	for (std::map<std::string, std::vector<INT> >:: iterator it = bags_train.begin();
+		it != bags_train.end(); it++)
 	{
 		INT max_size = 1;
 		for (INT i=0; i<max(1,max_size); i++)

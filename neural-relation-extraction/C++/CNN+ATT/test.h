@@ -153,10 +153,10 @@ void* test_mode(void *thread_id)
 
 // 测试函数
 void test() {
-	predict_relation_vector.clear();
 	total = 0;
 	bags_test_key.clear();
 	thread_first_bags_test.clear();
+	predict_relation_vector.clear();
 
 	std::vector<INT> sample_sum;
 	sample_sum.clear();
