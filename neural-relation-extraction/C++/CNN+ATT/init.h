@@ -22,26 +22,26 @@ std::string version = "";
 
 INT output_model = 0;
 INT num_threads = 32;
-INT train_times = 25;
+INT epochs = 25;
 REAL reduce = 0.98;
 
 // dimension_c: sentence embedding size
 // dimension_pos: position dimension
 // window: window size
 // batch: batch size
-// alpha: learning rate
+// alpha: learning rate, 1.6 / (32 * 40) = 0.00125
 // dropout_probability: dropout probability
 INT dimension_c = 230;
 INT dimension_pos = 5;
 INT window = 3;
-INT batch = 160;
-REAL alpha = 0.02;
+INT batch = 40;
+REAL alpha = 1.6; 
 REAL dropout_probability = 0.5;
 
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 INT limit = 30;
 
-INT npoch;
+INT nbatches;
 INT len;
 REAL rate = 1;
 

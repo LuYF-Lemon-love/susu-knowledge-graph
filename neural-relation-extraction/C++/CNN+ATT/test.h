@@ -25,7 +25,7 @@ bool cmp_predict_probability(pair<string, pair<INT,double> > a,pair<string, pair
 }
 
 // 互斥锁
-pthread_mutex_t mutex;
+pthread_mutex_t test_mutex;
 
 // 计算句子的一维卷机
 void calc_conv_1d(INT *sentence, INT *test_position_head,
@@ -139,13 +139,13 @@ void* test_mode(void *thread_id)
 			result_final[index_r] = max(result_final[index_r], result_final_r[index_r]/temp);
 		}
 
-		pthread_mutex_lock (&mutex);
+		pthread_mutex_lock (&test_mutex);
 		for (INT i_r = 1; i_r < relation_total; i_r++) 
 		{
 			predict_relation_vector.push_back(make_pair(bags_test_key[i_sample] + "\t" + id2relation[i_r],
 				make_pair(sample_relation_list.count(i_r), result_final[i_r])));
 		}
-		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&test_mutex);
 	}
 
 	free(result);
@@ -206,7 +206,7 @@ void test() {
 			correct++;	
 		REAL precision = correct/(i+1);
 		REAL recall = correct/total;
-		if (i % 50 == 0)
+		if ((i+1) % 50 == 0)
 			std::cout << "precision:\t" << precision << "\t\t" << "recall:\t" << recall <<std::endl;
 		fprintf(f,"precision: %lf\t\trecall: %lf\t\tcorrect: %d\t\tpredict_probability: %lf\t\tpredict_triplet: %s\n",
 			precision, recall, predict_relation_vector[i].second.first, predict_relation_vector[i].second.second,

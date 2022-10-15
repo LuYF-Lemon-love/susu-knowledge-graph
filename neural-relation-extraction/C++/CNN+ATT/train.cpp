@@ -6,16 +6,13 @@
 
 using namespace std;
 
-double score = 0;
-REAL alpha1;
-
-INT turn;
-
 // bags_test_key: 保存 bags_train 的 key (头实体 + "\t" + 尾实体 + "\t" + 关系名), 按照 bags_train 的迭代顺序
 std::vector<string> bags_train_key;
 
-double score_tmp = 0, score_max = 0;
-pthread_mutex_t mutex1;
+double total_loss = 0;
+REAL alpha_epoch;
+double current_sample = 0, final_sample = 0;
+pthread_mutex_t train_mutex;
 
 struct timeval t_start, t_end;
 
@@ -162,7 +159,7 @@ REAL train_bags(std::string bags_name)
 		sum+=f_r[j];
 	}
 	
-	double rt = (log(f_r[r1]) - log(sum));
+	double loss = -(log(f_r[r1]) - log(sum));
 	
 	vector<vector<REAL> > grad;
 	grad.resize(bags_size);
@@ -178,9 +175,9 @@ REAL train_bags(std::string bags_name)
 			for (INT k=0; k<bags_size; k++)
 				r[i] += rList[k][i] * weight[k];
 		
-		REAL g = f_r[r2]/sum*alpha1;
+		REAL g = f_r[r2]/sum*alpha_epoch;
 		if (r2 == r1)
-			g -= alpha1;
+			g -= alpha_epoch;
 		for (INT i = 0; i < dimension_c; i++) 
 		{
 			REAL g1 = 0;
@@ -223,25 +220,25 @@ REAL train_bags(std::string bags_name)
 	for (INT k=0; k<bags_size; k++)
 	{
 		INT i = bags_train[bags_name][k];
-		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], alpha1,rList[k], tipList[k], grad[k]);
+		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], alpha_epoch,rList[k], tipList[k], grad[k]);
 		
 	}
-	return rt;
+	return loss;
 }
 
-void* trainMode(void *id ) {
+void* train_mode(void *id ) {
 		while (true)
 		{
-			pthread_mutex_lock (&mutex1);
-			if (score_tmp>=score_max)
+			pthread_mutex_lock (&train_mutex);
+			if (current_sample >= final_sample)
 			{
-				pthread_mutex_unlock (&mutex1);
+				pthread_mutex_unlock (&train_mutex);
 				break;
 			}
-			score_tmp+=1;
-			pthread_mutex_unlock (&mutex1);
-			INT j = get_rand(0, len);
-			score += train_bags(bags_train_key[j]);
+			current_sample += 1;
+			pthread_mutex_unlock (&train_mutex);
+			INT i = get_rand(0, len);
+			total_loss += train_bags(bags_train_key[i]);
 		}
 }
 
@@ -318,18 +315,17 @@ void train() {
 	}
 	
 
-	for (turn = 0; turn < train_times; turn ++) {
+	for (INT epoch = 0; epoch < epochs; epoch ++) {
 		len = bags_train.size();
-		npoch  =  len / (batch * num_threads);
-		alpha1 = alpha * rate / batch;
+		nbatches  =  len / (batch * num_threads);
+		alpha_epoch = alpha * rate / (batch * num_threads);
 
-		score = 0;
-		score_max = 0;
-		score_tmp = 0;
-		double score1 = score;
+		total_loss = 0;
+		current_sample = 0;
+		final_sample = 0;
 		time_begin();
-		for (INT k = 1; k <= npoch; k++) {
-			score_max += batch * num_threads;
+		for (INT i = 1; i <= nbatches; i++) {
+			final_sample += batch * num_threads;
 			
 			memcpy(word_vec_copy, word_vec, word_total * dimension * sizeof(REAL));
 			memcpy(position_vec_head_copy, position_vec_head, position_total_head * dimension_pos * sizeof(REAL));
@@ -344,25 +340,16 @@ void train() {
 			
 			pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 			for (long a = 0; a < num_threads; a++)
-				pthread_create(&pt[a], NULL, trainMode,  (void *)a);
+				pthread_create(&pt[a], NULL, train_mode,  (void *)a);
 			for (long a = 0; a < num_threads; a++)
 				pthread_join(pt[a], NULL);
 			free(pt);
-			
-			if (k%(npoch/5)==0)
-			{
-				std::cout<<"npoch:\t"<<k<<'/'<<npoch<<std::endl;
-				time_end();
-				time_begin();
-				std::cout<<"score:\t"<<score-score1<<' '<<score_tmp<<std::endl;
-				score1 = score;
-			}
 		}
-		printf("Total Score:\t%f\n",score);
-		printf("test\n");
+		time_end();
+		printf("Epoch %d/%d - loss: %f\ntest:\n", epoch, epochs, total_loss/final_sample);
 		test();
-		if ((turn + 1) % 1 == 0) 
-			rate = rate*reduce;
+		if ((epoch + 1) % 1 == 0) 
+			rate = rate * reduce;
 	}
 	test();
 	std::cout<<"Train End"<<std::endl;
