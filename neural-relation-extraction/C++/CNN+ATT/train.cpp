@@ -256,7 +256,6 @@ void* trainMode(void *id ) {
 
 void train() {
 
-	INT tmp = 0;
 	b_train.clear();
 	c_train.clear();
 	for (std::map<std::string, std::vector<INT> >:: iterator it = bags_train.begin();
@@ -266,7 +265,6 @@ void train() {
 		for (INT i=0; i<max(1,max_size); i++)
 			c_train.push_back(b_train.size());
 		b_train.push_back(it->first);
-		tmp+=it->second.size();
 	}
 	std::cout<<c_train.size()<<std::endl;
 	
@@ -320,18 +318,14 @@ void train() {
 	}
 
 	for (INT i = 0; i < position_total_head; i++) {
-		REAL tmp = 0;
 		for (INT j = 0; j < dimension_pos; j++) {
 			position_vec_head[i * dimension_pos + j] = get_rand_u(-con1, con1);
-			tmp += position_vec_head[i * dimension_pos + j] * position_vec_head[i * dimension_pos + j];
 		}
 	}
 
 	for (INT i = 0; i < position_total_tail; i++) {
-		REAL tmp = 0;
 		for (INT j = 0; j < dimension_pos; j++) {
 			position_vec_tail[i * dimension_pos + j] = get_rand_u(-con1, con1);
-			tmp += position_vec_tail[i * dimension_pos + j] * position_vec_tail[i * dimension_pos + j];
 		}
 	}
 
