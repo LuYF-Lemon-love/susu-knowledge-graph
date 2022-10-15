@@ -208,7 +208,7 @@ void test() {
 		REAL recall = correct/total;
 		if (i % 50 == 0)
 			std::cout << "precision:\t" << precision << "\t\t" << "recall:\t" << recall <<std::endl;
-		fprintf(f,"precision: %lf\t\trecall: %lf\t\tcorrect: %ld\t\tpredict_probability: %lf\t\tpredict_triplet: %s\n",
+		fprintf(f,"precision: %lf\t\trecall: %lf\t\tcorrect: %d\t\tpredict_probability: %lf\t\tpredict_triplet: %s\n",
 			precision, recall, predict_relation_vector[i].second.first, predict_relation_vector[i].second.second,
 			predict_relation_vector[i].first.c_str());	
 	}

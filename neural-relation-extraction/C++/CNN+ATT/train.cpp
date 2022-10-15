@@ -11,12 +11,11 @@ REAL alpha1;
 
 INT turn;
 
-INT test_tmp = 0;
+// bags_test_key: 保存 bags_train 的 key (头实体 + "\t" + 尾实体 + "\t" + 关系名), 按照 bags_train 的迭代顺序
+std::vector<string> bags_train_key;
 
-std::vector<string> b_train;
 double score_tmp = 0, score_max = 0;
 pthread_mutex_t mutex1;
-INT tot_batch;
 
 struct timeval t_start, t_end;
 
@@ -48,14 +47,14 @@ vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_
 			for (INT j = i1; j < i1 + window; j++)  {
 				INT last1 = sentence[j] * dimension;
 			 	for (INT k = 0; k < dimension; k++) {
-			 		res += matrixW1Dao[last + tot] * wordVecDao[last1+k];
+			 		res += conv_1d_word_copy[last + tot] * word_vec_copy[last1+k];
 			 		tot++;
 			 	}
 			 	INT last2 = train_position_head[j] * dimension_pos;
 			 	INT last3 = train_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		res += matrixW1PositionE1Dao[lastt + tot1] * positionVecDaoE1[last2+k];
-			 		res += matrixW1PositionE2Dao[lastt + tot1] * positionVecDaoE2[last3+k];
+			 		res += conv_1d_position_head_copy[lastt + tot1] * position_vec_head_copy[last2+k];
+			 		res += conv_1d_position_tail_copy[lastt + tot1] * position_vec_tail_copy[last3+k];
 			 		tot1++;
 			 	}
 			}
@@ -64,7 +63,7 @@ vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_
 				tip[i] = i1;
 			}
 		}
-		r[i] = max_pool_1d + matrixB1Dao[i];
+		r[i] = max_pool_1d + conv_1d_bias_copy[i];
 	}
 
 	for (INT i = 0; i < dimension_c; i++) {
@@ -86,17 +85,17 @@ void train_gradient(INT *sentence, INT *train_position_head, INT *train_position
 		for (INT j = 0; j < window; j++)  {
 			INT last1 = sentence[tip[i] + j] * dimension;
 			for (INT k = 0; k < dimension; k++) {
-				conv_1d_word[last + tot] -= g1 * wordVecDao[last1+k];
-				word_vec[last1 + k] -= g1 * matrixW1Dao[last + tot];
+				conv_1d_word[last + tot] -= g1 * word_vec_copy[last1+k];
+				word_vec[last1 + k] -= g1 * conv_1d_word_copy[last + tot];
 				tot++;
 			}
 			INT last2 = train_position_head[tip[i] + j] * dimension_pos;
 			INT last3 = train_position_tail[tip[i] + j] * dimension_pos;
 			for (INT k = 0; k < dimension_pos; k++) {
-				conv_1d_position_head[lastt + tot1] -= g1 * positionVecDaoE1[last2 + k];
-				conv_1d_position_tail[lastt + tot1] -= g1 * positionVecDaoE2[last3 + k];
-				position_vec_head[last2 + k] -= g1 * matrixW1PositionE1Dao[lastt + tot1];
-				position_vec_tail[last3 + k] -= g1 * matrixW1PositionE2Dao[lastt + tot1];
+				conv_1d_position_head[lastt + tot1] -= g1 * position_vec_head_copy[last2 + k];
+				conv_1d_position_tail[lastt + tot1] -= g1 * position_vec_tail_copy[last3 + k];
+				position_vec_head[last2 + k] -= g1 * conv_1d_position_head_copy[lastt + tot1];
+				position_vec_tail[last3 + k] -= g1 * conv_1d_position_tail_copy[lastt + tot1];
 				tot1++;
 			}
 		}
@@ -139,8 +138,8 @@ REAL train_bags(string bags_name)
 		{
 			REAL tmp = 0;
 			for (INT j = 0; j < dimension_c; j++)
-				tmp+=rList[k][j]*att_W_Dao[r1][j][i];
-			s += tmp * matrixRelationDao[r1 * dimension_c + i];
+				tmp+=rList[k][j]*attention_weights_copy[r1][j][i];
+			s += tmp * relation_matrix_copy[r1 * dimension_c + i];
 		}
 		s = exp(s); 
 		weight.push_back(s);
@@ -159,9 +158,9 @@ REAL train_bags(string bags_name)
 	
 		REAL ss = 0;
 		for (INT i = 0; i < dimension_c; i++) {
-			ss += dropout[i] * r[i] * matrixRelationDao[j * dimension_c + i];
+			ss += dropout[i] * r[i] * relation_matrix_copy[j * dimension_c + i];
 		}
-		ss += matrixRelationPrDao[j];
+		ss += relation_matrix_bias_copy[j];
 		f_r.push_back(exp(ss));
 		sum+=f_r[j];
 	}
@@ -190,7 +189,7 @@ REAL train_bags(string bags_name)
 			REAL g1 = 0;
 			if (dropout[i]!=0)
 			{
-				g1 += g * matrixRelationDao[r2 * dimension_c + i];
+				g1 += g * relation_matrix_copy[r2 * dimension_c + i];
 				relation_matrix[r2 * dimension_c + i] -= g * r[i];
 			}
 			g1_tmp[i]+=g1;
@@ -206,10 +205,10 @@ REAL train_bags(string bags_name)
 				grad[k][i]+=g1*weight[k];
 				for (INT j = 0; j < dimension_c; j++)
 				{
-					grad[k][j]+=g1*rList[k][i]*weight[k]*matrixRelationDao[r1 * dimension_c + i]*att_W_Dao[r1][j][i];
-					relation_matrix[r1 * dimension_c + i] -= g1*rList[k][i]*weight[k]*rList[k][j]*att_W_Dao[r1][j][i];
+					grad[k][j]+=g1*rList[k][i]*weight[k]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
+					relation_matrix[r1 * dimension_c + i] -= g1*rList[k][i]*weight[k]*rList[k][j]*attention_weights_copy[r1][j][i];
 					if (i==j)
-					  attention_weights[r1][j][i] -= g1*rList[k][i]*weight[k]*rList[k][j]*matrixRelationDao[r1 * dimension_c + i];
+					  attention_weights[r1][j][i] -= g1*rList[k][i]*weight[k]*rList[k][j]*relation_matrix_copy[r1 * dimension_c + i];
 				}
 				tmp_sum += rList[k][i]*weight[k];
 			}	
@@ -217,10 +216,10 @@ REAL train_bags(string bags_name)
 			{
 				for (INT j = 0; j < dimension_c; j++)
 				{
-					grad[k1][j]-=g1*tmp_sum*weight[k1]*matrixRelationDao[r1 * dimension_c + i]*att_W_Dao[r1][j][i];
-					relation_matrix[r1 * dimension_c + i] += g1*tmp_sum*weight[k1]*rList[k1][j]*att_W_Dao[r1][j][i];
+					grad[k1][j]-=g1*tmp_sum*weight[k1]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
+					relation_matrix[r1 * dimension_c + i] += g1*tmp_sum*weight[k1]*rList[k1][j]*attention_weights_copy[r1][j][i];
 					if (i==j)
-					  attention_weights[r1][j][i] += g1*tmp_sum*weight[k1]*rList[k1][j]*matrixRelationDao[r1 * dimension_c + i];
+					  attention_weights[r1][j][i] += g1*tmp_sum*weight[k1]*rList[k1][j]*relation_matrix_copy[r1 * dimension_c + i];
 				}
 			}
 		}
@@ -234,11 +233,8 @@ REAL train_bags(string bags_name)
 }
 
 void* trainMode(void *id ) {
-		unsigned long long next_random = (long long)id;
-		test_tmp = 0;
 		while (true)
 		{
-
 			pthread_mutex_lock (&mutex1);
 			if (score_tmp>=score_max)
 			{
@@ -248,19 +244,25 @@ void* trainMode(void *id ) {
 			score_tmp+=1;
 			pthread_mutex_unlock (&mutex1);
 			INT j = get_rand(0, len);
-			score += train_bags(b_train[j]);
+			score += train_bags(bags_train_key[j]);
 		}
 }
 
 void train() {
 
-	b_train.clear();
+	bags_train_key.clear();
 	for (std::map<std::string, std::vector<INT> >:: iterator it = bags_train.begin();
 		it != bags_train.end(); it++)
 	{
-		b_train.push_back(it->first);
+		bags_train_key.push_back(it->first);
 	}
-	
+
+	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
+	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
+	conv_1d_word = (REAL*)calloc(dimension_c * window * dimension, sizeof(REAL));
+	conv_1d_position_head = (REAL *)calloc(dimension_c * window * dimension_pos, sizeof(REAL));
+	conv_1d_position_tail = (REAL *)calloc(dimension_c * window * dimension_pos, sizeof(REAL));
+	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 	attention_weights.resize(relation_total);
 	for (INT i=0; i<relation_total; i++)
 	{
@@ -271,65 +273,58 @@ void train() {
 			attention_weights[i][j][j] = 1.00;
 		}
 	}
-	att_W_Dao = attention_weights;
-
-	REAL con = sqrt(6.0/(dimension_c+relation_total));
-	REAL con1 = sqrt(6.0/((dimension_pos+dimension)*window));
-	relation_matrix = (REAL *)calloc(dimension_c * relation_total, sizeof(REAL));
+	relation_matrix = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
 	relation_matrix_bias = (REAL *)calloc(relation_total, sizeof(REAL));
-	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
-	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
-	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
-	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
-	
-	conv_1d_word = (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
-	conv_1d_position_head = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	conv_1d_position_tail = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 
-	for (INT i = 0; i < dimension_c; i++) {
-		INT last = i * window * dimension;
-		for (INT j = dimension * window - 1; j >=0; j--)
-			conv_1d_word[last + j] = get_rand_u(-con1, con1);
-		last = i * window * dimension_pos;
-		REAL tmp1 = 0;
-		REAL tmp2 = 0;
-		for (INT j = dimension_pos * window - 1; j >=0; j--) {
-			conv_1d_position_head[last + j] = get_rand_u(-con1, con1);
-			tmp1 += conv_1d_position_head[last + j]  * conv_1d_position_head[last + j] ;
-			conv_1d_position_tail[last + j] = get_rand_u(-con1, con1);
-			tmp2 += conv_1d_position_tail[last + j]  * conv_1d_position_tail[last + j] ;
-		}
-		conv_1d_bias[i] = get_rand_u(-con1, con1);
-	}
+	word_vec_copy = (REAL *)calloc(dimension * word_total, sizeof(REAL));
+	position_vec_head_copy = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
+	position_vec_tail_copy = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
+	conv_1d_word_copy =  (REAL*)calloc(dimension_c * window * dimension, sizeof(REAL));
+	conv_1d_position_head_copy = (REAL *)calloc(dimension_c * window * dimension_pos, sizeof(REAL));
+	conv_1d_position_tail_copy = (REAL *)calloc(dimension_c * window * dimension_pos, sizeof(REAL));
+	conv_1d_bias_copy =  (REAL*)calloc(dimension_c, sizeof(REAL));
+	attention_weights_copy = attention_weights;
+	relation_matrix_copy = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
+	relation_matrix_bias_copy = (REAL *)calloc(relation_total, sizeof(REAL));
 
-	for (INT i = 0; i < relation_total; i++) 
-	{
-		relation_matrix_bias[i] = get_rand_u(-con, con);				//add
-		for (INT j = 0; j < dimension_c; j++)
-			relation_matrix[i * dimension_c + j] = get_rand_u(-con, con);
-	}
+	REAL relation_matrix_init = sqrt(6.0 / (dimension_c + relation_total));
+	REAL conv_1d_position_vec_init = sqrt(6.0 / ((dimension_pos + dimension) * window));
 
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++) {
-			position_vec_head[i * dimension_pos + j] = get_rand_u(-con1, con1);
+			position_vec_head[i * dimension_pos + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
 		}
 	}
 
 	for (INT i = 0; i < position_total_tail; i++) {
 		for (INT j = 0; j < dimension_pos; j++) {
-			position_vec_tail[i * dimension_pos + j] = get_rand_u(-con1, con1);
+			position_vec_tail[i * dimension_pos + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
 		}
 	}
 
-	matrixRelationDao = (REAL *)calloc(dimension_c*relation_total, sizeof(REAL));
-	matrixW1Dao =  (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
-	matrixB1Dao =  (REAL*)calloc(dimension_c, sizeof(REAL));
+	for (INT i = 0; i < dimension_c; i++) {
+		INT last = i * window * dimension;
+		for (INT j = dimension * window - 1; j >=0; j--)
+			conv_1d_word[last + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
+		last = i * window * dimension_pos;
+		REAL tmp1 = 0;
+		REAL tmp2 = 0;
+		for (INT j = dimension_pos * window - 1; j >=0; j--) {
+			conv_1d_position_head[last + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
+			tmp1 += conv_1d_position_head[last + j]  * conv_1d_position_head[last + j] ;
+			conv_1d_position_tail[last + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
+			tmp2 += conv_1d_position_tail[last + j]  * conv_1d_position_tail[last + j] ;
+		}
+		conv_1d_bias[i] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
+	}
+
+	for (INT i = 0; i < relation_total; i++) 
+	{
+		relation_matrix_bias[i] = get_rand_u(-relation_matrix_init, relation_matrix_init);				//add
+		for (INT j = 0; j < dimension_c; j++)
+			relation_matrix[i * dimension_c + j] = get_rand_u(-relation_matrix_init, relation_matrix_init);
+	}
 	
-	positionVecDaoE1 = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
-	positionVecDaoE2 = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
-	matrixW1PositionE1Dao = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
-	matrixW1PositionE2Dao = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
 
 	for (turn = 0; turn < train_times; turn ++) {
 		len = bags_train.size();
@@ -343,21 +338,22 @@ void train() {
 		time_begin();
 		for (INT k = 1; k <= npoch; k++) {
 			score_max += batch * num_threads;
-			memcpy(positionVecDaoE1, position_vec_head, position_total_head * dimension_pos* sizeof(REAL));
-			memcpy(positionVecDaoE2, position_vec_tail, position_total_tail * dimension_pos* sizeof(REAL));
-			memcpy(matrixW1PositionE1Dao, conv_1d_position_head, dimension_c * dimension_pos * window* sizeof(REAL));
-			memcpy(matrixW1PositionE2Dao, conv_1d_position_tail, dimension_c * dimension_pos * window* sizeof(REAL));
-			memcpy(wordVecDao, word_vec, dimension * word_total * sizeof(REAL));
-
-			memcpy(matrixW1Dao, conv_1d_word, sizeof(REAL) * dimension_c * dimension * window);
-			memcpy(matrixB1Dao, conv_1d_bias, sizeof(REAL) * dimension_c);
-			memcpy(matrixRelationPrDao, relation_matrix_bias, relation_total * sizeof(REAL));				//add
-			memcpy(matrixRelationDao, relation_matrix, dimension_c*relation_total * sizeof(REAL));
-			att_W_Dao = attention_weights;
+			
+			memcpy(word_vec_copy, word_vec, word_total * dimension * sizeof(REAL));
+			memcpy(position_vec_head_copy, position_vec_head, position_total_head * dimension_pos * sizeof(REAL));
+			memcpy(position_vec_tail_copy, position_vec_tail, position_total_tail * dimension_pos * sizeof(REAL));
+			memcpy(conv_1d_word_copy, conv_1d_word, dimension_c * window * dimension * sizeof(REAL));
+			memcpy(conv_1d_position_head_copy, conv_1d_position_head, dimension_c * window * dimension_pos * sizeof(REAL));
+			memcpy(conv_1d_position_tail_copy, conv_1d_position_tail, dimension_c * window * dimension_pos * sizeof(REAL));
+			memcpy(conv_1d_bias_copy, conv_1d_bias, dimension_c * sizeof(REAL));
+			attention_weights_copy = attention_weights;
+			memcpy(relation_matrix_copy, relation_matrix, relation_total * dimension_c * sizeof(REAL));
+			memcpy(relation_matrix_bias_copy, relation_matrix_bias, relation_total * sizeof(REAL));
+			
 			pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
-			for (INT a = 0; a < num_threads; a++)
+			for (long a = 0; a < num_threads; a++)
 				pthread_create(&pt[a], NULL, trainMode,  (void *)a);
-			for (INT a = 0; a < num_threads; a++)
+			for (long a = 0; a < num_threads; a++)
 			pthread_join(pt[a], NULL);
 			free(pt);
 			if (k%(npoch/5)==0)
@@ -372,8 +368,8 @@ void train() {
 		printf("Total Score:\t%f\n",score);
 		printf("test\n");
 		test();
-		//if ((turn+1)%1==0) 
-		//	rate=rate*reduce;
+		if ((turn + 1) % 1 == 0) 
+			rate = rate*reduce;
 	}
 	test();
 	std::cout<<"Train End"<<std::endl;

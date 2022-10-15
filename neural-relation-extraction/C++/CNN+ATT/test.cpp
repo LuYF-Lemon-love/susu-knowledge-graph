@@ -3,19 +3,14 @@
 
 void preprocess()
 {
-
-	relation_matrix = (REAL *)calloc(dimension_c * relation_total, sizeof(REAL));
-	relation_matrix_bias = (REAL *)calloc(relation_total, sizeof(REAL));
-	matrixRelationPrDao = (REAL *)calloc(relation_total, sizeof(REAL));
-	wordVecDao = (REAL *)calloc(dimension * word_total, sizeof(REAL));
 	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
 	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
-	
+
 	conv_1d_word = (REAL*)calloc(dimension_c * dimension * window, sizeof(REAL));
 	conv_1d_position_head = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
 	conv_1d_position_tail = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
 	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
-	
+
 	attention_weights.resize(relation_total);
 	for (INT i=0; i<relation_total; i++)
 	{
@@ -23,6 +18,9 @@ void preprocess()
 		for (INT j=0; j<dimension_c; j++)
 			attention_weights[i][j].resize(dimension_c);
 	}
+
+	relation_matrix = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
+	relation_matrix_bias = (REAL *)calloc(relation_total, sizeof(REAL));
 	
 	INT tmp;
 
