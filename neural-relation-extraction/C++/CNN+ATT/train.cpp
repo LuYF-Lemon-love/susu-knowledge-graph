@@ -30,8 +30,6 @@ void time_end()
 	std::cout << "time(s):\t" << time_use/1000000.0 << std::endl;
 }
 
-
-
 vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, vector<INT> &tip) {
 	vector<REAL> r;
 	r.resize(dimension_c);
@@ -103,7 +101,7 @@ void train_gradient(INT *sentence, INT *train_position_head, INT *train_position
 	}
 }
 
-REAL train_bags(string bags_name)
+REAL train_bags(std::string bags_name)
 {
 	INT bags_size = bags_train[bags_name].size();
 	double bags_rate = max(1.0,1.0*bags_size/2);
@@ -125,9 +123,8 @@ REAL train_bags(string bags_name)
 	vector<REAL> f_r;	
 	
 	vector<INT> dropout;
-	for (INT i = 0; i < dimension_c; i++) 
-		//dropout.push_back(1);
-		dropout.push_back(rand()%2);
+	for (INT i = 0; i < dimension_c; i++)
+		dropout.push_back((rand() % 1000) / 1000.0 > (1 - dropout_probability));
 	
 	vector<REAL> weight;
 	REAL weight_sum = 0;
@@ -264,10 +261,10 @@ void train() {
 	conv_1d_position_tail = (REAL *)calloc(dimension_c * window * dimension_pos, sizeof(REAL));
 	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 	attention_weights.resize(relation_total);
-	for (INT i=0; i<relation_total; i++)
+	for (INT i = 0; i < relation_total; i++)
 	{
 		attention_weights[i].resize(dimension_c);
-		for (INT j=0; j<dimension_c; j++)
+		for (INT j = 0; j < dimension_c; j++)
 		{
 			attention_weights[i][j].resize(dimension_c);
 			attention_weights[i][j][j] = 1.00;
@@ -287,49 +284,44 @@ void train() {
 	relation_matrix_copy = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
 	relation_matrix_bias_copy = (REAL *)calloc(relation_total, sizeof(REAL));
 
-	REAL relation_matrix_init = sqrt(6.0 / (dimension_c + relation_total));
-	REAL conv_1d_position_vec_init = sqrt(6.0 / ((dimension_pos + dimension) * window));
+	REAL relation_matrix_init = sqrt(6.0 / (relation_total + dimension_c));
+	REAL conv_1d_position_vec_init = sqrt(6.0 / ((dimension + dimension_pos) * window));
 
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++) {
-			position_vec_head[i * dimension_pos + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
+			position_vec_head[i * dimension_pos + j] = get_rand_u(-conv_1d_position_vec_init,
+				conv_1d_position_vec_init);
 		}
 	}
-
 	for (INT i = 0; i < position_total_tail; i++) {
 		for (INT j = 0; j < dimension_pos; j++) {
-			position_vec_tail[i * dimension_pos + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
+			position_vec_tail[i * dimension_pos + j] = get_rand_u(-conv_1d_position_vec_init,
+				conv_1d_position_vec_init);
 		}
 	}
-
 	for (INT i = 0; i < dimension_c; i++) {
 		INT last = i * window * dimension;
-		for (INT j = dimension * window - 1; j >=0; j--)
+		for (INT j = 0; j < window * dimension; j++)
 			conv_1d_word[last + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
 		last = i * window * dimension_pos;
-		REAL tmp1 = 0;
-		REAL tmp2 = 0;
 		for (INT j = dimension_pos * window - 1; j >=0; j--) {
 			conv_1d_position_head[last + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
-			tmp1 += conv_1d_position_head[last + j]  * conv_1d_position_head[last + j] ;
 			conv_1d_position_tail[last + j] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
-			tmp2 += conv_1d_position_tail[last + j]  * conv_1d_position_tail[last + j] ;
 		}
 		conv_1d_bias[i] = get_rand_u(-conv_1d_position_vec_init, conv_1d_position_vec_init);
 	}
-
 	for (INT i = 0; i < relation_total; i++) 
 	{
-		relation_matrix_bias[i] = get_rand_u(-relation_matrix_init, relation_matrix_init);				//add
 		for (INT j = 0; j < dimension_c; j++)
 			relation_matrix[i * dimension_c + j] = get_rand_u(-relation_matrix_init, relation_matrix_init);
+		relation_matrix_bias[i] = get_rand_u(-relation_matrix_init, relation_matrix_init);
 	}
 	
 
 	for (turn = 0; turn < train_times; turn ++) {
 		len = bags_train.size();
 		npoch  =  len / (batch * num_threads);
-		alpha1 = alpha*rate/batch;
+		alpha1 = alpha * rate / batch;
 
 		score = 0;
 		score_max = 0;
@@ -354,8 +346,9 @@ void train() {
 			for (long a = 0; a < num_threads; a++)
 				pthread_create(&pt[a], NULL, trainMode,  (void *)a);
 			for (long a = 0; a < num_threads; a++)
-			pthread_join(pt[a], NULL);
+				pthread_join(pt[a], NULL);
 			free(pt);
+			
 			if (k%(npoch/5)==0)
 			{
 				std::cout<<"npoch:\t"<<k<<'/'<<npoch<<std::endl;

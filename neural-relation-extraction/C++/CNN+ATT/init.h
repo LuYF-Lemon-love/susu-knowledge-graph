@@ -30,13 +30,13 @@ REAL reduce = 0.98;
 // window: window size
 // batch: batch size
 // alpha: learning rate
-// dropout: dropout probability
+// dropout_probability: dropout probability
 INT dimension_c = 230;
 INT dimension_pos = 5;
 INT window = 3;
 INT batch = 160;
 REAL alpha = 0.02;
-REAL dropout = 0.5;
+REAL dropout_probability = 0.5;
 
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 INT limit = 30;

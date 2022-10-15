@@ -130,7 +130,7 @@ void* test_mode(void *thread_id)
 			for (INT i_r = 0; i_r < relation_total; i_r++) {
 				REAL s = 0;
 				for (INT i_s = 0; i_s < dimension_c; i_s++)
-					s +=  dropout * relation_matrix[i_r * dimension_c + i_s] * result_sentence[i_s];
+					s +=  dropout_probability * relation_matrix[i_r * dimension_c + i_s] * result_sentence[i_s];
 				s += relation_matrix_bias[i_r];
 				s = exp(s);
 				temp += s;
