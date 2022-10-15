@@ -208,9 +208,9 @@ REAL train_bags(string bags_name)
 				for (INT j = 0; j < dimension_c; j++)
 				{
 					grad[k][j]+=g1*rList[k][i]*weight[k]*matrixRelationDao[r1 * dimension_c + i]*att_W_Dao[r1][j][i];
-					relation_matrix[r1 * dimension_c + i] += g1*rList[k][i]*weight[k]*rList[k][j]*att_W_Dao[r1][j][i];
+					relation_matrix[r1 * dimension_c + i] -= g1*rList[k][i]*weight[k]*rList[k][j]*att_W_Dao[r1][j][i];
 					if (i==j)
-					  attention_weights[r1][j][i] += g1*rList[k][i]*weight[k]*rList[k][j]*matrixRelationDao[r1 * dimension_c + i];
+					  attention_weights[r1][j][i] -= g1*rList[k][i]*weight[k]*rList[k][j]*matrixRelationDao[r1 * dimension_c + i];
 				}
 				tmp_sum += rList[k][i]*weight[k];
 			}	
@@ -219,9 +219,9 @@ REAL train_bags(string bags_name)
 				for (INT j = 0; j < dimension_c; j++)
 				{
 					grad[k1][j]-=g1*tmp_sum*weight[k1]*matrixRelationDao[r1 * dimension_c + i]*att_W_Dao[r1][j][i];
-					relation_matrix[r1 * dimension_c + i] -= g1*tmp_sum*weight[k1]*rList[k1][j]*att_W_Dao[r1][j][i];
+					relation_matrix[r1 * dimension_c + i] += g1*tmp_sum*weight[k1]*rList[k1][j]*att_W_Dao[r1][j][i];
 					if (i==j)
-					  attention_weights[r1][j][i] -= g1*tmp_sum*weight[k1]*rList[k1][j]*matrixRelationDao[r1 * dimension_c + i];
+					  attention_weights[r1][j][i] += g1*tmp_sum*weight[k1]*rList[k1][j]*matrixRelationDao[r1 * dimension_c + i];
 				}
 			}
 		}
