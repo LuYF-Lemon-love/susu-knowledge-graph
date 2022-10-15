@@ -14,7 +14,7 @@ INT turn;
 INT test_tmp = 0;
 
 std::vector<string> b_train;
-std::vector<INT> c_train;
+// std::vector<INT> c_train;
 double score_tmp = 0, score_max = 0;
 pthread_mutex_t mutex1;
 INT tot_batch;
@@ -248,8 +248,9 @@ void* trainMode(void *id ) {
 			}
 			score_tmp+=1;
 			pthread_mutex_unlock (&mutex1);
-			INT j = get_rand(0, c_train.size());
-			j = c_train[j];
+			// INT j = get_rand(0, c_train.size());
+			// j = c_train[j];
+			INT j = get_rand(0, len);
 			score += train_bags(b_train[j]);
 		}
 }
@@ -257,16 +258,16 @@ void* trainMode(void *id ) {
 void train() {
 
 	b_train.clear();
-	c_train.clear();
+	// c_train.clear();
 	for (std::map<std::string, std::vector<INT> >:: iterator it = bags_train.begin();
 		it != bags_train.end(); it++)
 	{
-		INT max_size = 1;
-		for (INT i=0; i<max(1,max_size); i++)
-			c_train.push_back(b_train.size());
+		// INT max_size = 1;
+		// for (INT i=0; i<max(1,max_size); i++)
+			// c_train.push_back(b_train.size());
 		b_train.push_back(it->first);
 	}
-	std::cout<<c_train.size()<<std::endl;
+	// std::cout<<c_train.size()<<std::endl;
 	
 	attention_weights.resize(relation_total);
 	for (INT i=0; i<relation_total; i++)
@@ -339,7 +340,8 @@ void train() {
 	matrixW1PositionE2Dao = (REAL *)calloc(dimension_c * dimension_pos * window, sizeof(REAL));
 
 	for (turn = 0; turn < train_times; turn ++) {
-		len = c_train.size();
+		// len = c_train.size();
+		len = bags_train.size();
 		npoch  =  len / (batch * num_threads);
 		alpha1 = alpha*rate/batch;
 
