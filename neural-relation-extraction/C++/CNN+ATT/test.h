@@ -35,20 +35,20 @@ void calc_conv_1d(INT *sentence, INT *test_position_head,
 		REAL max_pool_1d = -FLT_MAX;
 		for (INT last_window = 0; last_window <= len - window; last_window++) {
 			REAL sum = 0;
-			INT tot_word = 0;
-			INT tot_pos = 0;
+			INT total_word = 0;
+			INT total_pos = 0;
 			for (INT j = last_window; j < last_window + window; j++)  {
 				INT last_word_vec = sentence[j] * dimension;
 			 	for (INT k = 0; k < dimension; k++) {
-			 		sum += conv_1d_word[last_word + tot_word] * word_vec[last_word_vec+k];
-			 		tot_word++;
+			 		sum += conv_1d_word[last_word + total_word] * word_vec[last_word_vec+k];
+			 		total_word++;
 			 	}
 			 	INT last_pos_head = test_position_head[j] * dimension_pos;
 			 	INT last_pos_tail = test_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		sum += conv_1d_position_head[last_pos + tot_pos] * position_vec_head[last_pos_head+k];
-			 		sum += conv_1d_position_tail[last_pos + tot_pos] * position_vec_tail[last_pos_tail+k];
-			 		tot_pos++;
+			 		sum += conv_1d_position_head[last_pos + total_pos] * position_vec_head[last_pos_head+k];
+			 		sum += conv_1d_position_tail[last_pos + total_pos] * position_vec_tail[last_pos_tail+k];
+			 		total_pos++;
 			 	}
 			}
 			if (sum > max_pool_1d) max_pool_1d = sum;

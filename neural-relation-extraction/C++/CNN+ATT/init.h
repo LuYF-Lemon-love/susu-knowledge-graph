@@ -134,8 +134,8 @@ std::vector<std::vector<std::vector<REAL> > > attention_weights_copy;
 REAL *relation_matrix_copy, *relation_matrix_bias_copy;
 
 void init() {
-
-	printf("\nInit start...\n\n");
+	
+	printf("\n##################################################\n\nInit start...\n\n");
 
 	INT tmp;
 

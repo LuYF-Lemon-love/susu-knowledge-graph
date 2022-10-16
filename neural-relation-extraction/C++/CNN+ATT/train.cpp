@@ -30,20 +30,20 @@ vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 		REAL max_pool_1d = -FLT_MAX;
 		for (INT last_window = 0; last_window <= len - window; last_window++) {
 			REAL sum = 0;
-			INT tot_word = 0;
-			INT tot_pos = 0;
+			INT total_word = 0;
+			INT total_pos = 0;
 			for (INT j = last_window; j < last_window + window; j++)  {
 				INT last_word_vec = sentence[j] * dimension;
 			 	for (INT k = 0; k < dimension; k++) {
-			 		sum += conv_1d_word_copy[last_word + tot_word] * word_vec_copy[last_word_vec + k];
-			 		tot_word++;
+			 		sum += conv_1d_word_copy[last_word + total_word] * word_vec_copy[last_word_vec + k];
+			 		total_word++;
 			 	}
 			 	INT last_pos_head = train_position_head[j] * dimension_pos;
 			 	INT last_pos_tail = train_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		sum += conv_1d_position_head_copy[last_pos + tot_pos] * position_vec_head_copy[last_pos_head+k];
-			 		sum += conv_1d_position_tail_copy[last_pos + tot_pos] * position_vec_tail_copy[last_pos_tail+k];
-			 		tot_pos++;
+			 		sum += conv_1d_position_head_copy[last_pos + total_pos] * position_vec_head_copy[last_pos_head+k];
+			 		sum += conv_1d_position_tail_copy[last_pos + total_pos] * position_vec_tail_copy[last_pos_tail+k];
+			 		total_pos++;
 			 	}
 			}
 			if (sum > max_pool_1d) {
@@ -60,34 +60,36 @@ vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	return conv_1d_result_k;
 }
 
-void train_gradient(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, INT e1, INT e2, INT relation, REAL alpha, vector<REAL> &r,vector<INT> &max_pool_window_k, vector<REAL> &grad)
+void train_gradient(INT *sentence, INT *train_position_head, INT *train_position_tail,
+	INT len, std::vector<REAL> &conv_1d_result_k,
+	std::vector<INT> &max_pool_window_k, std::vector<REAL> &grad_x_k)
 {
 	for (INT i = 0; i < dimension_c; i++) {
-		if (fabs(grad[i])<1e-8)
+		if (fabs(grad_x_k[i]) < 1e-8)
 			continue;
-		INT last = i * dimension * window;
-		INT tot_word = 0;
-		INT lastt = i * dimension_pos * window;
-		INT tot_pos = 0;
-		REAL g1 = grad[i] * (1 -  r[i] * r[i]);
+		INT last_word = i * window * dimension;
+		INT last_pos = i * window * dimension_pos;
+		INT total_word = 0;
+		INT total_pos = 0;
+		REAL grad_word_pos = grad_x_k[i] * (1 -  conv_1d_result_k[i] * conv_1d_result_k[i]);
 		for (INT j = 0; j < window; j++)  {
 			INT last_word_vec = sentence[max_pool_window_k[i] + j] * dimension;
 			for (INT k = 0; k < dimension; k++) {
-				conv_1d_word[last + tot_word] -= g1 * word_vec_copy[last_word_vec+k];
-				word_vec[last_word_vec + k] -= g1 * conv_1d_word_copy[last + tot_word];
-				tot_word++;
+				conv_1d_word[last_word + total_word] -= grad_word_pos * word_vec_copy[last_word_vec + k];
+				word_vec[last_word_vec + k] -= grad_word_pos * conv_1d_word_copy[last_word + total_word];
+				total_word++;
 			}
 			INT last_pos_head = train_position_head[max_pool_window_k[i] + j] * dimension_pos;
 			INT last_pos_tail = train_position_tail[max_pool_window_k[i] + j] * dimension_pos;
 			for (INT k = 0; k < dimension_pos; k++) {
-				conv_1d_position_head[lastt + tot_pos] -= g1 * position_vec_head_copy[last_pos_head + k];
-				conv_1d_position_tail[lastt + tot_pos] -= g1 * position_vec_tail_copy[last_pos_tail + k];
-				position_vec_head[last_pos_head + k] -= g1 * conv_1d_position_head_copy[lastt + tot_pos];
-				position_vec_tail[last_pos_tail + k] -= g1 * conv_1d_position_tail_copy[lastt + tot_pos];
-				tot_pos++;
+				conv_1d_position_head[last_pos + total_pos] -= grad_word_pos * position_vec_head_copy[last_pos_head + k];
+				conv_1d_position_tail[last_pos + total_pos] -= grad_word_pos * position_vec_tail_copy[last_pos_tail + k];
+				position_vec_head[last_pos_head + k] -= grad_word_pos * conv_1d_position_head_copy[last_pos + total_pos];
+				position_vec_tail[last_pos_tail + k] -= grad_word_pos * conv_1d_position_tail_copy[last_pos + total_pos];
+				total_pos++;
 			}
 		}
-		conv_1d_bias[i] -= g1;
+		conv_1d_bias[i] -= grad_word_pos;
 	}
 }
 
@@ -157,67 +159,84 @@ REAL train_bags(std::string bags_name)
 	
 	double loss = -(log(result_final[relation]) - log(sum));
 	
-	vector<vector<REAL> > grad;
-	grad.resize(bags_size);
-	for (INT k=0; k<bags_size; k++)
-		grad[k].resize(dimension_c);
-	vector<REAL> g1_tmp;
-	g1_tmp.resize(dimension_c);
-	for (INT r2 = 0; r2<relation_total; r2++)
+	std::vector<REAL> grad_s;
+	grad_s.resize(dimension_c);
+
+	for (INT i_r = 0; i_r < relation_total; i_r++)
 	{	
-		vector<REAL> result_sentence;
-		result_sentence.resize(dimension_c);
-		for (INT i = 0; i < dimension_c; i++) 
-			for (INT k=0; k<bags_size; k++)
-				result_sentence[i] += conv_1d_result[k][i] * weight[k];
-		
-		REAL g = result_final[r2]/sum*current_alpha;
-		if (r2 == relation)
-			g -= current_alpha;
-		for (INT i = 0; i < dimension_c; i++) 
+		REAL grad_final = result_final[i_r] / sum * current_alpha;
+		if (i_r == relation)
+			grad_final -= current_alpha;
+
+		for (INT i_s = 0; i_s < dimension_c; i_s++) 
 		{
-			REAL g1 = 0;
-			if (dropout[i]!=0)
+			REAL grad_i_s = 0;
+			if (dropout[i_s] != 0)
 			{
-				g1 += g * relation_matrix_copy[r2 * dimension_c + i];
-				relation_matrix[r2 * dimension_c + i] -= g * result_sentence[i];
+				grad_i_s += grad_final * relation_matrix_copy[i_r * dimension_c + i_s];
+				relation_matrix[i_r * dimension_c + i_s] -= grad_final * result_sentence[i_s];
 			}
-			g1_tmp[i]+=g1;
+			grad_s[i_s] += grad_i_s;
 		}
-		relation_matrix_bias[r2] -= g;
+		relation_matrix_bias[i_r] -= grad_final;
 	}
-	for (INT i = 0; i < dimension_c; i++) 
+
+	std::vector<std::vector<REAL> > grad_x;
+	grad_x.resize(bags_size);
+
+	for (INT k = 0; k < bags_size; k++)
+		grad_x[k].resize(dimension_c);
+
+	for (INT i_r = 0; i_r < dimension_c; i_r++) 
 	{
-		REAL g1 = g1_tmp[i];
-		double tmp_sum = 0; //for conv_1d_result[k][i]*weight[k]
-		for (INT k=0; k<bags_size; k++)
+		REAL grad_i_s = grad_s[i_r];
+		double a_denominator_sum_exp = 0;
+
+		for (INT k = 0; k < bags_size; k++)
 		{
-			grad[k][i]+=g1*weight[k];
-			for (INT j = 0; j < dimension_c; j++)
+			grad_x[k][i_r] += grad_i_s * weight[k];
+			for (INT i_x = 0; i_x < dimension_c; i_x++)
 			{
-				grad[k][j]+=g1*conv_1d_result[k][i]*weight[k]*relation_matrix_copy[relation * dimension_c + i]*attention_weights_copy[relation][j][i];
-				relation_matrix[relation * dimension_c + i] -= g1*conv_1d_result[k][i]*weight[k]*conv_1d_result[k][j]*attention_weights_copy[relation][j][i];
-				if (i==j)
-				  attention_weights[relation][j][i] -= g1*conv_1d_result[k][i]*weight[k]*conv_1d_result[k][j]*relation_matrix_copy[relation * dimension_c + i];
+				grad_x[k][i_x] += grad_i_s * conv_1d_result[k][i_r] * weight[k] *
+					relation_matrix_copy[relation * dimension_c + i_r] *
+					attention_weights_copy[relation][i_x][i_r];
+
+				relation_matrix[relation * dimension_c + i_r] -= grad_i_s *
+					conv_1d_result[k][i_r] * weight[k] * conv_1d_result[k][i_x] *
+					attention_weights_copy[relation][i_x][i_r];
+
+				if (i_r == i_x)
+					attention_weights[relation][i_x][i_r] -= grad_i_s * conv_1d_result[k][i_r] *
+						weight[k] * conv_1d_result[k][i_x] *
+						relation_matrix_copy[relation * dimension_c + i_r];
 			}
-			tmp_sum += conv_1d_result[k][i]*weight[k];
+			a_denominator_sum_exp += conv_1d_result[k][i_r] * weight[k];
 		}	
-		for (INT k1=0; k1<bags_size; k1++)
+		for (INT k = 0; k < bags_size; k++)
 		{
-			for (INT j = 0; j < dimension_c; j++)
+			for (INT i_x = 0; i_x < dimension_c; i_x++)
 			{
-				grad[k1][j]-=g1*tmp_sum*weight[k1]*relation_matrix_copy[relation * dimension_c + i]*attention_weights_copy[relation][j][i];
-				relation_matrix[relation * dimension_c + i] += g1*tmp_sum*weight[k1]*conv_1d_result[k1][j]*attention_weights_copy[relation][j][i];
-				if (i==j)
-				  attention_weights[relation][j][i] += g1*tmp_sum*weight[k1]*conv_1d_result[k1][j]*relation_matrix_copy[relation * dimension_c + i];
+				grad_x[k][i_x]-= grad_i_s * a_denominator_sum_exp * weight[k] *
+					relation_matrix_copy[relation * dimension_c + i_r] *
+					attention_weights_copy[relation][i_x][i_r];
+
+				relation_matrix[relation * dimension_c + i_r] += grad_i_s *
+					a_denominator_sum_exp * weight[k] * conv_1d_result[k][i_x] *
+					attention_weights_copy[relation][i_x][i_r];
+
+				if (i_r == i_x)
+					attention_weights[relation][i_x][i_r] += grad_i_s * a_denominator_sum_exp *
+						weight[k] * conv_1d_result[k][i_x] *
+						relation_matrix_copy[relation * dimension_c + i_r];
 			}
 		}
 	}
-	for (INT k=0; k<bags_size; k++)
+
+	for (INT k = 0; k < bags_size; k++)
 	{
-		INT i = bags_train[bags_name][k];
-		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], current_alpha,conv_1d_result[k], max_pool_window[k], grad[k]);
-		
+		INT pos = bags_train[bags_name][k];
+		train_gradient(train_sentence_list[pos], train_position_head[pos], train_position_tail[pos],
+			train_length[pos], conv_1d_result[k], max_pool_window[k], grad_x[k]);
 	}
 	return loss;
 }
@@ -349,7 +368,7 @@ void train() {
 		gettimeofday(&t_end, NULL);
 		long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
 
-		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %.2Lf\n\n", epoch, epochs,
+		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %.2Lfs\n\n", epoch, epochs,
 			current_alpha, total_loss / final_sample, time_use / 1000000.0);
 		test();
 
