@@ -10,7 +10,6 @@
 #include <cmath>
 #include <algorithm>
 #include <pthread.h>
-#include <iostream>
 
 #define INT int
 #define REAL float
@@ -136,7 +135,7 @@ REAL *relation_matrix_copy, *relation_matrix_bias_copy;
 
 void init() {
 
-	printf("Init Begin...\n\n");
+	printf("\nInit start...\n\n");
 
 	INT tmp;
 
@@ -336,7 +335,7 @@ void init() {
 	printf("bags_train.size: %d\n", INT(bags_train.size()));
 	printf("bags_test.size:  %d\n\n", INT(bags_test.size()));
 
-	printf("Init End.\n\n");
+	printf("Init end.\n\n");
 }
 
 // 计算双曲正切函数（tanh）

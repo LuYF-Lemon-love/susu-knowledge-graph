@@ -27,7 +27,7 @@ void time_end()
 {
 	gettimeofday(&t_end, NULL);
 	long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
-	printf("time(s): %.2Lf.\n", time_use/1000000.0);
+	printf("time(s): %.2Lf.\n", time_use / 1000000.0);
 }
 
 vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
@@ -319,9 +319,10 @@ void train() {
 			relation_matrix[i * dimension_c + j] = get_rand_u(-relation_matrix_init, relation_matrix_init);
 		relation_matrix_bias[i] = get_rand_u(-relation_matrix_init, relation_matrix_init);
 	}
-	
 
-	for (INT epoch = 0; epoch < epochs; epoch ++) {
+	printf("Train start...\n\n");
+
+	for (INT epoch = 1; epoch <= epochs; epoch++) {
 		
 		len = bags_train.size();
 		nbatches  =  len / (batch * num_threads);
@@ -331,7 +332,7 @@ void train() {
 		final_sample = 0;
 		total_loss = 0;
 
-		time_begin();
+		gettimeofday(&t_start, NULL);
 
 		for (INT i = 1; i <= nbatches; i++) {
 			final_sample += batch * num_threads;
@@ -355,14 +356,16 @@ void train() {
 			free(pt);
 		}
 
-		time_end();
-		printf("Epoch %d/%d - loss: %f\tcurrent_alpha: %.8f\ntest:\n", epoch, epochs, total_loss/final_sample, current_alpha);
+		gettimeofday(&t_end, NULL);
+		long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
+
+		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %.2Lf\n\n", epoch, epochs,
+			current_alpha, total_loss / final_sample, time_use / 1000000.0);
 		test();
 
-		if ((epoch + 1) % 1 == 0) 
-			current_rate = current_rate * reduce_epoch;
+		current_rate = current_rate * reduce_epoch;
 	}
-	printf("Train End\n");
+	printf("Train end.\n\n");
 }
 
 INT main(INT argc, char ** argv) {

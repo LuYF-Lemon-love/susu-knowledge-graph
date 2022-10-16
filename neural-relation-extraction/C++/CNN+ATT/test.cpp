@@ -12,10 +12,10 @@ void preprocess()
 	conv_1d_bias = (REAL*)calloc(dimension_c, sizeof(REAL));
 
 	attention_weights.resize(relation_total);
-	for (INT i=0; i<relation_total; i++)
+	for (INT i = 0; i < relation_total; i++)
 	{
 		attention_weights[i].resize(dimension_c);
-		for (INT j=0; j<dimension_c; j++)
+		for (INT j=0; j < dimension_c; j++)
 			attention_weights[i][j].resize(dimension_c);
 	}
 
@@ -25,16 +25,16 @@ void preprocess()
 	INT tmp;
 
 	FILE *fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "r");
-	tmp = fscanf(fout,"%d%d",&word_total,&dimension);
+	tmp = fscanf(fout,"%d%d", &word_total, &dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
-		for (INT j=0; j<dimension; j++)
-			tmp = fscanf(fout,"%f", &word_vec[i*dimension+j]);
+		for (INT j = 0; j < dimension; j++)
+			tmp = fscanf(fout, "%f", &word_vec[i * dimension + j]);
 	}
 	fclose(fout);
 
 	fout = fopen(("./out/position_vec" + version + ".txt").c_str(), "r");
-	tmp = fscanf(fout,"%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
+	tmp = fscanf(fout, "%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
 			tmp = fscanf(fout, "%f", &position_vec_head[i * dimension_pos + j]);
@@ -46,14 +46,14 @@ void preprocess()
 	fclose(fout);
 
 	fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "r");
-	tmp = fscanf(fout,"%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
+	tmp = fscanf(fout, "%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
 		for (INT j = 0; j < dimension * window; j++)
-			tmp = fscanf(fout, "%f", &conv_1d_word[i* dimension*window+j]);
+			tmp = fscanf(fout, "%f", &conv_1d_word[i * dimension * window + j]);
 		for (INT j = 0; j < dimension_pos * window; j++)
-			tmp = fscanf(fout, "%f", &conv_1d_position_head[i* dimension_pos*window+j]);
+			tmp = fscanf(fout, "%f", &conv_1d_position_head[i * dimension_pos * window + j]);
 		for (INT j = 0; j < dimension_pos * window; j++)
-			tmp = fscanf(fout, "%f", &conv_1d_position_tail[i* dimension_pos*window+j]);
+			tmp = fscanf(fout, "%f", &conv_1d_position_tail[i * dimension_pos * window + j]);
 		tmp = fscanf(fout, "%f", &conv_1d_bias[i]);
 	}
 	fclose(fout);
@@ -70,7 +70,7 @@ void preprocess()
 	fclose(fout);
 
 	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "r");
-	tmp = fscanf(fout,"%d%d", &relation_total, &dimension_c);
+	tmp = fscanf(fout, "%d%d", &relation_total, &dimension_c);
 	for (INT i = 0; i < relation_total; i++) {
 		for (INT j = 0; j < dimension_c; j++)
 			tmp = fscanf(fout, "%f", &relation_matrix[i * dimension_c + j]);
