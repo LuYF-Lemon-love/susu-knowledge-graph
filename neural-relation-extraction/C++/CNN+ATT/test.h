@@ -21,7 +21,8 @@ std::vector<std::pair<std::string, std::pair<INT,double> > > predict_relation_ve
 
 // 为 std::sort() 定义比较函数
 // 以模型给出的关系成立的概率降序排列
-bool cmp_predict_probability(pair<string, pair<INT,double> > a,pair<string, pair<INT,double> >b)
+bool cmp_predict_probability(std::pair<std::string, std::pair<INT,double> > a,
+	std::pair<std::string, std::pair<INT,double> >b)
 {
     return a.second.second > b.second.second;
 }
@@ -91,14 +92,14 @@ void* test_mode(void *thread_id)
 
 			calc_conv_1d(test_sentence_list[i],  test_position_head[i],
 				test_position_tail[i], test_length[i], result);
-			vector<double> result_temp;
+			std::vector<double> result_temp;
 			for (INT j = 0; j < dimension_c; j++)
 				result_temp.push_back(result[j]);
 			result_list.push_back(result_temp);
 		}
 
 		for (INT index_r = 0; index_r < relation_total; index_r++) {
-			vector<REAL> weight;
+			std::vector<REAL> weight;
 			REAL weight_sum = 0;
 			for (INT k = 0; k < bags_size; k++)
 			{
@@ -118,13 +119,13 @@ void* test_mode(void *thread_id)
 			for (INT k = 0; k < bags_size; k++)
 				weight[k] /= weight_sum;
 			
-			vector<REAL> result_sentence;
+			std::vector<REAL> result_sentence;
 			result_sentence.resize(dimension_c);
 			for (INT i = 0; i < dimension_c; i++) 
 				for (INT k = 0; k < bags_size; k++)
 					result_sentence[i] += result_list[k][i] * weight[k];
 
-			vector<REAL> result_final_r;
+			std::vector<REAL> result_final_r;
 			double temp = 0;
 			for (INT i_r = 0; i_r < relation_total; i_r++) {
 				REAL s = 0;
@@ -135,14 +136,14 @@ void* test_mode(void *thread_id)
 				temp += s;
 				result_final_r.push_back(s);
 			}
-			result_final[index_r] = max(result_final[index_r], result_final_r[index_r]/temp);
+			result_final[index_r] = std::max(result_final[index_r], result_final_r[index_r]/temp);
 		}
 
 		pthread_mutex_lock (&test_mutex);
 		for (INT i_r = 1; i_r < relation_total; i_r++) 
 		{
-			predict_relation_vector.push_back(make_pair(bags_test_key[i_sample] + "\t" + id2relation[i_r],
-				make_pair(sample_relation_list.count(i_r), result_final[i_r])));
+			predict_relation_vector.push_back(std::make_pair(bags_test_key[i_sample] + "\t" + id2relation[i_r],
+				std::make_pair(sample_relation_list.count(i_r), result_final[i_r])));
 		}
 		pthread_mutex_unlock(&test_mutex);
 	}
@@ -202,7 +203,7 @@ void test() {
 
 	REAL correct = 0;
 	FILE* f = fopen(("out/pr" + version + ".txt").c_str(), "w");
-	INT top_2000 = min(2000, INT(predict_relation_vector.size()));
+	INT top_2000 = std::min(2000, INT(predict_relation_vector.size()));
 	for (INT i = 0; i < top_2000; i++)
 	{
 		if (predict_relation_vector[i].second.first != 0)

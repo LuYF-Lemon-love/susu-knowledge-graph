@@ -2,19 +2,17 @@
 #define INIT_H
 #include <cstring>
 #include <cstdlib>
-#include <vector>
-#include <map>
-#include <string>
 #include <cstdio>
 #include <float.h>          // FLT_MAX
 #include <cmath>
 #include <algorithm>
 #include <pthread.h>
+#include <vector>
+#include <map>
+#include <string>
 
 #define INT int
 #define REAL float
-
-using namespace std;
 
 std::string version = "";
 
@@ -193,15 +191,15 @@ void init() {
 		std::string e2 = buffer;
 
 		tmp = fscanf(f,"%s",buffer);
-		string head_s = (string)(buffer);
+		std::string head_s = (std::string)(buffer);
 		INT head_id = word2id[head_s];
 		tmp = fscanf(f,"%s",buffer);
-		string tail_s = (string)(buffer);
+		std::string tail_s = (std::string)(buffer);
 		INT tail_id = word2id[tail_s];
 			
 		tmp = fscanf(f,"%s",buffer);
-		bags_train[e1+"\t"+e2+"\t"+(string)(buffer)].push_back(train_head_list.size());
-		INT relation_id = relation2id[(string)(buffer)];
+		bags_train[e1+"\t"+e2+"\t"+(std::string)(buffer)].push_back(train_head_list.size());
+		INT relation_id = relation2id[(std::string)(buffer)];
 
 		INT len_s = 0, head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;
@@ -251,15 +249,15 @@ void init() {
 		std::string e2 = buffer;
 
 		tmp = fscanf(f,"%s",buffer);
-		std::string head_s = (string)(buffer);
+		std::string head_s = (std::string)(buffer);
 		INT head_id = word2id[head_s];
 		tmp = fscanf(f,"%s",buffer);
-		std::string tail_s = (string)(buffer);
+		std::string tail_s = (std::string)(buffer);
 		INT tail_id = word2id[tail_s];
 
 		tmp = fscanf(f,"%s",buffer);
 		bags_test[e1+"\t"+e2].push_back(test_head_list.size());	
-		INT relation_id = relation2id[(string)(buffer)];
+		INT relation_id = relation2id[(std::string)(buffer)];
 
 		INT len_s = 0 , head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;

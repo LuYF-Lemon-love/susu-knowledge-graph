@@ -4,14 +4,12 @@
 #include "init.h"
 #include "test.h"
 
-using namespace std;
-
 // bags_test_key: 保存 bags_train 的 key (头实体 + "\t" + 尾实体 + "\t" + 关系名), 按照 bags_train 的迭代顺序
 // total_loss: 每一轮次的总损失
 // current_alpha: 当前轮次的学习率
 // current_sample, final_sample: 由于使用多线程训练模型, 这两个变量用于确定当前训练批次是否完成, 进而更新各种权重矩阵的副本, 如 word_vec_copy
 // train_mutex: 互斥锁
-std::vector<string> bags_train_key;
+std::vector<std::string> bags_train_key;
 double total_loss = 0;
 REAL current_alpha;
 double current_sample = 0, final_sample = 0;
@@ -19,8 +17,8 @@ pthread_mutex_t train_mutex;
 
 struct timeval t_start, t_end;
 
-vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
-	INT *train_position_tail, INT len, vector<INT> &max_pool_window_k) {
+std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
+	INT *train_position_tail, INT len, std::vector<INT> &max_pool_window_k) {
 	std::vector<REAL> conv_1d_result_k;
 	conv_1d_result_k.resize(dimension_c, 0);
 
@@ -60,7 +58,7 @@ vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	return conv_1d_result_k;
 }
 
-void train_gradient(INT *sentence, INT *train_position_head, INT *train_position_tail,
+void gradient_conv_1d(INT *sentence, INT *train_position_head, INT *train_position_tail,
 	INT len, std::vector<REAL> &conv_1d_result_k,
 	std::vector<INT> &max_pool_window_k, std::vector<REAL> &grad_x_k)
 {
@@ -235,7 +233,7 @@ REAL train_bags(std::string bags_name)
 	for (INT k = 0; k < bags_size; k++)
 	{
 		INT pos = bags_train[bags_name][k];
-		train_gradient(train_sentence_list[pos], train_position_head[pos], train_position_tail[pos],
+		gradient_conv_1d(train_sentence_list[pos], train_position_head[pos], train_position_tail[pos],
 			train_length[pos], conv_1d_result[k], max_pool_window[k], grad_x[k]);
 	}
 	return loss;
