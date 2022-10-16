@@ -19,17 +19,6 @@ pthread_mutex_t train_mutex;
 
 struct timeval t_start, t_end;
 
-void time_begin()
-{
-	gettimeofday(&t_start, NULL);
-}
-void time_end()
-{
-	gettimeofday(&t_end, NULL);
-	long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
-	printf("time(s): %.2Lf.\n", time_use / 1000000.0);
-}
-
 vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	INT *train_position_tail, INT len, vector<INT> &max_pool_window_k) {
 	std::vector<REAL> conv_1d_result_k;
@@ -120,52 +109,53 @@ REAL train_bags(std::string bags_name)
 			assert(relation == train_relation_list[pos]);
 		conv_1d_result.push_back(calc_conv_1d(train_sentence_list[pos], train_position_head[pos],
 			train_position_tail[pos], train_length[pos], max_pool_window[k]));
-	}
-	
-	vector<REAL> f_r;	
-	
-	vector<INT> dropout;
-	for (INT i = 0; i < dimension_c; i++)
-		dropout.push_back((double)(rand()) / RAND_MAX < dropout_probability);
-		
+	}	
 	
 	std::vector<REAL> weight;
 	REAL weight_sum = 0;
-	for (INT k=0; k<bags_size; k++)
+	for (INT k = 0; k < bags_size; k++)
 	{
 		REAL s = 0;
-		for (INT i = 0; i < dimension_c; i++) 
+		for (INT i_r = 0; i_r < dimension_c; i_r++) 
 		{
-			REAL tmp = 0;
-			for (INT j = 0; j < dimension_c; j++)
-				tmp+=conv_1d_result[k][j]*attention_weights_copy[relation][j][i];
-			s += tmp * relation_matrix_copy[relation * dimension_c + i];
+			REAL temp = 0;
+			for (INT i_x = 0; i_x < dimension_c; i_x++)
+				temp += conv_1d_result[k][i_x] * attention_weights_copy[relation][i_x][i_r];
+			s += temp * relation_matrix_copy[relation * dimension_c + i_r];
 		}
 		s = exp(s); 
 		weight.push_back(s);
 		weight_sum += s;
 	}
-	for (INT k=0; k<bags_size; k++)
-		weight[k] /=weight_sum;
+
+	for (INT k = 0; k < bags_size; k++)
+		weight[k] /= weight_sum;
 	
+	std::vector<REAL> result_sentence;
+	result_sentence.resize(dimension_c);
+	for (INT i = 0; i < dimension_c; i++) 
+		for (INT k = 0; k < bags_size; k++)
+			result_sentence[i] += conv_1d_result[k][i] * weight[k];
+
+	std::vector<REAL> result_final;
+
+	std::vector<INT> dropout;
+	for (INT i_s = 0; i_s < dimension_c; i_s++)
+		dropout.push_back((double)(rand()) / RAND_MAX < dropout_probability);
+
 	REAL sum = 0;
-	for (INT j = 0; j < relation_total; j++) {	
-		vector<REAL> r;
-		r.resize(dimension_c);
-		for (INT i = 0; i < dimension_c; i++) 
-			for (INT k=0; k<bags_size; k++)
-				r[i] += conv_1d_result[k][i] * weight[k];
-	
-		REAL ss = 0;
-		for (INT i = 0; i < dimension_c; i++) {
-			ss += dropout[i] * r[i] * relation_matrix_copy[j * dimension_c + i];
+	for (INT i_r = 0; i_r < relation_total; i_r++) {
+		REAL s = 0;
+		for (INT i_s = 0; i_s < dimension_c; i_s++) {
+			s += dropout[i_s] * result_sentence[i_s] * relation_matrix_copy[i_r * dimension_c + i_s];
 		}
-		ss += relation_matrix_bias_copy[j];
-		f_r.push_back(exp(ss));
-		sum+=f_r[j];
+		s += relation_matrix_bias_copy[i_r];
+		s = exp(s);
+		sum += s;
+		result_final.push_back(s);
 	}
 	
-	double loss = -(log(f_r[relation]) - log(sum));
+	double loss = -(log(result_final[relation]) - log(sum));
 	
 	vector<vector<REAL> > grad;
 	grad.resize(bags_size);
@@ -175,13 +165,13 @@ REAL train_bags(std::string bags_name)
 	g1_tmp.resize(dimension_c);
 	for (INT r2 = 0; r2<relation_total; r2++)
 	{	
-		vector<REAL> r;
-		r.resize(dimension_c);
+		vector<REAL> result_sentence;
+		result_sentence.resize(dimension_c);
 		for (INT i = 0; i < dimension_c; i++) 
 			for (INT k=0; k<bags_size; k++)
-				r[i] += conv_1d_result[k][i] * weight[k];
+				result_sentence[i] += conv_1d_result[k][i] * weight[k];
 		
-		REAL g = f_r[r2]/sum*current_alpha;
+		REAL g = result_final[r2]/sum*current_alpha;
 		if (r2 == relation)
 			g -= current_alpha;
 		for (INT i = 0; i < dimension_c; i++) 
@@ -190,7 +180,7 @@ REAL train_bags(std::string bags_name)
 			if (dropout[i]!=0)
 			{
 				g1 += g * relation_matrix_copy[r2 * dimension_c + i];
-				relation_matrix[r2 * dimension_c + i] -= g * r[i];
+				relation_matrix[r2 * dimension_c + i] -= g * result_sentence[i];
 			}
 			g1_tmp[i]+=g1;
 		}
@@ -320,7 +310,7 @@ void train() {
 		relation_matrix_bias[i] = get_rand_u(-relation_matrix_init, relation_matrix_init);
 	}
 
-	printf("Train start...\n\n");
+	printf("##################################################\n\nTrain start...\n\n");
 
 	for (INT epoch = 1; epoch <= epochs; epoch++) {
 		
@@ -365,7 +355,7 @@ void train() {
 
 		current_rate = current_rate * reduce_epoch;
 	}
-	printf("Train end.\n\n");
+	printf("Train end.\n\n##################################################\n\n");
 }
 
 INT main(INT argc, char ** argv) {

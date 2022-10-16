@@ -153,7 +153,7 @@ void* test_mode(void *thread_id)
 // 测试函数
 void test() {
 
-	printf("Test start...\n\n");
+	printf("##################################################\n\nTest start...\n\n");
 
 	total = 0;
 	bags_test_key.clear();
@@ -210,14 +210,14 @@ void test() {
 		REAL precision = correct / (i+1);
 		REAL recall = correct / total;
 		if ((i+1) % 50 == 0)
-			printf("precion/recall curves %d/%d - precision: %.3lf - recall: %.3lf\n", (i + 1), top_2000, precision, recall);
+			printf("precion/recall curves %4d / %4d - precision: %.3lf - recall: %.3lf\n", (i + 1), top_2000, precision, recall);
 		fprintf(f, "precision: %.3lf  recall: %.3lf  correct: %d  predict_probability: %.2lf  predict_triplet: %s\n",
 			precision, recall, predict_relation_vector[i].second.first, predict_relation_vector[i].second.second,
 			predict_relation_vector[i].first.c_str());	
 	}
 	fclose(f);
 
-	printf("Test end.\n\n");
+	printf("\nTest end.\n\n##################################################\n\n");
 
 	if (!output_model)return;
 
