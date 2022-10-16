@@ -23,19 +23,19 @@ std::string version = "";
 INT output_model = 0;
 INT num_threads = 32;
 INT epochs = 25;
-REAL reduce = 0.98;
+REAL reduce_epoch = 0.98;
 
 // dimension_c: sentence embedding size
 // dimension_pos: position dimension
 // window: window size
 // batch: batch size
-// alpha: learning rate, 1.6 / (32 * 40) = 0.00125
+// alpha: learning rate
 // dropout_probability: dropout probability
 INT dimension_c = 230;
 INT dimension_pos = 5;
 INT window = 3;
 INT batch = 40;
-REAL alpha = 1.6; 
+REAL alpha = 0.00125; 
 REAL dropout_probability = 0.5;
 
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
@@ -43,7 +43,7 @@ INT limit = 30;
 
 INT nbatches;
 INT len;
-REAL rate = 1;
+REAL current_rate = 1.0;
 
 // word_total: 词汇总数, 包括 "UNK"
 // dimension: 词嵌入维度
@@ -134,14 +134,14 @@ REAL *relation_matrix_copy, *relation_matrix_bias_copy;
 
 void init() {
 
+	printf("Init Begin...\n\n");
+
 	INT tmp;
 
 	// 读取预训练词嵌入
 	FILE *f = fopen("../data/vec.bin", "rb");
 	tmp = fscanf(f, "%d", &word_total);
 	tmp = fscanf(f, "%d", &dimension);
-	std::cout << "word_total (exclude \"UNK\") = " << word_total << std::endl;
-	std::cout << "word dimension = " << dimension << std::endl;
 	word_vec = (REAL *)malloc((word_total+1) * dimension * sizeof(REAL));
 	id2word.resize(word_total + 1);
 	id2word[0] = "UNK";
@@ -179,7 +179,6 @@ void init() {
 		id2relation.push_back((std::string)(buffer));
 	}
 	fclose(f);
-	std::cout << "relation_total: " << relation_total << std::endl;
 	
 	// 读取训练文件 (train.txt)
 	position_min_head = 0;
@@ -301,11 +300,6 @@ void init() {
 	}
 	fclose(f);
 
-	std::cout << "position_min_head: " << position_min_head << std::endl 
-			  << "position_max_head: " << position_max_head << std::endl
-			  << "position_min_tail: " << position_min_tail << std::endl
-			  << "position_max_tail: " << position_max_tail << std::endl;
-
 	for (INT i = 0; i < train_position_head.size(); i++) {
 		INT len_s = train_length[i];
 		INT *position = train_position_head[i];
@@ -329,8 +323,18 @@ void init() {
 	position_total_head = position_max_head - position_min_head + 1;
 	position_total_tail = position_max_tail - position_min_tail + 1;
 
-	std::cout << "position_total_head: " << position_total_head << std::endl 
-			  << "position_total_tail: " << position_total_tail << std::endl;
+	printf("batch: %d\nnumber of threads: %d\nlearning rate: %.8f\n", batch, num_threads, alpha);
+	printf("current_rate: %.2f\nreduce: %.2f\nepochs: %d\n\n", current_rate, reduce_epoch, epochs);
+	printf("word_total: %d\nword dimension: %d\n\n", word_total, dimension);
+	printf("limit: %d\nposition_total_head: %d\nposition_total_tail: %d\ndimension_pos: %d\n\n",
+		limit, position_total_head, position_total_tail, dimension_pos);
+	printf("window: %d\ndimension_c: %d\n\n", window, dimension_c);
+	printf("relation_total: %d\ndropout_probability: %.2f\n\n", relation_total, dropout_probability);
+
+	printf("bags_train.size: %d\n", INT(bags_train.size()));
+	printf("bags_test.size:  %d\n\n", INT(bags_test.size()));
+
+	printf("Init End.\n\n");
 }
 
 // 计算双曲正切函数（tanh）
@@ -342,9 +346,9 @@ REAL calc_tanh(REAL value) {
 	return sinhx / coshx;
 }
 
-INT get_rand(INT l,INT r) {
+INT get_rand_i(INT l,INT r) {
 	INT len = r - l;
-	INT res = rand()*rand() % len;
+	INT res = rand() % len;
 	if (res < 0)
 		res += len;
 	return res + l;

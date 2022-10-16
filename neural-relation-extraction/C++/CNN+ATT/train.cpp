@@ -10,7 +10,7 @@ using namespace std;
 std::vector<string> bags_train_key;
 
 double total_loss = 0;
-REAL alpha_epoch;
+REAL current_alpha;
 double current_sample = 0, final_sample = 0;
 pthread_mutex_t train_mutex;
 
@@ -121,9 +121,10 @@ REAL train_bags(std::string bags_name)
 	
 	vector<INT> dropout;
 	for (INT i = 0; i < dimension_c; i++)
-		dropout.push_back((rand() % 1000) / 1000.0 > (1 - dropout_probability));
+		dropout.push_back((double)(rand()) / RAND_MAX < dropout_probability);
+		
 	
-	vector<REAL> weight;
+	std::vector<REAL> weight;
 	REAL weight_sum = 0;
 	for (INT k=0; k<bags_size; k++)
 	{
@@ -175,9 +176,9 @@ REAL train_bags(std::string bags_name)
 			for (INT k=0; k<bags_size; k++)
 				r[i] += rList[k][i] * weight[k];
 		
-		REAL g = f_r[r2]/sum*alpha_epoch;
+		REAL g = f_r[r2]/sum*current_alpha;
 		if (r2 == r1)
-			g -= alpha_epoch;
+			g -= current_alpha;
 		for (INT i = 0; i < dimension_c; i++) 
 		{
 			REAL g1 = 0;
@@ -220,7 +221,7 @@ REAL train_bags(std::string bags_name)
 	for (INT k=0; k<bags_size; k++)
 	{
 		INT i = bags_train[bags_name][k];
-		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], alpha_epoch,rList[k], tipList[k], grad[k]);
+		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], current_alpha,rList[k], tipList[k], grad[k]);
 		
 	}
 	return loss;
@@ -237,7 +238,7 @@ void* train_mode(void *id ) {
 			}
 			current_sample += 1;
 			pthread_mutex_unlock (&train_mutex);
-			INT i = get_rand(0, len);
+			INT i = get_rand_i(0, len);
 			total_loss += train_bags(bags_train_key[i]);
 		}
 }
@@ -316,13 +317,15 @@ void train() {
 	
 
 	for (INT epoch = 0; epoch < epochs; epoch ++) {
+		
 		len = bags_train.size();
 		nbatches  =  len / (batch * num_threads);
-		alpha_epoch = alpha * rate / (batch * num_threads);
+		current_alpha = alpha * current_rate;
 
 		total_loss = 0;
 		current_sample = 0;
 		final_sample = 0;
+
 		time_begin();
 		for (INT i = 1; i <= nbatches; i++) {
 			final_sample += batch * num_threads;
@@ -344,23 +347,19 @@ void train() {
 			for (long a = 0; a < num_threads; a++)
 				pthread_join(pt[a], NULL);
 			free(pt);
+			cout << total_loss << endl;
 		}
 		time_end();
-		printf("Epoch %d/%d - loss: %f\ntest:\n", epoch, epochs, total_loss/final_sample);
+		printf("Epoch %d/%d - loss: %f\tcurrent_alpha: %.8f\ntest:\n", epoch, epochs, total_loss/final_sample, current_alpha);
 		test();
 		if ((epoch + 1) % 1 == 0) 
-			rate = rate * reduce;
+			current_rate = current_rate * reduce_epoch;
 	}
-	test();
 	std::cout<<"Train End"<<std::endl;
 }
 
 INT main(INT argc, char ** argv) {
 	//output_model = 1;
-	std::cout<<"Init Begin."<<std::endl;
 	init();
-	std::cout<< "bags_train.size: " << bags_train.size() << '\t' 
-	         << "bags_test.size: " << bags_test.size() << std::endl;
-	std::cout<<"Init End."<<std::endl;
 	train();
 }

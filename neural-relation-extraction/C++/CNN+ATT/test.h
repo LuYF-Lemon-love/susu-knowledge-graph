@@ -200,15 +200,16 @@ void test() {
 
 	REAL correct = 0;
 	FILE* f = fopen(("out/pr" + version + ".txt").c_str(), "w");
-	for (INT i = 0; i < min(2000, INT(predict_relation_vector.size())); i++)
+	INT top_2000 = min(2000, INT(predict_relation_vector.size()));
+	for (INT i = 0; i < top_2000; i++)
 	{
 		if (predict_relation_vector[i].second.first != 0)
 			correct++;	
 		REAL precision = correct/(i+1);
 		REAL recall = correct/total;
 		if ((i+1) % 50 == 0)
-			std::cout << "precision:\t" << precision << "\t\t" << "recall:\t" << recall <<std::endl;
-		fprintf(f,"precision: %lf\t\trecall: %lf\t\tcorrect: %d\t\tpredict_probability: %lf\t\tpredict_triplet: %s\n",
+			printf("Progress %d/%d - precision: %.2lf\trecall: %.2lf\n",(i+1), top_2000, precision, recall);
+		fprintf(f,"precision: %.2lf\trecall: %.2lf\tcorrect: %d\tpredict_probability: %.2lf\tpredict_triplet: %s\n",
 			precision, recall, predict_relation_vector[i].second.first, predict_relation_vector[i].second.second,
 			predict_relation_vector[i].first.c_str());	
 	}
