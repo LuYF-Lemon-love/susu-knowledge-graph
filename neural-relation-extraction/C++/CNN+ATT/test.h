@@ -7,9 +7,11 @@
 // total: 计算测试集中样本数 (其中 relation 非 NA,每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
 // bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
 // thread_first_bags_test (num_threads + 1): 保存每个线程第一个样本在 bags_test_key 中的位置
+// test_mutex: 互斥锁
 double total;
 std::vector<std::string> bags_test_key;
 std::vector<INT> thread_first_bags_test;
+pthread_mutex_t test_mutex;
 
 // predict_relation_vector: 每一个元素的 key -> (头实体 + "\t" + 尾实体 + "\t" + 预测关系名)
 // value 的 key -> (0 或 1, 0 表示关系预测错误, 1 表示关系预测正确)
@@ -23,9 +25,6 @@ bool cmp_predict_probability(pair<string, pair<INT,double> > a,pair<string, pair
 {
     return a.second.second > b.second.second;
 }
-
-// 互斥锁
-pthread_mutex_t test_mutex;
 
 // 计算句子的一维卷机
 void calc_conv_1d(INT *sentence, INT *test_position_head,
@@ -209,7 +208,7 @@ void test() {
 		REAL recall = correct/total;
 		if ((i+1) % 50 == 0)
 			printf("Progress %d/%d - precision: %.2lf\trecall: %.2lf\n",(i+1), top_2000, precision, recall);
-		fprintf(f,"precision: %.2lf\trecall: %.2lf\tcorrect: %d\tpredict_probability: %.2lf\tpredict_triplet: %s\n",
+		fprintf(f, "precision: %.2lf  recall: %.2lf  correct: %d  predict_probability: %.2lf  predict_triplet: %s\n",
 			precision, recall, predict_relation_vector[i].second.first, predict_relation_vector[i].second.second,
 			predict_relation_vector[i].first.c_str());	
 	}

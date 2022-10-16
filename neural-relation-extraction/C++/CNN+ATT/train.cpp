@@ -7,8 +7,11 @@
 using namespace std;
 
 // bags_test_key: 保存 bags_train 的 key (头实体 + "\t" + 尾实体 + "\t" + 关系名), 按照 bags_train 的迭代顺序
+// total_loss: 每一轮次的总损失
+// current_alpha: 当前轮次的学习率
+// current_sample, final_sample: 由于使用多线程训练模型, 这两个变量用于确定当前训练批次是否完成, 进而更新各种权重矩阵的副本, 如 word_vec_copy
+// train_mutex: 互斥锁
 std::vector<string> bags_train_key;
-
 double total_loss = 0;
 REAL current_alpha;
 double current_sample = 0, final_sample = 0;
@@ -24,7 +27,7 @@ void time_end()
 {
 	gettimeofday(&t_end, NULL);
 	long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
-	std::cout << "time(s):\t" << time_use/1000000.0 << std::endl;
+	printf("time(s): %.2Lf.\n", time_use/1000000.0);
 }
 
 vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, vector<INT> &tip) {
@@ -191,33 +194,33 @@ REAL train_bags(std::string bags_name)
 		}
 		relation_matrix_bias[r2] -= g;
 	}
-		for (INT i = 0; i < dimension_c; i++) 
+	for (INT i = 0; i < dimension_c; i++) 
+	{
+		REAL g1 = g1_tmp[i];
+		double tmp_sum = 0; //for rList[k][i]*weight[k]
+		for (INT k=0; k<bags_size; k++)
 		{
-			REAL g1 = g1_tmp[i];
-			double tmp_sum = 0; //for rList[k][i]*weight[k]
-			for (INT k=0; k<bags_size; k++)
+			grad[k][i]+=g1*weight[k];
+			for (INT j = 0; j < dimension_c; j++)
 			{
-				grad[k][i]+=g1*weight[k];
-				for (INT j = 0; j < dimension_c; j++)
-				{
-					grad[k][j]+=g1*rList[k][i]*weight[k]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
-					relation_matrix[r1 * dimension_c + i] -= g1*rList[k][i]*weight[k]*rList[k][j]*attention_weights_copy[r1][j][i];
-					if (i==j)
-					  attention_weights[r1][j][i] -= g1*rList[k][i]*weight[k]*rList[k][j]*relation_matrix_copy[r1 * dimension_c + i];
-				}
-				tmp_sum += rList[k][i]*weight[k];
-			}	
-			for (INT k1=0; k1<bags_size; k1++)
+				grad[k][j]+=g1*rList[k][i]*weight[k]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
+				relation_matrix[r1 * dimension_c + i] -= g1*rList[k][i]*weight[k]*rList[k][j]*attention_weights_copy[r1][j][i];
+				if (i==j)
+				  attention_weights[r1][j][i] -= g1*rList[k][i]*weight[k]*rList[k][j]*relation_matrix_copy[r1 * dimension_c + i];
+			}
+			tmp_sum += rList[k][i]*weight[k];
+		}	
+		for (INT k1=0; k1<bags_size; k1++)
+		{
+			for (INT j = 0; j < dimension_c; j++)
 			{
-				for (INT j = 0; j < dimension_c; j++)
-				{
-					grad[k1][j]-=g1*tmp_sum*weight[k1]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
-					relation_matrix[r1 * dimension_c + i] += g1*tmp_sum*weight[k1]*rList[k1][j]*attention_weights_copy[r1][j][i];
-					if (i==j)
-					  attention_weights[r1][j][i] += g1*tmp_sum*weight[k1]*rList[k1][j]*relation_matrix_copy[r1 * dimension_c + i];
-				}
+				grad[k1][j]-=g1*tmp_sum*weight[k1]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
+				relation_matrix[r1 * dimension_c + i] += g1*tmp_sum*weight[k1]*rList[k1][j]*attention_weights_copy[r1][j][i];
+				if (i==j)
+				  attention_weights[r1][j][i] += g1*tmp_sum*weight[k1]*rList[k1][j]*relation_matrix_copy[r1 * dimension_c + i];
 			}
 		}
+	}
 	for (INT k=0; k<bags_size; k++)
 	{
 		INT i = bags_train[bags_name][k];
@@ -228,19 +231,19 @@ REAL train_bags(std::string bags_name)
 }
 
 void* train_mode(void *id ) {
-		while (true)
+	while (true)
+	{
+		pthread_mutex_lock (&train_mutex);
+		if (current_sample >= final_sample)
 		{
-			pthread_mutex_lock (&train_mutex);
-			if (current_sample >= final_sample)
-			{
-				pthread_mutex_unlock (&train_mutex);
-				break;
-			}
-			current_sample += 1;
 			pthread_mutex_unlock (&train_mutex);
-			INT i = get_rand_i(0, len);
-			total_loss += train_bags(bags_train_key[i]);
+			break;
 		}
+		current_sample += 1;
+		pthread_mutex_unlock (&train_mutex);
+		INT i = get_rand_i(0, len);
+		total_loss += train_bags(bags_train_key[i]);
+	}
 }
 
 void train() {
@@ -322,11 +325,12 @@ void train() {
 		nbatches  =  len / (batch * num_threads);
 		current_alpha = alpha * current_rate;
 
-		total_loss = 0;
 		current_sample = 0;
 		final_sample = 0;
+		total_loss = 0;
 
 		time_begin();
+
 		for (INT i = 1; i <= nbatches; i++) {
 			final_sample += batch * num_threads;
 			
@@ -347,15 +351,16 @@ void train() {
 			for (long a = 0; a < num_threads; a++)
 				pthread_join(pt[a], NULL);
 			free(pt);
-			cout << total_loss << endl;
 		}
+
 		time_end();
 		printf("Epoch %d/%d - loss: %f\tcurrent_alpha: %.8f\ntest:\n", epoch, epochs, total_loss/final_sample, current_alpha);
 		test();
+
 		if ((epoch + 1) % 1 == 0) 
 			current_rate = current_rate * reduce_epoch;
 	}
-	std::cout<<"Train End"<<std::endl;
+	printf("Train End\n");
 }
 
 INT main(INT argc, char ** argv) {

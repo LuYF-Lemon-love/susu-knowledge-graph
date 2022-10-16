@@ -15,35 +15,37 @@
 #define INT int
 #define REAL float
 
-
 using namespace std;
 
 std::string version = "";
 
-INT output_model = 0;
-INT num_threads = 32;
-INT epochs = 25;
-REAL reduce_epoch = 0.98;
-
-// dimension_c: sentence embedding size
+// batch: batch size
+// num_threads: number of threads
+// alpha: learning rate
+// current_rate: init rate
+// reduce_epoch: reduce_epoch
+// epochs: epochs
+// limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 // dimension_pos: position dimension
 // window: window size
-// batch: batch size
-// alpha: learning rate
+// dimension_c: sentence embedding size
 // dropout_probability: dropout probability
-INT dimension_c = 230;
+INT batch = 40;
+INT num_threads = 32;
+REAL alpha = 0.00125;
+REAL current_rate = 1.0;
+REAL reduce_epoch = 0.98;
+INT epochs = 25;
+INT limit = 30;
 INT dimension_pos = 5;
 INT window = 3;
-INT batch = 40;
-REAL alpha = 0.00125; 
+INT dimension_c = 230;
 REAL dropout_probability = 0.5;
 
-// limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
-INT limit = 30;
-
+INT output_model = 0;
 INT nbatches;
 INT len;
-REAL current_rate = 1.0;
+
 
 // word_total: 词汇总数, 包括 "UNK"
 // dimension: 词嵌入维度
@@ -324,7 +326,7 @@ void init() {
 	position_total_tail = position_max_tail - position_min_tail + 1;
 
 	printf("batch: %d\nnumber of threads: %d\nlearning rate: %.8f\n", batch, num_threads, alpha);
-	printf("current_rate: %.2f\nreduce: %.2f\nepochs: %d\n\n", current_rate, reduce_epoch, epochs);
+	printf("current_rate: %.2f\nreduce_epoch: %.2f\nepochs: %d\n\n", current_rate, reduce_epoch, epochs);
 	printf("word_total: %d\nword dimension: %d\n\n", word_total, dimension);
 	printf("limit: %d\nposition_total_head: %d\nposition_total_tail: %d\ndimension_pos: %d\n\n",
 		limit, position_total_head, position_total_tail, dimension_pos);
