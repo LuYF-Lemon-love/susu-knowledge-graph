@@ -30,71 +30,72 @@ void time_end()
 	printf("time(s): %.2Lf.\n", time_use/1000000.0);
 }
 
-vector<REAL> train(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, vector<INT> &tip) {
-	vector<REAL> r;
-	r.resize(dimension_c);
+vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
+	INT *train_position_tail, INT len, vector<INT> &max_pool_window_k) {
+	std::vector<REAL> conv_1d_result_k;
+	conv_1d_result_k.resize(dimension_c, 0);
+
 	for (INT i = 0; i < dimension_c; i++) {
-		r[i] = 0;
-		INT last = i * dimension * window;
-		INT lastt = i * dimension_pos * window;
+		INT last_word = i * window * dimension;
+		INT last_pos = i * window * dimension_pos;
 		REAL max_pool_1d = -FLT_MAX;
-		for (INT i1 = 0; i1 <= len - window; i1++) {
-			REAL res = 0;
-			INT tot = 0;
-			INT tot1 = 0;
-			for (INT j = i1; j < i1 + window; j++)  {
-				INT last1 = sentence[j] * dimension;
+		for (INT last_window = 0; last_window <= len - window; last_window++) {
+			REAL sum = 0;
+			INT tot_word = 0;
+			INT tot_pos = 0;
+			for (INT j = last_window; j < last_window + window; j++)  {
+				INT last_word_vec = sentence[j] * dimension;
 			 	for (INT k = 0; k < dimension; k++) {
-			 		res += conv_1d_word_copy[last + tot] * word_vec_copy[last1+k];
-			 		tot++;
+			 		sum += conv_1d_word_copy[last_word + tot_word] * word_vec_copy[last_word_vec + k];
+			 		tot_word++;
 			 	}
-			 	INT last2 = train_position_head[j] * dimension_pos;
-			 	INT last3 = train_position_tail[j] * dimension_pos;
+			 	INT last_pos_head = train_position_head[j] * dimension_pos;
+			 	INT last_pos_tail = train_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		res += conv_1d_position_head_copy[lastt + tot1] * position_vec_head_copy[last2+k];
-			 		res += conv_1d_position_tail_copy[lastt + tot1] * position_vec_tail_copy[last3+k];
-			 		tot1++;
+			 		sum += conv_1d_position_head_copy[last_pos + tot_pos] * position_vec_head_copy[last_pos_head+k];
+			 		sum += conv_1d_position_tail_copy[last_pos + tot_pos] * position_vec_tail_copy[last_pos_tail+k];
+			 		tot_pos++;
 			 	}
 			}
-			if (res > max_pool_1d) {
-				max_pool_1d = res;
-				tip[i] = i1;
+			if (sum > max_pool_1d) {
+				max_pool_1d = sum;
+				max_pool_window_k[i] = last_window;
 			}
 		}
-		r[i] = max_pool_1d + conv_1d_bias_copy[i];
+		conv_1d_result_k[i] = max_pool_1d + conv_1d_bias_copy[i];
 	}
 
 	for (INT i = 0; i < dimension_c; i++) {
-		r[i] = calc_tanh(r[i]);
+		conv_1d_result_k[i] = calc_tanh(conv_1d_result_k[i]);
 	}
-	return r;
+	return conv_1d_result_k;
 }
 
-void train_gradient(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, INT e1, INT e2, INT r1, REAL alpha, vector<REAL> &r,vector<INT> &tip, vector<REAL> &grad)
+void train_gradient(INT *sentence, INT *train_position_head, INT *train_position_tail, INT len, INT e1, INT e2, INT relation, REAL alpha, vector<REAL> &r,vector<INT> &max_pool_window_k, vector<REAL> &grad)
 {
 	for (INT i = 0; i < dimension_c; i++) {
 		if (fabs(grad[i])<1e-8)
 			continue;
 		INT last = i * dimension * window;
-		INT tot = 0;
+		INT tot_word = 0;
 		INT lastt = i * dimension_pos * window;
-		INT tot1 = 0;
+		INT tot_pos = 0;
 		REAL g1 = grad[i] * (1 -  r[i] * r[i]);
 		for (INT j = 0; j < window; j++)  {
-			INT last1 = sentence[tip[i] + j] * dimension;
+			INT last_word_vec = sentence[max_pool_window_k[i] + j] * dimension;
 			for (INT k = 0; k < dimension; k++) {
-				conv_1d_word[last + tot] -= g1 * word_vec_copy[last1+k];
-				word_vec[last1 + k] -= g1 * conv_1d_word_copy[last + tot];
-				tot++;
+				conv_1d_word[last + tot_word] -= g1 * word_vec_copy[last_word_vec+k];
+				word_vec[last_word_vec + k] -= g1 * conv_1d_word_copy[last + tot_word];
+				tot_word++;
 			}
-			INT last2 = train_position_head[tip[i] + j] * dimension_pos;
-			INT last3 = train_position_tail[tip[i] + j] * dimension_pos;
+			INT last_pos_head = train_position_head[max_pool_window_k[i] + j] * dimension_pos;
+			INT last_pos_tail = train_position_tail[max_pool_window_k[i] + j] * dimension_pos;
 			for (INT k = 0; k < dimension_pos; k++) {
-				conv_1d_position_head[lastt + tot1] -= g1 * position_vec_head_copy[last2 + k];
-				conv_1d_position_tail[lastt + tot1] -= g1 * position_vec_tail_copy[last3 + k];
-				position_vec_head[last2 + k] -= g1 * conv_1d_position_head_copy[lastt + tot1];
-				position_vec_tail[last3 + k] -= g1 * conv_1d_position_tail_copy[lastt + tot1];
-				tot1++;
+				conv_1d_position_head[lastt + tot_pos] -= g1 * position_vec_head_copy[last_pos_head + k];
+				conv_1d_position_tail[lastt + tot_pos] -= g1 * position_vec_tail_copy[last_pos_tail + k];
+				position_vec_head[last_pos_head + k] -= g1 * conv_1d_position_head_copy[lastt + tot_pos];
+				position_vec_tail[last_pos_tail + k] -= g1 * conv_1d_position_tail_copy[lastt + tot_pos];
+				tot_pos++;
 			}
 		}
 		conv_1d_bias[i] -= g1;
@@ -103,21 +104,22 @@ void train_gradient(INT *sentence, INT *train_position_head, INT *train_position
 
 REAL train_bags(std::string bags_name)
 {
+	INT relation = -1;
 	INT bags_size = bags_train[bags_name].size();
-	double bags_rate = max(1.0,1.0*bags_size/2);
-	vector<vector<REAL> > rList;
-	vector<vector<INT> > tipList;
-	tipList.resize(bags_size);
-	INT r1 = -1;
-	for (INT k=0; k<bags_size; k++)
+	std::vector<std::vector<INT> > max_pool_window;
+	max_pool_window.resize(bags_size);
+	std::vector<std::vector<REAL> > conv_1d_result;
+	
+	for (INT k = 0; k < bags_size; k++)
 	{
-		tipList[k].resize(dimension_c);
-		INT i = bags_train[bags_name][k];
-		if (r1==-1)
-			r1 = train_relation_list[i];
+		max_pool_window[k].resize(dimension_c);
+		INT pos = bags_train[bags_name][k];
+		if (relation == -1)
+			relation = train_relation_list[pos];
 		else
-			assert(r1==train_relation_list[i]);
-		rList.push_back(train(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], tipList[k]));
+			assert(relation == train_relation_list[pos]);
+		conv_1d_result.push_back(calc_conv_1d(train_sentence_list[pos], train_position_head[pos],
+			train_position_tail[pos], train_length[pos], max_pool_window[k]));
 	}
 	
 	vector<REAL> f_r;	
@@ -136,8 +138,8 @@ REAL train_bags(std::string bags_name)
 		{
 			REAL tmp = 0;
 			for (INT j = 0; j < dimension_c; j++)
-				tmp+=rList[k][j]*attention_weights_copy[r1][j][i];
-			s += tmp * relation_matrix_copy[r1 * dimension_c + i];
+				tmp+=conv_1d_result[k][j]*attention_weights_copy[relation][j][i];
+			s += tmp * relation_matrix_copy[relation * dimension_c + i];
 		}
 		s = exp(s); 
 		weight.push_back(s);
@@ -152,7 +154,7 @@ REAL train_bags(std::string bags_name)
 		r.resize(dimension_c);
 		for (INT i = 0; i < dimension_c; i++) 
 			for (INT k=0; k<bags_size; k++)
-				r[i] += rList[k][i] * weight[k];
+				r[i] += conv_1d_result[k][i] * weight[k];
 	
 		REAL ss = 0;
 		for (INT i = 0; i < dimension_c; i++) {
@@ -163,7 +165,7 @@ REAL train_bags(std::string bags_name)
 		sum+=f_r[j];
 	}
 	
-	double loss = -(log(f_r[r1]) - log(sum));
+	double loss = -(log(f_r[relation]) - log(sum));
 	
 	vector<vector<REAL> > grad;
 	grad.resize(bags_size);
@@ -177,10 +179,10 @@ REAL train_bags(std::string bags_name)
 		r.resize(dimension_c);
 		for (INT i = 0; i < dimension_c; i++) 
 			for (INT k=0; k<bags_size; k++)
-				r[i] += rList[k][i] * weight[k];
+				r[i] += conv_1d_result[k][i] * weight[k];
 		
 		REAL g = f_r[r2]/sum*current_alpha;
-		if (r2 == r1)
+		if (r2 == relation)
 			g -= current_alpha;
 		for (INT i = 0; i < dimension_c; i++) 
 		{
@@ -197,40 +199,40 @@ REAL train_bags(std::string bags_name)
 	for (INT i = 0; i < dimension_c; i++) 
 	{
 		REAL g1 = g1_tmp[i];
-		double tmp_sum = 0; //for rList[k][i]*weight[k]
+		double tmp_sum = 0; //for conv_1d_result[k][i]*weight[k]
 		for (INT k=0; k<bags_size; k++)
 		{
 			grad[k][i]+=g1*weight[k];
 			for (INT j = 0; j < dimension_c; j++)
 			{
-				grad[k][j]+=g1*rList[k][i]*weight[k]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
-				relation_matrix[r1 * dimension_c + i] -= g1*rList[k][i]*weight[k]*rList[k][j]*attention_weights_copy[r1][j][i];
+				grad[k][j]+=g1*conv_1d_result[k][i]*weight[k]*relation_matrix_copy[relation * dimension_c + i]*attention_weights_copy[relation][j][i];
+				relation_matrix[relation * dimension_c + i] -= g1*conv_1d_result[k][i]*weight[k]*conv_1d_result[k][j]*attention_weights_copy[relation][j][i];
 				if (i==j)
-				  attention_weights[r1][j][i] -= g1*rList[k][i]*weight[k]*rList[k][j]*relation_matrix_copy[r1 * dimension_c + i];
+				  attention_weights[relation][j][i] -= g1*conv_1d_result[k][i]*weight[k]*conv_1d_result[k][j]*relation_matrix_copy[relation * dimension_c + i];
 			}
-			tmp_sum += rList[k][i]*weight[k];
+			tmp_sum += conv_1d_result[k][i]*weight[k];
 		}	
 		for (INT k1=0; k1<bags_size; k1++)
 		{
 			for (INT j = 0; j < dimension_c; j++)
 			{
-				grad[k1][j]-=g1*tmp_sum*weight[k1]*relation_matrix_copy[r1 * dimension_c + i]*attention_weights_copy[r1][j][i];
-				relation_matrix[r1 * dimension_c + i] += g1*tmp_sum*weight[k1]*rList[k1][j]*attention_weights_copy[r1][j][i];
+				grad[k1][j]-=g1*tmp_sum*weight[k1]*relation_matrix_copy[relation * dimension_c + i]*attention_weights_copy[relation][j][i];
+				relation_matrix[relation * dimension_c + i] += g1*tmp_sum*weight[k1]*conv_1d_result[k1][j]*attention_weights_copy[relation][j][i];
 				if (i==j)
-				  attention_weights[r1][j][i] += g1*tmp_sum*weight[k1]*rList[k1][j]*relation_matrix_copy[r1 * dimension_c + i];
+				  attention_weights[relation][j][i] += g1*tmp_sum*weight[k1]*conv_1d_result[k1][j]*relation_matrix_copy[relation * dimension_c + i];
 			}
 		}
 	}
 	for (INT k=0; k<bags_size; k++)
 	{
 		INT i = bags_train[bags_name][k];
-		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], current_alpha,rList[k], tipList[k], grad[k]);
+		train_gradient(train_sentence_list[i], train_position_head[i], train_position_tail[i], train_length[i], train_head_list[i], train_tail_list[i], train_relation_list[i], current_alpha,conv_1d_result[k], max_pool_window[k], grad[k]);
 		
 	}
 	return loss;
 }
 
-void* train_mode(void *id ) {
+void* train_mode(void *id) {
 	while (true)
 	{
 		pthread_mutex_lock (&train_mutex);
