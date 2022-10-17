@@ -19,6 +19,7 @@ struct timeval t_start, t_end;
 
 std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	INT *train_position_tail, INT len, std::vector<INT> &max_pool_window_k) {
+	
 	std::vector<REAL> conv_1d_result_k;
 	conv_1d_result_k.resize(dimension_c, 0);
 

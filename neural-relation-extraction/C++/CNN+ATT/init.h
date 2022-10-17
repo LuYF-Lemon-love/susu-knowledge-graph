@@ -25,10 +25,11 @@
 #include <cassert>         // assert
 #include <pthread.h>       // pthread_create, pthread_join, pthread_mutex_t
 #include <sys/time.h>      // timeval, gettimeofday
-#include <vector>          // std::vector, std::vector::resize, std::vector::operator[], std::vector::push_back
-#include <map>             // std::map, std::map::operator[]
+#include <vector>          // std::vector, std::vector::resize, std::vector::operator[], std::vector::push_back, std::vector::size
+#include <map>             // std::map, std::map::operator[], std::map::clear, std::map::size
 #include <string>          // std::string, std::string::c_str
 #include <algorithm>       // std::sort
+#include <utility>         // std::make_pair
 
 // ##################################################
 // 声明和定义超参数变量
@@ -343,9 +344,9 @@ void init() {
 	printf("window: %d\ndimension_c: %d\n\n", window, dimension_c);
 	printf("relation_total: %d\ndropout_probability: %.2f\n\n", relation_total, dropout_probability);
 
-	printf("number of training samples: %d - average sentence number of per training sample: %.2f\n",
+	printf("number of training samples: %7d - average sentence number of per training sample: %.2f\n",
 		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));
-	printf("number of testing samples:  %d - average sentence number of per testing sample: %.2f\n\n",
+	printf("number of testing samples:  %7d - average sentence number of per testing sample: %.2f\n\n",
 		INT(bags_test.size()), float(float(test_sentence_list.size()) / bags_test.size()));
 
 	printf("Init end.\n\n");

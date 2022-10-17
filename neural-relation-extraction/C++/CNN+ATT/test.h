@@ -1,15 +1,32 @@
+// test.h
+//
+// created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+//
+// 该 C++ 文件用于模型测试
+//
+// 输出 precion/recall curves
+// output:
+//     ./out/pr + note + .txt
+//
+// 输出模型 (可选)
+// output:
+//     ./out/word2vec + note + .txt
+//     ./out/position_vec + note + .txt
+//     ./out/conv_1d + note + .txt
+//     ./out/attention_weights + note + .txt
+//     ./out/relation_matrix + note + .txt
+
+// ##################################################
+// 包含标准库
+// ##################################################
+
 #ifndef TEST_H
 #define TEST_H
 #include "init.h"
 
-// total: 计算测试集中样本数 (其中 relation 非 NA,每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
-// bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
-// thread_first_bags_test (num_threads + 1): 保存每个线程第一个样本在 bags_test_key 中的位置
-// test_mutex: 互斥锁
-INT total;
-std::vector<std::string> bags_test_key;
-std::vector<INT> thread_first_bags_test;
-pthread_mutex_t test_mutex;
+// ##################################################
+// 声明和定义变量
+// ##################################################
 
 // predict_relation_vector: 每一个元素的 key -> (头实体 + "\t" + 尾实体 + "\t" + 预测关系名)
 // value 的 key -> (0 或 1, 0 表示关系预测错误, 1 表示关系预测正确)
@@ -17,8 +34,17 @@ pthread_mutex_t test_mutex;
 // 以模型给出的关系成立的概率降序排列
 std::vector<std::pair<std::string, std::pair<INT,double> > > predict_relation_vector;
 
+// num_test_non_NA: 计算测试集中样本数 (其中 relation 非 NA,每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
+// bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
+// thread_first_bags_test (num_threads + 1): 保存每个线程第一个样本在 bags_test_key 中的位置
+// test_mutex: 互斥锁, 线程同步 predict_relation_vector 变量
+INT num_test_non_NA;
+std::vector<std::string> bags_test_key;
+std::vector<INT> thread_first_bags_test;
+pthread_mutex_t test_mutex;
+
 // 为 std::sort() 定义比较函数
-// 以模型给出的关系成立的概率降序排列
+// 以模型给出的关系成立的概率降序排列, 用于 predict_relation_vector 变量
 bool cmp_predict_probability(std::pair<std::string, std::pair<INT,double> > a,
 	std::pair<std::string, std::pair<INT,double> >b)
 {
@@ -26,37 +52,44 @@ bool cmp_predict_probability(std::pair<std::string, std::pair<INT,double> > a,
 }
 
 // 计算句子的一维卷机
-void calc_conv_1d(INT *sentence, INT *test_position_head,
-		INT *test_position_tail, INT len, REAL *result) {
+std::vector<REAL> calc_conv_1d(INT *sentence, INT *test_position_head,
+	INT *test_position_tail, INT sentence_length) {
+	
+	std::vector<REAL> conv_1d_result_k;
+	conv_1d_result_k.resize(dimension_c, 0);
+	
 	for (INT i = 0; i < dimension_c; i++) {
 		INT last_word = i * window * dimension;
 		INT last_pos = i * window * dimension_pos;
 		REAL max_pool_1d = -FLT_MAX;
-		for (INT last_window = 0; last_window <= len - window; last_window++) {
+		for (INT last_window = 0; last_window <= sentence_length - window; last_window++) {
 			REAL sum = 0;
 			INT total_word = 0;
 			INT total_pos = 0;
 			for (INT j = last_window; j < last_window + window; j++)  {
 				INT last_word_vec = sentence[j] * dimension;
 			 	for (INT k = 0; k < dimension; k++) {
-			 		sum += conv_1d_word[last_word + total_word] * word_vec[last_word_vec+k];
+			 		sum += conv_1d_word[last_word + total_word] * word_vec[last_word_vec + k];
 			 		total_word++;
 			 	}
 			 	INT last_pos_head = test_position_head[j] * dimension_pos;
 			 	INT last_pos_tail = test_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		sum += conv_1d_position_head[last_pos + total_pos] * position_vec_head[last_pos_head+k];
-			 		sum += conv_1d_position_tail[last_pos + total_pos] * position_vec_tail[last_pos_tail+k];
+			 		sum += conv_1d_position_head[last_pos + total_pos] * position_vec_head[last_pos_head + k];
+			 		sum += conv_1d_position_tail[last_pos + total_pos] * position_vec_tail[last_pos_tail + k];
 			 		total_pos++;
 			 	}
 			}
+
+			// 对应于论文中的公式 (3), [x]_i = max(p_i), 其中 x \in R^{d^c}
 			if (sum > max_pool_1d) max_pool_1d = sum;
 		}
-		result[i] = max_pool_1d + conv_1d_bias[i];
+		conv_1d_result_k[i] = max_pool_1d + conv_1d_bias[i];
 	}
 
 	for (INT i = 0; i < dimension_c; i++)
-		result[i] = calc_tanh(result[i]);
+		conv_1d_result_k[i] = calc_tanh(conv_1d_result_k[i]);
+	return conv_1d_result_k;
 }
 
 // 单个线程内运行的任务
@@ -70,33 +103,32 @@ void* test_mode(void *thread_id)
 		right = bags_test_key.size();
 	else
 		right = thread_first_bags_test[id + 1];
-	REAL *result = (REAL *)calloc(dimension_c, sizeof(REAL));
+
+	// 保存样本的正确标签 (关系)
+	std::map<INT,INT> sample_relation_list;
 
 	for (INT i_sample = left; i_sample < right; i_sample++)
 	{
-		std::vector<double> result_final;
-		for (INT j = 0; j < relation_total; j++)
-			result_final.push_back(0.0);
-
-		std::map<INT,INT> sample_relation_list;
+		// 一维卷机部分
 		sample_relation_list.clear();
-		std::vector<std::vector<double> > result_list;
-
+		std::vector<std::vector<REAL> > conv_1d_result;
 		INT bags_size = bags_test[bags_test_key[i_sample]].size();
 		for (INT k = 0; k < bags_size; k++)
 		{
 			INT i = bags_test[bags_test_key[i_sample]][k];
-			sample_relation_list[test_relation_list[i]]=1;
+			sample_relation_list[test_relation_list[i]] = 1;
 
-			calc_conv_1d(test_sentence_list[i],  test_position_head[i],
-				test_position_tail[i], test_length[i], result);
-			std::vector<double> result_temp;
-			for (INT j = 0; j < dimension_c; j++)
-				result_temp.push_back(result[j]);
-			result_list.push_back(result_temp);
+			conv_1d_result.push_back(calc_conv_1d(test_sentence_list[i],
+				test_position_head[i], test_position_tail[i], test_length[i]));
 		}
 
+		// 对应于论文中的公式 (8), e_i = x_iAr, 其中 r is the query vector associated with relation r which
+		// indicates the representation of relation r, 也就是 predict 时, 需要用每一个关系依次查询.
+		std::vector<float> result_final;
+		result_final.resize(relation_total, 0.0);
 		for (INT index_r = 0; index_r < relation_total; index_r++) {
+			
+			// 获取每一个句子的权重
 			std::vector<REAL> weight;
 			REAL weight_sum = 0;
 			for (INT k = 0; k < bags_size; k++)
@@ -106,7 +138,7 @@ void* test_mode(void *thread_id)
 				{
 					REAL temp = 0;
 					for (INT i_x = 0; i_x < dimension_c; i_x++)
-						temp += result_list[k][i_x] * attention_weights[index_r][i_x][i_r];
+						temp += conv_1d_result[k][i_x] * attention_weights[index_r][i_x][i_r];
 					s += temp * relation_matrix[index_r * dimension_c + i_r];
 				}
 				s = exp(s);
@@ -117,26 +149,30 @@ void* test_mode(void *thread_id)
 			for (INT k = 0; k < bags_size; k++)
 				weight[k] /= weight_sum;
 			
+			// 获取 s, i.e., s indicates the representation of the sentence set
 			std::vector<REAL> result_sentence;
 			result_sentence.resize(dimension_c);
 			for (INT i = 0; i < dimension_c; i++) 
 				for (INT k = 0; k < bags_size; k++)
-					result_sentence[i] += result_list[k][i] * weight[k];
+					result_sentence[i] += conv_1d_result[k][i] * weight[k];
 
+			// 获取关系 (id 为 index_r) 成立的概率
 			std::vector<REAL> result_final_r;
 			double temp = 0;
 			for (INT i_r = 0; i_r < relation_total; i_r++) {
 				REAL s = 0;
 				for (INT i_s = 0; i_s < dimension_c; i_s++)
-					s +=  dropout_probability * relation_matrix[i_r * dimension_c + i_s] * result_sentence[i_s];
+					s +=  dropout_probability * result_sentence[i_s] *
+						relation_matrix[i_r * dimension_c + i_s];
 				s += relation_matrix_bias[i_r];
 				s = exp(s);
 				temp += s;
 				result_final_r.push_back(s);
 			}
-			result_final[index_r] = std::max(result_final[index_r], result_final_r[index_r]/temp);
+			result_final[index_r] = result_final_r[index_r]/temp;
 		}
 
+		// 保存该测试样本各个关系 (非 NA) 成立的概率, 使用线程同步
 		pthread_mutex_lock (&test_mutex);
 		for (INT i_r = 1; i_r < relation_total; i_r++) 
 		{
@@ -145,8 +181,6 @@ void* test_mode(void *thread_id)
 		}
 		pthread_mutex_unlock(&test_mutex);
 	}
-
-	free(result);
 }
 
 // 测试函数
@@ -154,7 +188,7 @@ void test() {
 
 	printf("##################################################\n\nTest start...\n\n");
 
-	total = 0;
+	num_test_non_NA = 0;
 	bags_test_key.clear();
 	thread_first_bags_test.clear();
 	predict_relation_vector.clear();
@@ -170,25 +204,25 @@ void test() {
 		{
 			INT pos = it->second[i];
 			if (test_relation_list[pos] > 0)
-				sample_relation_list[test_relation_list[pos]]=1;
+				sample_relation_list[test_relation_list[pos]] = 1;
 		}
-		total += sample_relation_list.size();
+		num_test_non_NA += sample_relation_list.size();
 		bags_test_key.push_back(it->first);
 		sample_sum.push_back(it->second.size());
 	}
 
 	for (INT i = 1; i < sample_sum.size(); i++)
-		sample_sum[i] += sample_sum[i-1];
+		sample_sum[i] += sample_sum[i - 1];
 	
 	INT thread_id = 0;
-	thread_first_bags_test.resize(num_threads+1);
+	thread_first_bags_test.resize(num_threads + 1);
 	for (INT i = 0; i < sample_sum.size(); i++)
 		if (sample_sum[i] >= (sample_sum[sample_sum.size()-1] / num_threads) * thread_id)
 		{
 			thread_first_bags_test[thread_id] = i;
 			thread_id += 1;
 		}
-	printf("Number of test samples for non NA relation: %d\n\n", total);
+	printf("Number of test samples for non NA relation: %d\n\n", num_test_non_NA);
 
 	pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 	for (long a = 0; a < num_threads; a++)
@@ -197,17 +231,19 @@ void test() {
 		pthread_join(pt[a], NULL);
 	free(pt);
 
+	// 以模型给出的关系成立的概率降序排列
 	std::sort(predict_relation_vector.begin(),predict_relation_vector.end(), cmp_predict_probability);
 
+	// 输出 precion/recall curves
 	REAL correct = 0;
 	FILE* f = fopen(("./out/pr" + note + ".txt").c_str(), "w");
-	INT top_2000 = std::min(2000, INT(predict_relation_vector.size()));
+	INT top_2000 = std::min(2000, num_test_non_NA);
 	for (INT i = 0; i < top_2000; i++)
 	{
 		if (predict_relation_vector[i].second.first != 0)
 			correct++;	
 		REAL precision = correct / (i+1);
-		REAL recall = correct / total;
+		REAL recall = correct / num_test_non_NA;
 		if ((i+1) % 50 == 0)
 			printf("precion/recall curves %4d / %4d - precision: %.3lf - recall: %.3lf\n", (i + 1), top_2000, precision, recall);
 		fprintf(f, "precision: %.3lf  recall: %.3lf  correct: %d  predict_probability: %.2lf  predict_triplet: %s\n",
