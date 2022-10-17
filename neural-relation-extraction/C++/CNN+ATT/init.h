@@ -6,9 +6,9 @@
 //
 // prerequisites:
 //     ../data/vec.bin
-//     ../data/RE/relation2id.txt
-//     ../data/RE/train.txt
-//     ../data/RE/test.txt
+//     ../data/re/relation2id.txt
+//     ../data/re/train.txt
+//     ../data/re/test.txt
 
 // ##################################################
 // 包含标准库
@@ -17,7 +17,7 @@
 #ifndef INIT_H
 #define INIT_H
 
-#include <cstdio>          // FILE, fscanf, fopen, fclose
+#include <cstdio>          // FILE, fscanf, fopen, fclose, fgetc, feof, fread
 #include <cstdlib>         // malloc, calloc, free, rand, RAND_MAX
 #include <cmath>           // exp, fabs
 #include <cstring>         // memcpy
@@ -25,8 +25,8 @@
 #include <cassert>         // assert
 #include <pthread.h>       // pthread_create, pthread_join, pthread_mutex_t
 #include <sys/time.h>      // timeval, gettimeofday
-#include <vector>          // std::vector
-#include <map>             // std::map
+#include <vector>          // std::vector, std::vector::resize, std::vector::operator[]
+#include <map>             // std::map, std::map::operator[]
 #include <string>          // std::string, std::string::c_str
 #include <algorithm>       // std::sort
 
@@ -172,7 +172,7 @@ void init() {
 	FILE *f = fopen("../data/vec.bin", "rb");
 	tmp = fscanf(f, "%d", &word_total);
 	tmp = fscanf(f, "%d", &dimension);
-	word_vec = (REAL *)malloc((word_total+1) * dimension * sizeof(REAL));
+	word_vec = (REAL *)malloc((word_total + 1) * dimension * sizeof(REAL));
 	id2word.resize(word_total + 1);
 	id2word[0] = "UNK";
 	word2id["UNK"] = 0;
@@ -183,29 +183,27 @@ void init() {
 			if (feof(f) || ch == ' ') break;
 			if (ch != '\n') name = name + ch;
 		}
+		word2id[name] = i;
+		id2word[i] = name;
+
 		long long last = i * dimension;
 		REAL sum = 0;
 		for (INT a = 0; a < dimension; a++) {
-			tmp = fread(&word_vec[a + last], sizeof(REAL), 1, f);
-			sum += word_vec[a + last] * word_vec[a + last];
+			tmp = fread(&word_vec[last + a], sizeof(REAL), 1, f);
+			sum += word_vec[last + a] * word_vec[last + a];
 		}
 		sum = sqrt(sum);
-		for (INT a = 0; a< dimension; a++)
-			word_vec[a+last] = word_vec[a+last] / sum;		
-		word2id[name] = i;
-		id2word[i] = name;
+		for (INT a = 0; a < dimension; a++)
+			word_vec[last + a] = word_vec[last + a] / sum;
 	}
 	word_total+=1;
 	fclose(f);
 
 	// 读取 relation2id.txt 文件
 	char buffer[1000];
-	f = fopen("../data/RE/relation2id.txt", "r");
-	while (fscanf(f,"%s",buffer)==1) {
-		INT id;
-		tmp = fscanf(f, "%d", &id);
-		relation2id[(std::string)(buffer)] = id;
-		relation_total++;
+	f = fopen("../data/re/relation2id.txt", "r");
+	while (fscanf(f, "%s", buffer) == 1) {
+		relation2id[(std::string)(buffer)] = relation_total++;
 		id2relation.push_back((std::string)(buffer));
 	}
 	fclose(f);
@@ -215,16 +213,16 @@ void init() {
 	position_max_head = 0;
 	position_min_tail = 0;
 	position_max_tail = 0;
-	f = fopen("../data/RE/train.txt", "r");
-	while (fscanf(f,"%s",buffer)==1)  {
+	f = fopen("../data/re/train.txt", "r");
+	while (fscanf(f, "%s", buffer) == 1)  {
 		std::string e1 = buffer;
-		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f, "%s", buffer);
 		std::string e2 = buffer;
 
-		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f, "%s", buffer);
 		std::string head_s = (std::string)(buffer);
 		INT head_id = word2id[head_s];
-		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f, "%s", buffer);
 		std::string tail_s = (std::string)(buffer);
 		INT tail_id = word2id[tail_s];
 			
@@ -273,7 +271,7 @@ void init() {
 	fclose(f);
 
 	// 读取测试文件 (test.txt)
-	f = fopen("../data/RE/test.txt", "r");	
+	f = fopen("../data/re/test.txt", "r");	
 	while (fscanf(f,"%s",buffer)==1)  {
 		std::string e1 = buffer;
 		tmp = fscanf(f,"%s",buffer);
