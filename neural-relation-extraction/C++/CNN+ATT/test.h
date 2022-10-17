@@ -2,8 +2,6 @@
 #define TEST_H
 #include "init.h"
 
-
-
 // total: 计算测试集中样本数 (其中 relation 非 NA,每个样本包含 n 个句子, 每个句子包含相同的 head, relation (label), tail)
 // bags_test_key: 保存 bags_test 的 key (头实体 + "\t" + 尾实体), 按照 bags_test 的迭代顺序
 // thread_first_bags_test (num_threads + 1): 保存每个线程第一个样本在 bags_test_key 中的位置
@@ -202,7 +200,7 @@ void test() {
 	std::sort(predict_relation_vector.begin(),predict_relation_vector.end(), cmp_predict_probability);
 
 	REAL correct = 0;
-	FILE* f = fopen(("out/pr" + version + ".txt").c_str(), "w");
+	FILE* f = fopen(("./out/pr" + note + ".txt").c_str(), "w");
 	INT top_2000 = std::min(2000, INT(predict_relation_vector.size()));
 	for (INT i = 0; i < top_2000; i++)
 	{
@@ -222,7 +220,7 @@ void test() {
 
 	if (!output_model)return;
 
-	FILE *fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "w");
+	FILE *fout = fopen(("./out/word2vec" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\n", word_total, dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
@@ -232,7 +230,7 @@ void test() {
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/position_vec" + version + ".txt").c_str(), "w");
+	fout = fopen(("./out/position_vec" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
@@ -246,7 +244,7 @@ void test() {
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "w");
+	fout = fopen(("./out/conv_1d" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
 		for (INT j = 0; j < dimension * window; j++)
@@ -259,7 +257,7 @@ void test() {
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/attention_weights" + version + ".txt").c_str(), "w");
+	fout = fopen(("./out/attention_weights" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
 	for (INT r1 = 0; r1 < relation_total; r1++) {
 		for (INT i = 0; i < dimension_c; i++)
@@ -271,7 +269,7 @@ void test() {
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "w");
+	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\n", relation_total, dimension_c);
 	for (INT i = 0; i < relation_total; i++) {
 		for (INT j = 0; j < dimension_c; j++)

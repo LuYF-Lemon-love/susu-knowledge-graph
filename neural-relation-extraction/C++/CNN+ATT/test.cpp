@@ -24,7 +24,7 @@ void preprocess()
 	
 	INT tmp;
 
-	FILE *fout = fopen(("./out/word2vec" + version + ".txt").c_str(), "r");
+	FILE *fout = fopen(("./out/word2vec" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout,"%d%d", &word_total, &dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
@@ -33,7 +33,7 @@ void preprocess()
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/position_vec" + version + ".txt").c_str(), "r");
+	fout = fopen(("./out/position_vec" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
@@ -45,7 +45,7 @@ void preprocess()
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/conv_1d" + version + ".txt").c_str(), "r");
+	fout = fopen(("./out/conv_1d" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
 		for (INT j = 0; j < dimension * window; j++)
@@ -58,7 +58,7 @@ void preprocess()
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/attention_weights" + version + ".txt").c_str(), "r");
+	fout = fopen(("./out/attention_weights" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout,"%d%d", &relation_total, &dimension_c);
 	for (INT r1 = 0; r1 < relation_total; r1++) {
 		for (INT i = 0; i < dimension_c; i++)
@@ -69,7 +69,7 @@ void preprocess()
 	}
 	fclose(fout);
 
-	fout = fopen(("./out/relation_matrix" + version + ".txt").c_str(), "r");
+	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d", &relation_total, &dimension_c);
 	for (INT i = 0; i < relation_total; i++) {
 		for (INT j = 0; j < dimension_c; j++)

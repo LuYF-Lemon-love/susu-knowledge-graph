@@ -1,32 +1,55 @@
+// init.h
+//
+// created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+// 
+// 该 C++ 文件用于初始化, 即读取训练数据和测试数据
+//
+// prerequisites:
+//     ../data/vec.bin
+//     ../data/RE/relation2id.txt
+//     ../data/RE/train.txt
+//     ../data/RE/test.txt
+
+// ##################################################
+// 包含标准库
+// ##################################################
+
 #ifndef INIT_H
 #define INIT_H
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <float.h>          // FLT_MAX
-#include <cmath>
-#include <algorithm>
-#include <pthread.h>
-#include <vector>
-#include <map>
-#include <string>
+
+#include <cstdio>          // FILE, fscanf, fopen, fclose
+#include <cstdlib>         // malloc, calloc, free, rand, RAND_MAX
+#include <cmath>           // exp, fabs
+#include <cstring>         // memcpy
+#include <cfloat>          // FLT_MAX
+#include <cassert>         // assert
+#include <pthread.h>       // pthread_create, pthread_join, pthread_mutex_t
+#include <sys/time.h>      // timeval, gettimeofday
+#include <vector>          // std::vector
+#include <map>             // std::map
+#include <string>          // std::string, std::string::c_str
+#include <algorithm>       // std::sort
+
+// ##################################################
+// 声明和定义超参数变量
+// ##################################################
 
 #define INT int
 #define REAL float
 
-std::string version = "";
-
 // batch: batch size
 // num_threads: number of threads
 // alpha: learning rate
-// current_rate: init rate
-// reduce_epoch: reduce_epoch
+// current_rate: init rate of learning rate
+// reduce_epoch: reduce_epoch of init rate of learning rate
 // epochs: epochs
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 // dimension_pos: position dimension
 // window: window size
 // dimension_c: sentence embedding size
 // dropout_probability: dropout probability
+// output_model: 是否保存模型, 1: 保存模型, 0: 不保存模型
+// note: 保存模型时, 文件名的额外的信息, ("./out/word2vec" + note + ".txt")
 INT batch = 40;
 INT num_threads = 32;
 REAL alpha = 0.00125;
@@ -38,11 +61,12 @@ INT dimension_pos = 5;
 INT window = 3;
 INT dimension_c = 230;
 REAL dropout_probability = 0.5;
-
 INT output_model = 0;
-INT nbatches;
-INT len;
+std::string note = "";
 
+// ##################################################
+// 声明和定义保存训练数据和测试数据的变量
+// ##################################################
 
 // word_total: 词汇总数, 包括 "UNK"
 // dimension: 词嵌入维度
@@ -67,7 +91,8 @@ std::map<std::string, INT> relation2id;
 // position_max_tail: 保存数据集 (训练集, 测试集) 句子中尾实体相对每个单词的最大距离, 理论上取值范围为 limit
 // position_total_head = position_max_head - position_min_head + 1
 // position_total_tail = position_max_tail - position_min_tail + 1
-INT position_min_head, position_max_head, position_min_tail, position_max_tail, position_total_head,position_total_tail;
+INT position_min_head, position_max_head, position_min_tail, position_max_tail;
+INT position_total_head, position_total_tail;
 
 // bags_train: key -> (头实体 + "\t" + 尾实体 + "\t" + 关系名), value -> 句子索引 (训练文件中该句子的位置)
 // train_head_list: 保存训练集每个句子的头实体 id, 按照训练文件句子的读取顺序排列
@@ -78,8 +103,7 @@ INT position_min_head, position_max_head, position_min_tail, position_max_tail, 
 // train_position_head: 保存训练集每个句子的头实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
 // train_position_tail: 保存训练集每个句子的尾实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
 std::map<std::string, std::vector<INT> > bags_train;
-std::vector<INT> train_head_list, train_tail_list, train_relation_list;
-std::vector<INT> train_length;
+std::vector<INT> train_head_list, train_tail_list, train_relation_list, train_length;
 std::vector<INT *> train_sentence_list, train_position_head, train_position_tail;
 
 // bags_test: key -> (头实体 + "\t" + 尾实体), value -> 句子索引 (测试文件中该句子的位置)
@@ -91,9 +115,12 @@ std::vector<INT *> train_sentence_list, train_position_head, train_position_tail
 // test_position_head: 保存测试集每个句子的头实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
 // test_position_tail: 保存测试集每个句子的尾实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
 std::map<std::string, std::vector<INT> > bags_test;
-std::vector<INT> test_head_list, test_tail_list, test_relation_list;
-std::vector<INT> test_length;
+std::vector<INT> test_head_list, test_tail_list, test_relation_list, test_length;
 std::vector<INT *> test_sentence_list, test_position_head, test_position_tail;
+
+// ##################################################
+// 声明和定义模型的权重矩阵
+// ##################################################
 
 // position_vec_head (position_total_head * dimension_pos): 头实体的位置嵌入矩阵
 // position_vec_tail (position_total_tail * dimension_pos): 尾实体的位置嵌入矩阵
@@ -106,12 +133,15 @@ REAL *position_vec_head, *position_vec_tail;
 REAL *conv_1d_word, *conv_1d_position_head, *conv_1d_position_tail, *conv_1d_bias;
 
 // attention_weights (relation_total * dimension_c * dimension_c): 注意力权重矩阵
-// attention_weights_copy (relation_total * dimension_c * dimension_c): 注意力权重矩阵副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
 std::vector<std::vector<std::vector<REAL> > > attention_weights;
 
 // relation_matrix (relation_total * dimension_c): the representation matrix of relation
 // relation_matrix_bias (relation_total): the bias vector of the representation matrix of relation
 REAL *relation_matrix, *relation_matrix_bias;
+
+// ##################################################
+// 声明和定义模型的权重矩阵的副本, 用于每一训练批次计算损失值
+// ##################################################
 
 // word_vec_copy (word_total * dimension): 词嵌入矩阵副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
 // position_vec_head_copy (position_total_head * dimension_pos): 头实体的位置嵌入矩阵副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
@@ -131,6 +161,7 @@ std::vector<std::vector<std::vector<REAL> > > attention_weights_copy;
 // relation_matrix_bias_copy (relation_total): the copy of the bias vector of the representation matrix of relation, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
 REAL *relation_matrix_copy, *relation_matrix_bias_copy;
 
+// 初始化函数, 即读取训练数据和测试数据
 void init() {
 	
 	printf("\n##################################################\n\nInit start...\n\n");

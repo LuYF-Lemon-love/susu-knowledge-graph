@@ -1,6 +1,3 @@
-#include<assert.h>
-#include<sys/time.h>
-
 #include "init.h"
 #include "test.h"
 
@@ -14,6 +11,9 @@ double total_loss = 0;
 REAL current_alpha;
 double current_sample = 0, final_sample = 0;
 pthread_mutex_t train_mutex;
+
+INT nbatches;
+INT len;
 
 struct timeval t_start, t_end;
 
