@@ -1,8 +1,28 @@
+// test.cpp
+//
+// created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+//
+// 该 C++ 文件用于模型测试
+//
+// 加载模型
+// prerequisites:
+//     ./out/word2vec + note + .txt
+//     ./out/position_vec + note + .txt
+//     ./out/conv_1d + note + .txt
+//     ./out/attention_weights + note + .txt
+//     ./out/relation_matrix + note + .txt
+
+// ##################################################
+// 包含标准库
+// ##################################################
+
 #include "init.h"
 #include "test.h"
 
-void preprocess()
+// 加载模型
+void load_model()
 {
+	// 为模型的权重矩阵分配内存空间
 	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
 	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
 
@@ -15,7 +35,7 @@ void preprocess()
 	for (INT i = 0; i < relation_total; i++)
 	{
 		attention_weights[i].resize(dimension_c);
-		for (INT j=0; j < dimension_c; j++)
+		for (INT j = 0; j < dimension_c; j++)
 			attention_weights[i][j].resize(dimension_c);
 	}
 
@@ -24,6 +44,7 @@ void preprocess()
 	
 	INT tmp;
 
+	// 加载词嵌入
 	FILE *fout = fopen(("./out/word2vec" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout,"%d%d", &word_total, &dimension);
 	for (INT i = 0; i < word_total; i++)
@@ -33,6 +54,7 @@ void preprocess()
 	}
 	fclose(fout);
 
+	// 加载位置嵌入
 	fout = fopen(("./out/position_vec" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
@@ -45,45 +67,48 @@ void preprocess()
 	}
 	fclose(fout);
 
+	// 加载一维卷机权重矩阵和对应的偏置向量
 	fout = fopen(("./out/conv_1d" + note + ".txt").c_str(), "r");
-	tmp = fscanf(fout, "%d%d%d%d", &dimension_c, &dimension, &window, &dimension_pos);
+	tmp = fscanf(fout, "%d%d%d%d", &dimension_c, &window, &dimension, &dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
-		for (INT j = 0; j < dimension * window; j++)
-			tmp = fscanf(fout, "%f", &conv_1d_word[i * dimension * window + j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			tmp = fscanf(fout, "%f", &conv_1d_position_head[i * dimension_pos * window + j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			tmp = fscanf(fout, "%f", &conv_1d_position_tail[i * dimension_pos * window + j]);
+		for (INT j = 0; j < window * dimension; j++)
+			tmp = fscanf(fout, "%f", &conv_1d_word[i * window * dimension + j]);
+		for (INT j = 0; j < window * dimension_pos; j++)
+			tmp = fscanf(fout, "%f", &conv_1d_position_head[i * window * dimension_pos + j]);
+		for (INT j = 0; j < window * dimension_pos; j++)
+			tmp = fscanf(fout, "%f", &conv_1d_position_tail[i * window * dimension_pos + j]);
 		tmp = fscanf(fout, "%f", &conv_1d_bias[i]);
 	}
 	fclose(fout);
 
+	// 加载注意力权重矩阵
 	fout = fopen(("./out/attention_weights" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout,"%d%d", &relation_total, &dimension_c);
-	for (INT r1 = 0; r1 < relation_total; r1++) {
-		for (INT i = 0; i < dimension_c; i++)
+	for (INT r = 0; r < relation_total; r++) {
+		for (INT i_x = 0; i_x < dimension_c; i_x++)
 		{
-			for (INT j = 0; j < dimension_c; j++)
-				tmp = fscanf(fout, "%f", &attention_weights[r1][i][j]);
+			for (INT i_r = 0; i_r < dimension_c; i_r++)
+				tmp = fscanf(fout, "%f", &attention_weights[r][i_x][i_r]);
 		}
 	}
 	fclose(fout);
 
+	// 加载 relation_matrix 和对应的偏置向量
 	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d", &relation_total, &dimension_c);
-	for (INT i = 0; i < relation_total; i++) {
-		for (INT j = 0; j < dimension_c; j++)
-			tmp = fscanf(fout, "%f", &relation_matrix[i * dimension_c + j]);
+	for (INT i_r = 0; i_r < relation_total; i_r++) {
+		for (INT i_s = 0; i_s < dimension_c; i_s++)
+			tmp = fscanf(fout, "%f", &relation_matrix[i_r * dimension_c + i_s]);
 	}
-	for (INT i = 0; i < relation_total; i++) 
-		tmp = fscanf(fout, "%f", &relation_matrix_bias[i]);
+	for (INT i_r = 0; i_r < relation_total; i_r++) 
+		tmp = fscanf(fout, "%f", &relation_matrix_bias[i_r]);
 	fclose(fout);
 }
 
 INT main()
 {
 	init();
-	preprocess();
+	load_model();
 	test();
 	return 0;
 }
