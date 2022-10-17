@@ -25,7 +25,7 @@
 #include <cassert>         // assert
 #include <pthread.h>       // pthread_create, pthread_join, pthread_mutex_t
 #include <sys/time.h>      // timeval, gettimeofday
-#include <vector>          // std::vector, std::vector::resize, std::vector::operator[]
+#include <vector>          // std::vector, std::vector::resize, std::vector::operator[], std::vector::push_back
 #include <map>             // std::map, std::map::operator[]
 #include <string>          // std::string, std::string::c_str
 #include <algorithm>       // std::sort
@@ -71,11 +71,9 @@ std::string note = "";
 // word_total: 词汇总数, 包括 "UNK"
 // dimension: 词嵌入维度
 // word_vec (word_total * dimension): 词嵌入矩阵
-// id2word (word_total): id2word[id] -> id 对应的词汇名
 // word2id (word_total): word2id[name] -> name 对应的词汇 id
 INT word_total, dimension;
 REAL *word_vec;
-std::vector<std::string> id2word;
 std::map<std::string, INT> word2id;
 
 // relation_total: 关系总数
@@ -95,27 +93,23 @@ INT position_min_head, position_max_head, position_min_tail, position_max_tail;
 INT position_total_head, position_total_tail;
 
 // bags_train: key -> (头实体 + "\t" + 尾实体 + "\t" + 关系名), value -> 句子索引 (训练文件中该句子的位置)
-// train_head_list: 保存训练集每个句子的头实体 id, 按照训练文件句子的读取顺序排列
-// train_tail_list: 保存训练集每个句子的尾实体 id, 按照训练文件句子的读取顺序排列
 // train_relation_list: 保存训练集每个句子的关系 id, 按照训练文件句子的读取顺序排列
 // train_length: 保存训练集每个句子的单词个数, 按照训练文件句子的读取顺序排列
 // train_sentence_list: 保存训练集中的句子, 按照训练文件句子的读取顺序排列
 // train_position_head: 保存训练集每个句子的头实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
 // train_position_tail: 保存训练集每个句子的尾实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
 std::map<std::string, std::vector<INT> > bags_train;
-std::vector<INT> train_head_list, train_tail_list, train_relation_list, train_length;
+std::vector<INT> train_relation_list, train_length;
 std::vector<INT *> train_sentence_list, train_position_head, train_position_tail;
 
 // bags_test: key -> (头实体 + "\t" + 尾实体), value -> 句子索引 (测试文件中该句子的位置)
-// test_head_list: 保存测试集每个句子的头实体 id, 按照测试文件句子的读取顺序排列
-// test_tail_list: 保存测试集每个句子的尾实体 id, 按照测试文件句子的读取顺序排列
 // test_relation_list: 保存测试集每个句子的关系 id, 按照测试文件句子的读取顺序排列
 // test_length: 保存测试集每个句子的单词个数, 按照测试文件句子的读取顺序排列
 // test_sentence_list: 保存测试集中的句子, 按照测试文件句子的读取顺序排列
 // test_position_head: 保存测试集每个句子的头实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中头实体对应单词的取值为 limit
 // test_position_tail: 保存测试集每个句子的尾实体相对每个单词的距离, 理论上取值范围为 [0, 2 * limit], 其中尾实体对应单词的取值为 limit
 std::map<std::string, std::vector<INT> > bags_test;
-std::vector<INT> test_head_list, test_tail_list, test_relation_list, test_length;
+std::vector<INT> test_relation_list, test_length;
 std::vector<INT *> test_sentence_list, test_position_head, test_position_tail;
 
 // ##################################################
@@ -173,8 +167,6 @@ void init() {
 	tmp = fscanf(f, "%d", &word_total);
 	tmp = fscanf(f, "%d", &dimension);
 	word_vec = (REAL *)malloc((word_total + 1) * dimension * sizeof(REAL));
-	id2word.resize(word_total + 1);
-	id2word[0] = "UNK";
 	word2id["UNK"] = 0;
 	for (INT i = 1; i <= word_total; i++) {
 		std::string name = "";
@@ -184,7 +176,6 @@ void init() {
 			if (ch != '\n') name = name + ch;
 		}
 		word2id[name] = i;
-		id2word[i] = name;
 
 		long long last = i * dimension;
 		REAL sum = 0;
@@ -196,7 +187,7 @@ void init() {
 		for (INT a = 0; a < dimension; a++)
 			word_vec[last + a] = word_vec[last + a] / sum;
 	}
-	word_total+=1;
+	word_total += 1;
 	fclose(f);
 
 	// 读取 relation2id.txt 文件
@@ -221,18 +212,16 @@ void init() {
 
 		tmp = fscanf(f, "%s", buffer);
 		std::string head_s = (std::string)(buffer);
-		INT head_id = word2id[head_s];
 		tmp = fscanf(f, "%s", buffer);
 		std::string tail_s = (std::string)(buffer);
-		INT tail_id = word2id[tail_s];
 			
-		tmp = fscanf(f,"%s",buffer);
-		bags_train[e1+"\t"+e2+"\t"+(std::string)(buffer)].push_back(train_head_list.size());
+		tmp = fscanf(f, "%s", buffer);
+		bags_train[e1 + "\t" + e2 + "\t" + (std::string)(buffer)].push_back(train_relation_list.size());
 		INT relation_id = relation2id[(std::string)(buffer)];
 
 		INT len_s = 0, head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;
-		while (fscanf(f,"%s", buffer)==1) {
+		while (fscanf(f," %s", buffer) == 1) {
 			std::string word = buffer;
 			if (word == "###END###") break;
 			INT word_id = word2id[word];
@@ -242,8 +231,6 @@ void init() {
 			sentence.push_back(word_id);
 		}
 
-		train_head_list.push_back(head_id);
-		train_tail_list.push_back(tail_id);
 		train_relation_list.push_back(relation_id);
 		train_length.push_back(len_s);
 		
@@ -279,18 +266,16 @@ void init() {
 
 		tmp = fscanf(f,"%s",buffer);
 		std::string head_s = (std::string)(buffer);
-		INT head_id = word2id[head_s];
 		tmp = fscanf(f,"%s",buffer);
 		std::string tail_s = (std::string)(buffer);
-		INT tail_id = word2id[tail_s];
 
-		tmp = fscanf(f,"%s",buffer);
-		bags_test[e1+"\t"+e2].push_back(test_head_list.size());	
+		tmp = fscanf(f, "%s", buffer);
+		bags_test[e1 + "\t" + e2].push_back(test_relation_list.size());	
 		INT relation_id = relation2id[(std::string)(buffer)];
 
 		INT len_s = 0 , head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;
-		while (fscanf(f,"%s", buffer)==1) {
+		while (fscanf(f,"%s", buffer) == 1) {
 			std::string word = buffer;
 			if (word=="###END###") break;
 			INT word_id = word2id[word];
@@ -300,8 +285,6 @@ void init() {
 			sentence.push_back(word_id);
 		}
 
-		test_head_list.push_back(head_id);
-		test_tail_list.push_back(tail_id);
 		test_relation_list.push_back(relation_id);
 		test_length.push_back(len_s);
 
@@ -328,6 +311,7 @@ void init() {
 	}
 	fclose(f);
 
+	// 将 train_position_head, train_position_tail, test_position_head, test_position_tail 的元素值转换到 [0, 2 * limit] 范围内
 	for (INT i = 0; i < train_position_head.size(); i++) {
 		INT len_s = train_length[i];
 		INT *position = train_position_head[i];
@@ -359,8 +343,10 @@ void init() {
 	printf("window: %d\ndimension_c: %d\n\n", window, dimension_c);
 	printf("relation_total: %d\ndropout_probability: %.2f\n\n", relation_total, dropout_probability);
 
-	printf("bags_train.size: %d\n", INT(bags_train.size()));
-	printf("bags_test.size:  %d\n\n", INT(bags_test.size()));
+	printf("number of training samples: %d - average sentence number of per training sample: %.2f\n",
+		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));
+	printf("number of testing samples:  %d - average sentence number of per testing sample: %.2f\n\n",
+		INT(bags_test.size()), float(float(test_sentence_list.size()) / bags_test.size()));
 
 	printf("Init end.\n\n");
 }
