@@ -28,7 +28,7 @@
 #include <vector>          // std::vector, std::vector::resize, std::vector::operator[], std::vector::push_back, std::vector::size
 #include <map>             // std::map, std::map::operator[], std::map::clear, std::map::size
 #include <string>          // std::string, std::string::c_str
-#include <algorithm>       // std::sort
+#include <algorithm>       // std::sort, std::min
 #include <utility>         // std::make_pair
 
 // ##################################################

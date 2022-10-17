@@ -224,6 +224,7 @@ void test() {
 		}
 	printf("Number of test samples for non NA relation: %d\n\n", num_test_non_NA);
 
+	// 多线程模型测试
 	pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 	for (long a = 0; a < num_threads; a++)
 		pthread_create(&pt[a], NULL, test_mode,  (void *)a);
@@ -237,12 +238,12 @@ void test() {
 	// 输出 precion/recall curves
 	REAL correct = 0;
 	FILE* f = fopen(("./out/pr" + note + ".txt").c_str(), "w");
-	INT top_2000 = std::min(2000, num_test_non_NA);
+	INT top_2000 = std::min(2000, INT(predict_relation_vector.size()));
 	for (INT i = 0; i < top_2000; i++)
 	{
 		if (predict_relation_vector[i].second.first != 0)
 			correct++;	
-		REAL precision = correct / (i+1);
+		REAL precision = correct / (i + 1);
 		REAL recall = correct / num_test_non_NA;
 		if ((i+1) % 50 == 0)
 			printf("precion/recall curves %4d / %4d - precision: %.3lf - recall: %.3lf\n", (i + 1), top_2000, precision, recall);
@@ -256,18 +257,20 @@ void test() {
 
 	if (!output_model)return;
 
+	// 输出词嵌入
 	FILE *fout = fopen(("./out/word2vec" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\n", word_total, dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
 		for (INT j = 0; j < dimension; j++)
-			fprintf(fout,"%f\t", word_vec[i * dimension + j]);
+			fprintf(fout, "%f\t", word_vec[i * dimension + j]);
 		fprintf(fout, "\n");
 	}
 	fclose(fout);
 
+	// 输出位置嵌入
 	fout = fopen(("./out/position_vec" + note + ".txt").c_str(), "w");
-	fprintf(fout,"%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
+	fprintf(fout, "%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
 			fprintf(fout, "%f\t", position_vec_head[i * dimension_pos + j]);
@@ -280,43 +283,45 @@ void test() {
 	}
 	fclose(fout);
 
+	// 输出一维卷机权重矩阵和对应的偏置向量
 	fout = fopen(("./out/conv_1d" + note + ".txt").c_str(), "w");
-	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, dimension, window, dimension_pos);
+	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, window, dimension, dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
-		for (INT j = 0; j < dimension * window; j++)
-			fprintf(fout, "%f\t", conv_1d_word[i * dimension * window + j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			fprintf(fout, "%f\t", conv_1d_position_head[i * dimension_pos * window + j]);
-		for (INT j = 0; j < dimension_pos * window; j++)
-			fprintf(fout, "%f\t", conv_1d_position_tail[i * dimension_pos * window + j]);
+		for (INT j = 0; j < window * dimension; j++)
+			fprintf(fout, "%f\t", conv_1d_word[i * window * dimension + j]);
+		for (INT j = 0; j < window * dimension_pos; j++)
+			fprintf(fout, "%f\t", conv_1d_position_head[i * window * dimension_pos + j]);
+		for (INT j = 0; j < window * dimension_pos; j++)
+			fprintf(fout, "%f\t", conv_1d_position_tail[i * window * dimension_pos + j]);
 		fprintf(fout, "%f\n", conv_1d_bias[i]);
 	}
 	fclose(fout);
 
+	// 输出注意力权重矩阵
 	fout = fopen(("./out/attention_weights" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
-	for (INT r1 = 0; r1 < relation_total; r1++) {
-		for (INT i = 0; i < dimension_c; i++)
+	for (INT r = 0; r < relation_total; r++) {
+		for (INT i_x = 0; i_x < dimension_c; i_x++)
 		{
-			for (INT j = 0; j < dimension_c; j++)
-				fprintf(fout, "%f\t", attention_weights[r1][i][j]);
+			for (INT i_r = 0; i_r < dimension_c; i_r++)
+				fprintf(fout, "%f\t", attention_weights[r][i_x][i_r]);
 			fprintf(fout, "\n");
 		}
 	}
 	fclose(fout);
 
+	// 输出 relation_matrix 和对应的偏置向量
 	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\n", relation_total, dimension_c);
-	for (INT i = 0; i < relation_total; i++) {
-		for (INT j = 0; j < dimension_c; j++)
-			fprintf(fout, "%f\t", relation_matrix[i * dimension_c + j]);
+	for (INT i_r = 0; i_r < relation_total; i_r++) {
+		for (INT i_s = 0; i_s < dimension_c; i_s++)
+			fprintf(fout, "%f\t", relation_matrix[i_r * dimension_c + i_s]);
 		fprintf(fout, "\n");
 	}
-	for (INT i = 0; i < relation_total; i++) 
-		fprintf(fout, "%f\t", relation_matrix_bias[i]);
+	for (INT i_r = 0; i_r < relation_total; i_r++) 
+		fprintf(fout, "%f\t", relation_matrix_bias[i_r]);
 	fprintf(fout, "\n");
 	fclose(fout);
-	
 }
 
 #endif
