@@ -360,18 +360,18 @@ REAL calc_tanh(REAL value) {
 	return sinhx / coshx;
 }
 
-INT get_rand_i(INT l,INT r) {
-	INT len = r - l;
-	INT res = rand() % len;
+// 返回取值为 [min, max) 的伪随机整数
+INT get_rand_i(INT min, INT max) {
+	INT d = max - min;
+	INT res = rand() % d;
 	if (res < 0)
-		res += len;
-	return res + l;
+		res += d;
+	return res + min;
 }
 
-REAL get_rand_u(REAL l, REAL r) {
-	REAL len = r - l;
-	REAL res = (REAL)(rand()) / RAND_MAX;
-	return res * len + l;
+// 返回取值为 [min, max) 的伪随机浮点数 
+REAL get_rand_u(REAL min, REAL max) {
+	return min + (max - min) * rand() / (RAND_MAX + 1.0);
 }
 
 #endif

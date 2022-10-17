@@ -141,7 +141,7 @@ REAL train_bags(std::string bags_name)
 
 	std::vector<INT> dropout;
 	for (INT i_s = 0; i_s < dimension_c; i_s++)
-		dropout.push_back((double)(rand()) / RAND_MAX < dropout_probability);
+		dropout.push_back((double)(rand()) / (RAND_MAX + 1.0) < dropout_probability);
 
 	REAL sum = 0;
 	for (INT i_r = 0; i_r < relation_total; i_r++) {
