@@ -1,3 +1,13 @@
+// train.cpp
+//
+// created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
+//
+// 该 C++ 文件用于模型训练
+
+// ##################################################
+// 包含标准库和头文件
+// ##################################################
+
 #include "init.h"
 #include "test.h"
 
@@ -5,20 +15,22 @@
 // total_loss: 每一轮次的总损失
 // current_alpha: 当前轮次的学习率
 // current_sample, final_sample: 由于使用多线程训练模型, 这两个变量用于确定当前训练批次是否完成, 进而更新各种权重矩阵的副本, 如 word_vec_copy
-// train_mutex: 互斥锁
+// train_mutex: 互斥锁, 线程同步 current_sample 变量
+// len = bags_train.size()
+// nbatches  =  len / (batch * num_threads)
 std::vector<std::string> bags_train_key;
 double total_loss = 0;
 REAL current_alpha;
 double current_sample = 0, final_sample = 0;
 pthread_mutex_t train_mutex;
-
-INT nbatches;
 INT len;
+INT nbatches;
 
 struct timeval t_start, t_end;
 
+// 计算句子的一维卷机
 std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
-	INT *train_position_tail, INT len, std::vector<INT> &max_pool_window_k) {
+	INT *train_position_tail, INT sentence_length, std::vector<INT> &max_pool_window_k) {
 	
 	std::vector<REAL> conv_1d_result_k;
 	conv_1d_result_k.resize(dimension_c, 0);
@@ -27,7 +39,7 @@ std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 		INT last_word = i * window * dimension;
 		INT last_pos = i * window * dimension_pos;
 		REAL max_pool_1d = -FLT_MAX;
-		for (INT last_window = 0; last_window <= len - window; last_window++) {
+		for (INT last_window = 0; last_window <= sentence_length - window; last_window++) {
 			REAL sum = 0;
 			INT total_word = 0;
 			INT total_pos = 0;
@@ -40,11 +52,13 @@ std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 			 	INT last_pos_head = train_position_head[j] * dimension_pos;
 			 	INT last_pos_tail = train_position_tail[j] * dimension_pos;
 			 	for (INT k = 0; k < dimension_pos; k++) {
-			 		sum += conv_1d_position_head_copy[last_pos + total_pos] * position_vec_head_copy[last_pos_head+k];
-			 		sum += conv_1d_position_tail_copy[last_pos + total_pos] * position_vec_tail_copy[last_pos_tail+k];
+			 		sum += conv_1d_position_head_copy[last_pos + total_pos] * position_vec_head_copy[last_pos_head + k];
+			 		sum += conv_1d_position_tail_copy[last_pos + total_pos] * position_vec_tail_copy[last_pos_tail + k];
 			 		total_pos++;
 			 	}
 			}
+
+			// 对应于论文中的公式 (3), [x]_i = max(p_i), 其中 x \in R^{d^c}
 			if (sum > max_pool_1d) {
 				max_pool_1d = sum;
 				max_pool_window_k[i] = last_window;
@@ -59,9 +73,9 @@ std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	return conv_1d_result_k;
 }
 
+// 根据梯度更新一维卷机的权重矩阵, 位置嵌入矩阵, 词嵌入矩阵
 void gradient_conv_1d(INT *sentence, INT *train_position_head, INT *train_position_tail,
-	INT len, std::vector<REAL> &conv_1d_result_k,
-	std::vector<INT> &max_pool_window_k, std::vector<REAL> &grad_x_k)
+	std::vector<REAL> &conv_1d_result_k, std::vector<INT> &max_pool_window_k, std::vector<REAL> &grad_x_k)
 {
 	for (INT i = 0; i < dimension_c; i++) {
 		if (fabs(grad_x_k[i]) < 1e-8)
@@ -92,8 +106,15 @@ void gradient_conv_1d(INT *sentence, INT *train_position_head, INT *train_positi
 	}
 }
 
+// 训练一个样本
 REAL train_bags(std::string bags_name)
 {
+	// ##################################################
+	// 正向传播
+	// ##################################################
+
+	// 一维卷机部分
+	// relation: 该训练样本的正确标签 (关系)
 	INT relation = -1;
 	INT bags_size = bags_train[bags_name].size();
 	std::vector<std::vector<INT> > max_pool_window;
@@ -110,8 +131,9 @@ REAL train_bags(std::string bags_name)
 			assert(relation == train_relation_list[pos]);
 		conv_1d_result.push_back(calc_conv_1d(train_sentence_list[pos], train_position_head[pos],
 			train_position_tail[pos], train_length[pos], max_pool_window[k]));
-	}	
-	
+	}
+
+	// 获取每一个句子的权重
 	std::vector<REAL> weight;
 	REAL weight_sum = 0;
 	for (INT k = 0; k < bags_size; k++)
@@ -131,15 +153,16 @@ REAL train_bags(std::string bags_name)
 
 	for (INT k = 0; k < bags_size; k++)
 		weight[k] /= weight_sum;
-	
+
+	// 获取 s, i.e., s indicates the representation of the sentence set
 	std::vector<REAL> result_sentence;
 	result_sentence.resize(dimension_c);
 	for (INT i = 0; i < dimension_c; i++) 
 		for (INT k = 0; k < bags_size; k++)
 			result_sentence[i] += conv_1d_result[k][i] * weight[k];
-
+	
+	// 计算各种关系成立的概率
 	std::vector<REAL> result_final;
-
 	std::vector<INT> dropout;
 	for (INT i_s = 0; i_s < dimension_c; i_s++)
 		dropout.push_back((double)(rand()) / (RAND_MAX + 1.0) < dropout_probability);
@@ -155,15 +178,27 @@ REAL train_bags(std::string bags_name)
 		sum += s;
 		result_final.push_back(s);
 	}
-	
+
+	// 计算损失值
 	double loss = -(log(result_final[relation]) - log(sum));
+
+	// ##################################################
+	// 反向传播
+	// ##################################################
 	
+	// 更新 relation_matrix, 对应于论文中的公式 (12), o = M(s \circ h) + d
 	std::vector<REAL> grad_s;
 	grad_s.resize(dimension_c);
 
 	for (INT i_r = 0; i_r < relation_total; i_r++)
-	{	
+	{
+		// 由于损失函数是 cross-entropy, 负标签是 0
+		// 对于负标签 (关系) 的梯度是计算的概率, 即 result_final[i_r] / sum
+		// 这样做, 能省略一层 softmax
 		REAL grad_final = result_final[i_r] / sum * current_alpha;
+		
+		// 正标签是 0, 对于正标签 (关系) 的梯度是计算的概率 - 1, 即 result_final[i_r] / sum - 1
+		// 这样做, 能省略一层 softmax
 		if (i_r == relation)
 			grad_final -= current_alpha;
 
@@ -180,6 +215,7 @@ REAL train_bags(std::string bags_name)
 		relation_matrix_bias[i_r] -= grad_final;
 	}
 
+	// 更新注意力权重矩阵和 relation_matrix, 对应于论文中的公式 (5), (7), (8)
 	std::vector<std::vector<REAL> > grad_x;
 	grad_x.resize(bags_size);
 
@@ -193,36 +229,47 @@ REAL train_bags(std::string bags_name)
 
 		for (INT k = 0; k < bags_size; k++)
 		{
+			// grad_i_s * weight[k] 对应于论文中的公式 5
 			grad_x[k][i_r] += grad_i_s * weight[k];
 			for (INT i_x = 0; i_x < dimension_c; i_x++)
 			{
+				// 对应于论文中的公式 7 中分子 (exp(e_i)) 的公式 8 中的 x_i
 				grad_x[k][i_x] += grad_i_s * conv_1d_result[k][i_r] * weight[k] *
 					relation_matrix_copy[relation * dimension_c + i_r] *
 					attention_weights_copy[relation][i_x][i_r];
 
+				// 对应于论文中的公式 7 中分子 (exp(e_i)) 的公式 8 中的 r
 				relation_matrix[relation * dimension_c + i_r] -= grad_i_s *
 					conv_1d_result[k][i_r] * weight[k] * conv_1d_result[k][i_x] *
 					attention_weights_copy[relation][i_x][i_r];
-
+				
+				// 对应于论文中的公式 7 中分子 (exp(e_i)) 的公式 8 中的 A
 				if (i_r == i_x)
 					attention_weights[relation][i_x][i_r] -= grad_i_s * conv_1d_result[k][i_r] *
 						weight[k] * conv_1d_result[k][i_x] *
 						relation_matrix_copy[relation * dimension_c + i_r];
 			}
+
+			// 由于 1/x 的导数是 -1/x^2, exp(x) 的导数是 exp(x)
+			// 所以论文中的公式 (7) 中分母 (exp(e_i)) 的公式 8 需要一个和 (exp(x_1), exp(x_2) ,...)
+			// 并且需要多乘一次 weight[k]
 			a_denominator_sum_exp += conv_1d_result[k][i_r] * weight[k];
 		}	
 		for (INT k = 0; k < bags_size; k++)
 		{
 			for (INT i_x = 0; i_x < dimension_c; i_x++)
 			{
+				// 对应于论文中的公式 7 中分母 (exp(e_i)) 的公式 8 中的 x_i
 				grad_x[k][i_x]-= grad_i_s * a_denominator_sum_exp * weight[k] *
 					relation_matrix_copy[relation * dimension_c + i_r] *
 					attention_weights_copy[relation][i_x][i_r];
-
+				
+				// 对应于论文中的公式 7 中分母 (exp(e_i)) 的公式 8 中的 r
 				relation_matrix[relation * dimension_c + i_r] += grad_i_s *
 					a_denominator_sum_exp * weight[k] * conv_1d_result[k][i_x] *
 					attention_weights_copy[relation][i_x][i_r];
-
+				
+				// 对应于论文中的公式 7 中分母 (exp(e_i)) 的公式 8 中的 A
 				if (i_r == i_x)
 					attention_weights[relation][i_x][i_r] += grad_i_s * a_denominator_sum_exp *
 						weight[k] * conv_1d_result[k][i_x] *
@@ -231,15 +278,17 @@ REAL train_bags(std::string bags_name)
 		}
 	}
 
+	// 根据梯度更新一维卷机的权重矩阵, 位置嵌入矩阵, 词嵌入矩阵
 	for (INT k = 0; k < bags_size; k++)
 	{
 		INT pos = bags_train[bags_name][k];
 		gradient_conv_1d(train_sentence_list[pos], train_position_head[pos], train_position_tail[pos],
-			train_length[pos], conv_1d_result[k], max_pool_window[k], grad_x[k]);
+			conv_1d_result[k], max_pool_window[k], grad_x[k]);
 	}
 	return loss;
 }
 
+// 单个线程内运行的任务
 void* train_mode(void *id) {
 	while (true)
 	{
@@ -256,6 +305,7 @@ void* train_mode(void *id) {
 	}
 }
 
+// 训练函数
 void train() {
 
 	bags_train_key.clear();
@@ -265,6 +315,7 @@ void train() {
 		bags_train_key.push_back(it->first);
 	}
 
+	// 为模型的权重矩阵分配内存空间
 	position_vec_head = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
 	position_vec_tail = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
 	conv_1d_word = (REAL*)calloc(dimension_c * window * dimension, sizeof(REAL));
@@ -284,6 +335,7 @@ void train() {
 	relation_matrix = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
 	relation_matrix_bias = (REAL *)calloc(relation_total, sizeof(REAL));
 
+	// 为模型的权重矩阵的副本分配内存空间
 	word_vec_copy = (REAL *)calloc(dimension * word_total, sizeof(REAL));
 	position_vec_head_copy = (REAL *)calloc(position_total_head * dimension_pos, sizeof(REAL));
 	position_vec_tail_copy = (REAL *)calloc(position_total_tail * dimension_pos, sizeof(REAL));
@@ -295,6 +347,7 @@ void train() {
 	relation_matrix_copy = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
 	relation_matrix_bias_copy = (REAL *)calloc(relation_total, sizeof(REAL));
 
+	// 为模型的权重矩阵初始化
 	REAL relation_matrix_init = sqrt(6.0 / (relation_total + dimension_c));
 	REAL conv_1d_position_vec_init = sqrt(6.0 / ((dimension + dimension_pos) * window));
 
@@ -377,7 +430,7 @@ void train() {
 }
 
 INT main(INT argc, char ** argv) {
-	//output_model = 1;
+	output_model = 1;
 	init();
 	train();
 }

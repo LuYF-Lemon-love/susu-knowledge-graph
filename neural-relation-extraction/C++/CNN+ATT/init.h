@@ -346,7 +346,7 @@ void init() {
 
 	printf("number of training samples: %7d - average sentence number of per training sample: %.2f\n",
 		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));
-	printf("number of testing samples:  %7d - average sentence number of per testing sample: %.2f\n\n",
+	printf("number of testing samples:  %7d - average sentence number of per testing sample:  %.2f\n\n",
 		INT(bags_test.size()), float(float(test_sentence_list.size()) / bags_test.size()));
 
 	printf("Init end.\n\n");
