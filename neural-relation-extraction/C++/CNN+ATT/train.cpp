@@ -308,6 +308,9 @@ void* train_mode(void *id) {
 // 训练函数
 void train() {
 
+	len = bags_train.size();
+	nbatches  =  len / (batch * num_threads);
+
 	bags_train_key.clear();
 	for (std::map<std::string, std::vector<INT> >:: iterator it = bags_train.begin();
 		it != bags_train.end(); it++)
@@ -384,9 +387,8 @@ void train() {
 	printf("##################################################\n\nTrain start...\n\n");
 
 	for (INT epoch = 1; epoch <= epochs; epoch++) {
-		
-		len = bags_train.size();
-		nbatches  =  len / (batch * num_threads);
+
+		// 更新当前 epoch 的学习率		
 		current_alpha = alpha * current_rate;
 
 		current_sample = 0;
@@ -418,10 +420,12 @@ void train() {
 		}
 
 		gettimeofday(&t_end, NULL);
-		long double time_use = 1000000 * (t_end.tv_sec - t_start.tv_sec) + t_end.tv_usec - t_start.tv_usec;
+		long double time_use = (1000000 * (t_end.tv_sec - t_start.tv_sec)
+			+ t_end.tv_usec - t_start.tv_usec) / 1000000.0;
 
-		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %.2Lfs\n\n", epoch, epochs,
-			current_alpha, total_loss / final_sample, time_use / 1000000.0);
+		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %02d : %02d : %02d\n\n", epoch, epochs,
+			current_alpha, total_loss / final_sample, INT(time_use / 3600.0),
+			INT(time_use) % 3600 / 60, INT(time_use) % 60);
 		test();
 
 		current_rate = current_rate * reduce_epoch;
@@ -429,8 +433,67 @@ void train() {
 	printf("Train end.\n\n##################################################\n\n");
 }
 
-INT main(INT argc, char ** argv) {
-	output_model = 1;
+// ##################################################
+// Main function
+// ##################################################
+
+// 寻找特定参数的位置
+INT arg_pos(char *str, INT argc, char **argv) {
+	INT a;
+	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
+		if (a == argc - 1) {
+			printf("Argument missing for %s\n", str);
+			exit(1);
+		}
+		return a;
+	}
+	return -1;
+}
+
+void setparameters(INT argc, char **argv) {
+	INT i;
+	if ((i = arg_pos((char *)"-batch", argc, argv)) > 0) batch = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-init_rate", argc, argv)) > 0) current_rate = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-reduce_epoch", argc, argv)) > 0) reduce_epoch = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-limit", argc, argv)) > 0) limit = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-dimension_pos", argc, argv)) > 0) dimension_pos = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-window", argc, argv)) > 0) window = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-dimension_c", argc, argv)) > 0) dimension_c = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-dropout", argc, argv)) > 0) dropout_probability = atof(argv[i + 1]);
+	if ((i = arg_pos((char *)"-output_model", argc, argv)) > 0) output_model = atoi(argv[i + 1]);	
+	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+}
+
+// ##################################################
+// ./train [-batch BATCH] [-threads THREAD] [-alpha ALPHA]
+//         [-init_rate INIT_RATE] [-reduce_epoch REDUCE_EPOCH]
+//         [-epochs EPOCHS] [-limit LIMIT] [-dimension_pos DIMENSION_POS]
+//         [-window WINDOW] [-dimension_c DIMENSION_C]
+//         [-dropout DROPOUT] [-output_model 0/1]
+//         [-note NOTE]
+
+// optional arguments:
+// -batch BATCH                   batch size. if unspecified, batch will default to [40]
+// -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
+// -alpha ALPHA                   learning rate. if unspecified, alpha will default to [0.00125]
+// -init_rate INIT_RATE           init rate of learning rate. if unspecified, current_rate will default to [1.0]
+// -reduce_epoch REDUCE_EPOCH     reduce of init rate of learning rate per epoch. if unspecified, reduce_epoch will default to [0.98]
+// -epochs EPOCHS                 number of epochs. if unspecified, epochs will default to [25]
+// -limit LIMIT                   限制句子中 (头, 尾) 实体相对每个单词的最大距离. 默认值为 [30]
+// -dimension_pos DIMENSION_POS   位置嵌入维度，默认值为 [5]
+// -window WINDOW                 一维卷机的 window 大小. 默认值为 [3]
+// -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
+// -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
+// -output_model 0/1              [1] 保存模型，默认值为 [0]
+// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// ##################################################
+
+INT main(INT argc, char **argv) {	
+	setparameters(argc, argv);
 	init();
 	train();
+	return 0;
 }

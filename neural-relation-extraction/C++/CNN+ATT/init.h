@@ -42,7 +42,7 @@
 // num_threads: number of threads
 // alpha: learning rate
 // current_rate: init rate of learning rate
-// reduce_epoch: reduce_epoch of init rate of learning rate
+// reduce_epoch: reduce of init rate of learning rate per epoch
 // epochs: epochs
 // limit: 限制句子中 (头, 尾) 实体相对每个单词的最大距离
 // dimension_pos: position dimension
@@ -336,13 +336,16 @@ void init() {
 	position_total_head = position_max_head - position_min_head + 1;
 	position_total_tail = position_max_tail - position_min_tail + 1;
 
+	std::string save_model[] = {"不会保存模型.", "将会保存模型."};
+
 	printf("batch: %d\nnumber of threads: %d\nlearning rate: %.8f\n", batch, num_threads, alpha);
-	printf("current_rate: %.2f\nreduce_epoch: %.2f\nepochs: %d\n\n", current_rate, reduce_epoch, epochs);
+	printf("init_rate: %.2f\nreduce_epoch: %.2f\nepochs: %d\n\n", current_rate, reduce_epoch, epochs);
 	printf("word_total: %d\nword dimension: %d\n\n", word_total, dimension);
 	printf("limit: %d\nposition_total_head: %d\nposition_total_tail: %d\ndimension_pos: %d\n\n",
 		limit, position_total_head, position_total_tail, dimension_pos);
 	printf("window: %d\ndimension_c: %d\n\n", window, dimension_c);
 	printf("relation_total: %d\ndropout_probability: %.2f\n\n", relation_total, dropout_probability);
+	printf("%s\nnote: %s\n\n", save_model[output_model].c_str(), note.c_str());
 
 	printf("number of training samples: %7d - average sentence number of per training sample: %.2f\n",
 		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));
