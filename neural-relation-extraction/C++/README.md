@@ -1627,7 +1627,7 @@ $
 
 ## [papers](./papers/)
 
-- [Neural Relation Extraction with Selective Attention over Instances.pdf](./papers/Neural Relation Extraction with Selective Attention over Instances.pdf): 已经读过的 **CNN+ATT** 论文.
+- [Neural Relation Extraction with Selective Attention over Instances.pdf](./papers/Neural%20Relation%20Extraction%20with%20Selective%20Attention%20over%20Instances.pdf): 已经读过的 **CNN+ATT** 论文.
 
 ## Reference
 
