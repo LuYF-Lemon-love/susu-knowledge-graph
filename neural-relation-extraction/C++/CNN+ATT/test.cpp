@@ -1,16 +1,22 @@
 // test.cpp
 //
+// 使用方法:
+//     编译:
+//           $ g++ test.cpp -o test -pthread -O3 -march=native
+//     运行:
+//           $ ./test
+//
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 //
 // 该 C++ 文件用于模型测试
 //
 // 加载模型
 // prerequisites:
-//     ./out/word2vec + note + .txt
-//     ./out/position_vec + note + .txt
-//     ./out/conv_1d + note + .txt
-//     ./out/attention_weights + note + .txt
-//     ./out/relation_matrix + note + .txt
+//     ./output/word2vec + note + .txt
+//     ./output/position_vec + note + .txt
+//     ./output/conv_1d + note + .txt
+//     ./output/attention_weights + note + .txt
+//     ./output/relation_matrix + note + .txt
 
 // ##################################################
 // 包含标准库和头文件
@@ -103,6 +109,8 @@ void load_model()
 	for (INT i_r = 0; i_r < relation_total; i_r++) 
 		tmp = fscanf(fout, "%f", &relation_matrix_bias[i_r]);
 	fclose(fout);
+
+	printf("模型加载成功!\n\n");
 }
 
 // ##################################################
@@ -126,7 +134,7 @@ void print_test_help() {
 
 // optional arguments:
 // -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
-// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -note NOTE                     information you want to add to the filename, like ("./output/word2vec" + note + ".txt"). if unspecified, note will default to ""
 // -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
 // -load_path LOAD_PATH           folder of pretrained models. if unspecified, load_path will default to "./output/"
 // --help                         print help information of ./test
@@ -143,7 +151,7 @@ void print_test_help() {
 
 // optional arguments:
 // -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
-// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -note NOTE                     information you want to add to the filename, like ("./output/word2vec" + note + ".txt"). if unspecified, note will default to ""
 // -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
 // -load_path LOAD_PATH           folder of pretrained models. if unspecified, load_path will default to "./output/"
 // --help                         print help information of ./test

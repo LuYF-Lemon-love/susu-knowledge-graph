@@ -6,9 +6,9 @@
 //
 // prerequisites:
 //     ../data/vec.bin
-//     ../data/re/relation2id.txt
-//     ../data/re/train.txt
-//     ../data/re/test.txt
+//     ../data/relation.txt
+//     ../data/train.txt
+//     ../data/test.txt
 
 // ##################################################
 // 包含标准库
@@ -50,7 +50,7 @@
 // dimension_c: sentence embedding size
 // dropout_probability: dropout probability
 // output_model: 是否保存模型, 1: 保存模型, 0: 不保存模型
-// note: 保存模型时, 文件名的额外的信息, ("./out/word2vec" + note + ".txt")
+// note: 保存模型时, 文件名的额外的信息, ("./output/word2vec" + note + ".txt")
 // data_path: folder of data
 // output_path: folder of outputing results (precion/recall curves) and models
 INT batch = 40;
@@ -195,9 +195,9 @@ void init() {
 	word_total += 1;
 	fclose(f);
 
-	// 读取 relation2id.txt 文件
+	// 读取 relation.txt 文件
 	char buffer[1000];
-	f = fopen((data_path + "relation2id.txt").c_str(), "r");
+	f = fopen((data_path + "relation.txt").c_str(), "r");
 	while (fscanf(f, "%s", buffer) == 1) {
 		relation2id[(std::string)(buffer)] = relation_total++;
 		id2relation.push_back((std::string)(buffer));
@@ -226,7 +226,7 @@ void init() {
 
 		INT len_s = 0, head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;
-		while (fscanf(f," %s", buffer) == 1) {
+		while (fscanf(f, "%s", buffer) == 1) {
 			std::string word = buffer;
 			if (word == "###END###") break;
 			INT word_id = word2id[word];
@@ -264,14 +264,14 @@ void init() {
 
 	// 读取测试文件 (test.txt)
 	f = fopen((data_path + "test.txt").c_str(), "r");
-	while (fscanf(f,"%s",buffer)==1)  {
+	while (fscanf(f, "%s", buffer)==1)  {
 		std::string e1 = buffer;
-		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f, "%s", buffer);
 		std::string e2 = buffer;
 
-		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f, "%s", buffer);
 		std::string head_s = (std::string)(buffer);
-		tmp = fscanf(f,"%s",buffer);
+		tmp = fscanf(f, "%s", buffer);
 		std::string tail_s = (std::string)(buffer);
 
 		tmp = fscanf(f, "%s", buffer);
@@ -280,7 +280,7 @@ void init() {
 
 		INT len_s = 0 , head_pos = 0, tail_pos = 0;
 		std::vector<INT> sentence;
-		while (fscanf(f,"%s", buffer) == 1) {
+		while (fscanf(f, "%s", buffer) == 1) {
 			std::string word = buffer;
 			if (word=="###END###") break;
 			INT word_id = word2id[word];
@@ -339,6 +339,8 @@ void init() {
 
 	position_total_head = position_max_head - position_min_head + 1;
 	position_total_tail = position_max_tail - position_min_tail + 1;
+
+	printf("训练数据和测试数据加载成功!\n\n");
 }
 
 // 打印一些重要的信息
@@ -364,6 +366,23 @@ void print_information() {
 	printf("Init end.\n\n");
 }
 
+// 寻找特定参数的位置
+INT arg_pos(char *str, INT argc, char **argv) {
+	INT a;
+	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
+		if (a == argc - 1) {
+			printf("Argument missing for %s\n", str);
+			exit(1);
+		}
+		return a;
+	}
+	return -1;
+}
+
+// ##################################################
+// 数学函数
+// ##################################################
+
 // 计算双曲正切函数（tanh）
 REAL calc_tanh(REAL value) {
 	if (value > 20) return 1.0;
@@ -385,19 +404,6 @@ INT get_rand_i(INT min, INT max) {
 // 返回取值为 [min, max) 的伪随机浮点数 
 REAL get_rand_u(REAL min, REAL max) {
 	return min + (max - min) * rand() / (RAND_MAX + 1.0);
-}
-
-// 寻找特定参数的位置
-INT arg_pos(char *str, INT argc, char **argv) {
-	INT a;
-	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
-		if (a == argc - 1) {
-			printf("Argument missing for %s\n", str);
-			exit(1);
-		}
-		return a;
-	}
-	return -1;
 }
 
 #endif

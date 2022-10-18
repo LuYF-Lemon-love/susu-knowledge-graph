@@ -6,15 +6,15 @@
 //
 // 输出 precion/recall curves
 // output:
-//     ./out/pr + note + .txt
+//     ./output/pr + note + .txt
 //
 // 输出模型 (可选)
 // output:
-//     ./out/word2vec + note + .txt
-//     ./out/position_vec + note + .txt
-//     ./out/conv_1d + note + .txt
-//     ./out/attention_weights + note + .txt
-//     ./out/relation_matrix + note + .txt
+//     ./output/word2vec + note + .txt
+//     ./output/position_vec + note + .txt
+//     ./output/conv_1d + note + .txt
+//     ./output/attention_weights + note + .txt
+//     ./output/relation_matrix + note + .txt
 
 // ##################################################
 // 包含标准库和头文件
@@ -322,6 +322,8 @@ void test() {
 		fprintf(fout, "%f\t", relation_matrix_bias[i_r]);
 	fprintf(fout, "\n");
 	fclose(fout);
+
+	printf("模型保存成功, 保存目录为: %s .\n\n", output_path.c_str());
 }
 
 #endif

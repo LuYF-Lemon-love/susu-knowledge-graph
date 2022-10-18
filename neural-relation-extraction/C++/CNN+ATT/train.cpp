@@ -1,5 +1,11 @@
 // train.cpp
 //
+// 使用方法:
+//     编译:
+//           $ g++ train.cpp -o train -pthread -O3 -march=native
+//     运行:
+//           $ ./train
+//
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 //
 // 该 C++ 文件用于模型训练
@@ -251,7 +257,7 @@ REAL train_bags(std::string bags_name)
 			}
 
 			// 由于 1/x 的导数是 -1/x^2, exp(x) 的导数是 exp(x)
-			// 所以论文中的公式 (7) 中分母 (exp(e_i)) 的公式 8 需要一个和 (exp(x_1), exp(x_2) ,...)
+			// 所以论文中的公式 (7) 中分母 (exp(e_i)) 的公式 8 的求导需要一个和 (exp(x_1), exp(x_2) ,...)
 			// 并且需要多乘一次 weight[k]
 			a_denominator_sum_exp += conv_1d_result[k][i_r] * weight[k];
 		}	
@@ -350,7 +356,7 @@ void train() {
 	relation_matrix_copy = (REAL *)calloc(relation_total * dimension_c, sizeof(REAL));
 	relation_matrix_bias_copy = (REAL *)calloc(relation_total, sizeof(REAL));
 
-	// 为模型的权重矩阵初始化
+	// 模型的权重矩阵初始化
 	REAL relation_matrix_init = sqrt(6.0 / (relation_total + dimension_c));
 	REAL conv_1d_position_vec_init = sqrt(6.0 / ((dimension + dimension_pos) * window));
 
@@ -480,7 +486,7 @@ void print_train_help() {
 // -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]
-// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -note NOTE                     information you want to add to the filename, like ("./output/word2vec" + note + ".txt"). if unspecified, note will default to ""
 // -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
 // -output_path OUTPUT_PATH       folder of outputing results (precion/recall curves) and models. if unspecified, output_path will default to "./output/"
 // --help                         print help information of ./train
@@ -512,7 +518,7 @@ void print_train_help() {
 // -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]
-// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -note NOTE                     information you want to add to the filename, like ("./output/word2vec" + note + ".txt"). if unspecified, note will default to ""
 // -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
 // -output_path OUTPUT_PATH       folder of outputing results (precion/recall curves) and models. if unspecified, output_path will default to "./output/"
 // --help                         print help information of ./train
