@@ -105,10 +105,32 @@ void load_model()
 	fclose(fout);
 }
 
-INT main()
-{
+// ##################################################
+// Main function
+// ##################################################
+
+void setparameters(INT argc, char **argv) {
+	INT i;
+	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
+	if ((i = arg_pos((char *)"-dropout", argc, argv)) > 0) dropout_probability = atof(argv[i + 1]);	
+	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+}
+
+// ##################################################
+// ./test [-threads THREAD] [-dropout DROPOUT]
+//         [-note NOTE]
+
+// optional arguments:
+// -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
+// -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
+// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// ##################################################
+
+INT main(INT argc, char **argv) {	
+	setparameters(argc, argv);
 	init();
 	load_model();
+	print_information();
 	test();
 	return 0;
 }

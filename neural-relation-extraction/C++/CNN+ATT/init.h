@@ -335,7 +335,10 @@ void init() {
 
 	position_total_head = position_max_head - position_min_head + 1;
 	position_total_tail = position_max_tail - position_min_tail + 1;
+}
 
+// 打印一些重要的信息
+void print_information() {
 	std::string save_model[] = {"不会保存模型.", "将会保存模型."};
 
 	printf("batch: %d\nnumber of threads: %d\nlearning rate: %.8f\n", batch, num_threads, alpha);
@@ -351,7 +354,7 @@ void init() {
 		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));
 	printf("number of testing samples:  %7d - average sentence number of per testing sample:  %.2f\n\n",
 		INT(bags_test.size()), float(float(test_sentence_list.size()) / bags_test.size()));
-
+	
 	printf("Init end.\n\n");
 }
 
@@ -376,6 +379,19 @@ INT get_rand_i(INT min, INT max) {
 // 返回取值为 [min, max) 的伪随机浮点数 
 REAL get_rand_u(REAL min, REAL max) {
 	return min + (max - min) * rand() / (RAND_MAX + 1.0);
+}
+
+// 寻找特定参数的位置
+INT arg_pos(char *str, INT argc, char **argv) {
+	INT a;
+	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
+		if (a == argc - 1) {
+			printf("Argument missing for %s\n", str);
+			exit(1);
+		}
+		return a;
+	}
+	return -1;
 }
 
 #endif

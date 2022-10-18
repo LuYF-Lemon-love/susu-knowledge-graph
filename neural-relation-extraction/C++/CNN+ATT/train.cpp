@@ -437,19 +437,6 @@ void train() {
 // Main function
 // ##################################################
 
-// 寻找特定参数的位置
-INT arg_pos(char *str, INT argc, char **argv) {
-	INT a;
-	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
-		if (a == argc - 1) {
-			printf("Argument missing for %s\n", str);
-			exit(1);
-		}
-		return a;
-	}
-	return -1;
-}
-
 void setparameters(INT argc, char **argv) {
 	INT i;
 	if ((i = arg_pos((char *)"-batch", argc, argv)) > 0) batch = atoi(argv[i + 1]);
@@ -494,6 +481,7 @@ void setparameters(INT argc, char **argv) {
 INT main(INT argc, char **argv) {	
 	setparameters(argc, argv);
 	init();
+	print_information();
 	train();
 	return 0;
 }
