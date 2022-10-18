@@ -237,7 +237,7 @@ void test() {
 
 	// 输出 precion/recall curves
 	REAL correct = 0;
-	FILE* f = fopen(("./out/pr" + note + ".txt").c_str(), "w");
+	FILE* f = fopen((output_path + "pr" + note + ".txt").c_str(), "w");
 	INT top_2000 = std::min(2000, INT(predict_relation_vector.size()));
 	for (INT i = 0; i < top_2000; i++)
 	{
@@ -258,7 +258,7 @@ void test() {
 	if (!output_model)return;
 
 	// 输出词嵌入
-	FILE *fout = fopen(("./out/word2vec" + note + ".txt").c_str(), "w");
+	FILE *fout = fopen((output_path + "word2vec" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\n", word_total, dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
@@ -269,7 +269,7 @@ void test() {
 	fclose(fout);
 
 	// 输出位置嵌入
-	fout = fopen(("./out/position_vec" + note + ".txt").c_str(), "w");
+	fout = fopen((output_path + "position_vec" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\t%d\n", position_total_head, position_total_tail, dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
@@ -284,7 +284,7 @@ void test() {
 	fclose(fout);
 
 	// 输出一维卷机权重矩阵和对应的偏置向量
-	fout = fopen(("./out/conv_1d" + note + ".txt").c_str(), "w");
+	fout = fopen((output_path + "conv_1d" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, window, dimension, dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
 		for (INT j = 0; j < window * dimension; j++)
@@ -298,7 +298,7 @@ void test() {
 	fclose(fout);
 
 	// 输出注意力权重矩阵
-	fout = fopen(("./out/attention_weights" + note + ".txt").c_str(), "w");
+	fout = fopen((output_path + "attention_weights" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\n", relation_total, dimension_c);
 	for (INT r = 0; r < relation_total; r++) {
 		for (INT i_x = 0; i_x < dimension_c; i_x++)
@@ -311,7 +311,7 @@ void test() {
 	fclose(fout);
 
 	// 输出 relation_matrix 和对应的偏置向量
-	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "w");
+	fout = fopen((output_path + "relation_matrix" + note + ".txt").c_str(), "w");
 	fprintf(fout, "%d\t%d\t%f\n", relation_total, dimension_c, dropout_probability);
 	for (INT i_r = 0; i_r < relation_total; i_r++) {
 		for (INT i_s = 0; i_s < dimension_c; i_s++)

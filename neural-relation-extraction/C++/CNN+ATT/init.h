@@ -52,6 +52,7 @@
 // output_model: 是否保存模型, 1: 保存模型, 0: 不保存模型
 // note: 保存模型时, 文件名的额外的信息, ("./out/word2vec" + note + ".txt")
 // data_path: folder of data
+// output_path: folder of outputing results (precion/recall curves) and models
 INT batch = 40;
 INT num_threads = 32;
 REAL alpha = 0.00125;
@@ -66,6 +67,7 @@ REAL dropout_probability = 0.5;
 INT output_model = 0;
 std::string note = "";
 std::string data_path = "../data/";
+std::string output_path = "./output/";
 
 // ##################################################
 // 声明和定义保存训练数据和测试数据的变量
@@ -351,7 +353,8 @@ void print_information() {
 	printf("window: %d\ndimension_c: %d\n\n", window, dimension_c);
 	printf("relation_total: %d\ndropout_probability: %.2f\n\n", relation_total, dropout_probability);
 	printf("%s\nnote: %s\n\n", save_model[output_model].c_str(), note.c_str());
-	printf("folder of data: %s\n\n", data_path.c_str());
+	printf("folder of data: %s\n", data_path.c_str());
+	printf("folder of outputing results (precion/recall curves) and models: %s\n\n", output_path.c_str());
 
 	printf("number of training samples: %7d - average sentence number of per training sample: %.2f\n",
 		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));

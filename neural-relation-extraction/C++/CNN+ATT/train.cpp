@@ -423,7 +423,7 @@ void train() {
 		long double time_use = (1000000 * (t_end.tv_sec - t_start.tv_sec)
 			+ t_end.tv_usec - t_start.tv_usec) / 1000000.0;
 
-		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %02d : %02d : %02d\n\n", epoch, epochs,
+		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %02d:%02d:%02d\n\n", epoch, epochs,
 			current_alpha, total_loss / final_sample, INT(time_use / 3600.0),
 			INT(time_use) % 3600 / 60, INT(time_use) % 60);
 		test();
@@ -453,8 +453,11 @@ void setparameters(INT argc, char **argv) {
 	if ((i = arg_pos((char *)"-output_model", argc, argv)) > 0) output_model = atoi(argv[i + 1]);	
 	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 	if ((i = arg_pos((char *)"-data_path", argc, argv)) > 0) data_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-output_path", argc, argv)) > 0) output_path = argv[i + 1];
 }
 
+void print_train_help() {
+	std::string str = R"(
 // ##################################################
 // ./train [-batch BATCH] [-threads THREAD] [-alpha ALPHA]
 //         [-init_rate INIT_RATE] [-reduce_epoch REDUCE_EPOCH]
@@ -462,6 +465,7 @@ void setparameters(INT argc, char **argv) {
 //         [-window WINDOW] [-dimension_c DIMENSION_C]
 //         [-dropout DROPOUT] [-output_model 0/1]
 //         [-note NOTE] [-data_path DATA_PATH]
+//         [-output_path OUTPUT_PATH] [--help]
 
 // optional arguments:
 // -batch BATCH                   batch size. if unspecified, batch will default to [40]
@@ -475,12 +479,51 @@ void setparameters(INT argc, char **argv) {
 // -window WINDOW                 一维卷机的 window 大小. 默认值为 [3]
 // -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
-// -output_model 0/1              [1] 保存模型，默认值为 [0]
+// -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]
 // -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
 // -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
+// -output_path OUTPUT_PATH       folder of outputing results (precion/recall curves) and models. if unspecified, output_path will default to "./output/"
+// --help                         print help information of ./train
+// ##################################################
+)";
+
+	printf("%s\n", str.c_str());
+}
+
+// ##################################################
+// ./train [-batch BATCH] [-threads THREAD] [-alpha ALPHA]
+//         [-init_rate INIT_RATE] [-reduce_epoch REDUCE_EPOCH]
+//         [-epochs EPOCHS] [-limit LIMIT] [-dimension_pos DIMENSION_POS]
+//         [-window WINDOW] [-dimension_c DIMENSION_C]
+//         [-dropout DROPOUT] [-output_model 0/1]
+//         [-note NOTE] [-data_path DATA_PATH]
+//         [-output_path OUTPUT_PATH] [--help]
+
+// optional arguments:
+// -batch BATCH                   batch size. if unspecified, batch will default to [40]
+// -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
+// -alpha ALPHA                   learning rate. if unspecified, alpha will default to [0.00125]
+// -init_rate INIT_RATE           init rate of learning rate. if unspecified, current_rate will default to [1.0]
+// -reduce_epoch REDUCE_EPOCH     reduce of init rate of learning rate per epoch. if unspecified, reduce_epoch will default to [0.98]
+// -epochs EPOCHS                 number of epochs. if unspecified, epochs will default to [25]
+// -limit LIMIT                   限制句子中 (头, 尾) 实体相对每个单词的最大距离. 默认值为 [30]
+// -dimension_pos DIMENSION_POS   位置嵌入维度，默认值为 [5]
+// -window WINDOW                 一维卷机的 window 大小. 默认值为 [3]
+// -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
+// -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
+// -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]
+// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
+// -output_path OUTPUT_PATH       folder of outputing results (precion/recall curves) and models. if unspecified, output_path will default to "./output/"
+// --help                         print help information of ./train
 // ##################################################
 
-INT main(INT argc, char **argv) {	
+INT main(INT argc, char **argv) {
+	for (INT a = 1; a < argc; a++) if (!strcmp((char *)"--help", argv[a])) {
+		print_train_help();
+		return 0;
+	}
+	output_model = 1;
 	setparameters(argc, argv);
 	init();
 	print_information();

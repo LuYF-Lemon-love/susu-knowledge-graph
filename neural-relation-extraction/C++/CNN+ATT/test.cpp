@@ -45,7 +45,7 @@ void load_model()
 	INT tmp;
 
 	// 加载词嵌入
-	FILE *fout = fopen(("./out/word2vec" + note + ".txt").c_str(), "r");
+	FILE *fout = fopen((output_path + "word2vec" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout,"%d%d", &word_total, &dimension);
 	for (INT i = 0; i < word_total; i++)
 	{
@@ -55,7 +55,7 @@ void load_model()
 	fclose(fout);
 
 	// 加载位置嵌入
-	fout = fopen(("./out/position_vec" + note + ".txt").c_str(), "r");
+	fout = fopen((output_path + "position_vec" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%d", &position_total_head, &position_total_tail, &dimension_pos);
 	for (INT i = 0; i < position_total_head; i++) {
 		for (INT j = 0; j < dimension_pos; j++)
@@ -68,7 +68,7 @@ void load_model()
 	fclose(fout);
 
 	// 加载一维卷机权重矩阵和对应的偏置向量
-	fout = fopen(("./out/conv_1d" + note + ".txt").c_str(), "r");
+	fout = fopen((output_path + "conv_1d" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%d%d", &dimension_c, &window, &dimension, &dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {
 		for (INT j = 0; j < window * dimension; j++)
@@ -82,7 +82,7 @@ void load_model()
 	fclose(fout);
 
 	// 加载注意力权重矩阵
-	fout = fopen(("./out/attention_weights" + note + ".txt").c_str(), "r");
+	fout = fopen((output_path + "attention_weights" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout,"%d%d", &relation_total, &dimension_c);
 	for (INT r = 0; r < relation_total; r++) {
 		for (INT i_x = 0; i_x < dimension_c; i_x++)
@@ -94,7 +94,7 @@ void load_model()
 	fclose(fout);
 
 	// 加载 relation_matrix 和对应的偏置向量
-	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "r");
+	fout = fopen((output_path + "relation_matrix" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%f", &relation_total, &dimension_c, &dropout_probability);
 	for (INT i_r = 0; i_r < relation_total; i_r++) {
 		for (INT i_s = 0; i_s < dimension_c; i_s++)
@@ -114,19 +114,46 @@ void setparameters(INT argc, char **argv) {
 	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
 	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
 	if ((i = arg_pos((char *)"-data_path", argc, argv)) > 0) data_path = argv[i + 1];
+	if ((i = arg_pos((char *)"-load_path", argc, argv)) > 0) output_path = argv[i + 1];
 }
 
+void print_test_help() {
+	std::string str = R"(
 // ##################################################
 // ./test [-threads THREAD] [-dropout DROPOUT]
 //        [-note NOTE] [-data_path DATA_PATH]
+//        [-load_path LOAD_PATH] [--help]
 
 // optional arguments:
 // -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
 // -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
 // -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
+// -load_path LOAD_PATH           folder of pretrained models. if unspecified, load_path will default to "./output/"
+// --help                         print help information of ./test
+// ##################################################
+)";
+
+	printf("%s\n", str.c_str());
+}
+
+// ##################################################
+// ./test [-threads THREAD] [-dropout DROPOUT]
+//        [-note NOTE] [-data_path DATA_PATH]
+//        [-load_path LOAD_PATH] [--help]
+
+// optional arguments:
+// -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
+// -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
+// -load_path LOAD_PATH           folder of pretrained models. if unspecified, load_path will default to "./output/"
+// --help                         print help information of ./test
 // ##################################################
 
-INT main(INT argc, char **argv) {	
+INT main(INT argc, char **argv) {
+	for (INT a = 1; a < argc; a++) if (!strcmp((char *)"--help", argv[a])) {
+		print_test_help();
+		return 0;
+	}	
 	setparameters(argc, argv);
 	init();
 	load_model();
