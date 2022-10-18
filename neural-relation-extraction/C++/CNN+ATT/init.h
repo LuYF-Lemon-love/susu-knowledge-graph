@@ -51,6 +51,7 @@
 // dropout_probability: dropout probability
 // output_model: 是否保存模型, 1: 保存模型, 0: 不保存模型
 // note: 保存模型时, 文件名的额外的信息, ("./out/word2vec" + note + ".txt")
+// data_path: folder of data
 INT batch = 40;
 INT num_threads = 32;
 REAL alpha = 0.00125;
@@ -64,6 +65,7 @@ INT dimension_c = 230;
 REAL dropout_probability = 0.5;
 INT output_model = 0;
 std::string note = "";
+std::string data_path = "../data/";
 
 // ##################################################
 // 声明和定义保存训练数据和测试数据的变量
@@ -164,7 +166,7 @@ void init() {
 	INT tmp;
 
 	// 读取预训练词嵌入
-	FILE *f = fopen("../data/vec.bin", "rb");
+	FILE *f = fopen((data_path + "vec.bin").c_str(), "rb");
 	tmp = fscanf(f, "%d", &word_total);
 	tmp = fscanf(f, "%d", &dimension);
 	word_vec = (REAL *)malloc((word_total + 1) * dimension * sizeof(REAL));
@@ -193,7 +195,7 @@ void init() {
 
 	// 读取 relation2id.txt 文件
 	char buffer[1000];
-	f = fopen("../data/re/relation2id.txt", "r");
+	f = fopen((data_path + "relation2id.txt").c_str(), "r");
 	while (fscanf(f, "%s", buffer) == 1) {
 		relation2id[(std::string)(buffer)] = relation_total++;
 		id2relation.push_back((std::string)(buffer));
@@ -205,7 +207,7 @@ void init() {
 	position_max_head = 0;
 	position_min_tail = 0;
 	position_max_tail = 0;
-	f = fopen("../data/re/train.txt", "r");
+	f = fopen((data_path + "train.txt").c_str(), "r");
 	while (fscanf(f, "%s", buffer) == 1)  {
 		std::string e1 = buffer;
 		tmp = fscanf(f, "%s", buffer);
@@ -259,7 +261,7 @@ void init() {
 	fclose(f);
 
 	// 读取测试文件 (test.txt)
-	f = fopen("../data/re/test.txt", "r");	
+	f = fopen((data_path + "test.txt").c_str(), "r");
 	while (fscanf(f,"%s",buffer)==1)  {
 		std::string e1 = buffer;
 		tmp = fscanf(f,"%s",buffer);
@@ -349,6 +351,7 @@ void print_information() {
 	printf("window: %d\ndimension_c: %d\n\n", window, dimension_c);
 	printf("relation_total: %d\ndropout_probability: %.2f\n\n", relation_total, dropout_probability);
 	printf("%s\nnote: %s\n\n", save_model[output_model].c_str(), note.c_str());
+	printf("folder of data: %s\n\n", data_path.c_str());
 
 	printf("number of training samples: %7d - average sentence number of per training sample: %.2f\n",
 		INT(bags_train.size()), float(float(train_sentence_list.size()) / bags_train.size()));

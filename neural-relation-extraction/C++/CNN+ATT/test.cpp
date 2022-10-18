@@ -95,7 +95,7 @@ void load_model()
 
 	// 加载 relation_matrix 和对应的偏置向量
 	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "r");
-	tmp = fscanf(fout, "%d%d", &relation_total, &dimension_c);
+	tmp = fscanf(fout, "%d%d%f", &relation_total, &dimension_c, &dropout_probability);
 	for (INT i_r = 0; i_r < relation_total; i_r++) {
 		for (INT i_s = 0; i_s < dimension_c; i_s++)
 			tmp = fscanf(fout, "%f", &relation_matrix[i_r * dimension_c + i_s]);
@@ -112,18 +112,18 @@ void load_model()
 void setparameters(INT argc, char **argv) {
 	INT i;
 	if ((i = arg_pos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
-	if ((i = arg_pos((char *)"-dropout", argc, argv)) > 0) dropout_probability = atof(argv[i + 1]);	
 	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+	if ((i = arg_pos((char *)"-data_path", argc, argv)) > 0) data_path = argv[i + 1];
 }
 
 // ##################################################
 // ./test [-threads THREAD] [-dropout DROPOUT]
-//         [-note NOTE]
+//        [-note NOTE] [-data_path DATA_PATH]
 
 // optional arguments:
 // -threads THREAD                number of worker threads. if unspecified, num_threads will default to [32]
-// -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
 // ##################################################
 
 INT main(INT argc, char **argv) {	

@@ -165,7 +165,7 @@ REAL train_bags(std::string bags_name)
 	std::vector<REAL> result_final;
 	std::vector<INT> dropout;
 	for (INT i_s = 0; i_s < dimension_c; i_s++)
-		dropout.push_back((double)(rand()) / (RAND_MAX + 1.0) < dropout_probability);
+		dropout.push_back((REAL)(rand()) / (RAND_MAX + 1.0) < dropout_probability);
 
 	REAL sum = 0;
 	for (INT i_r = 0; i_r < relation_total; i_r++) {
@@ -452,6 +452,7 @@ void setparameters(INT argc, char **argv) {
 	if ((i = arg_pos((char *)"-dropout", argc, argv)) > 0) dropout_probability = atof(argv[i + 1]);
 	if ((i = arg_pos((char *)"-output_model", argc, argv)) > 0) output_model = atoi(argv[i + 1]);	
 	if ((i = arg_pos((char *)"-note", argc, argv)) > 0) note = argv[i + 1];
+	if ((i = arg_pos((char *)"-data_path", argc, argv)) > 0) data_path = argv[i + 1];
 }
 
 // ##################################################
@@ -460,7 +461,7 @@ void setparameters(INT argc, char **argv) {
 //         [-epochs EPOCHS] [-limit LIMIT] [-dimension_pos DIMENSION_POS]
 //         [-window WINDOW] [-dimension_c DIMENSION_C]
 //         [-dropout DROPOUT] [-output_model 0/1]
-//         [-note NOTE]
+//         [-note NOTE] [-data_path DATA_PATH]
 
 // optional arguments:
 // -batch BATCH                   batch size. if unspecified, batch will default to [40]
@@ -476,6 +477,7 @@ void setparameters(INT argc, char **argv) {
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -output_model 0/1              [1] 保存模型，默认值为 [0]
 // -note NOTE                     information you want to add to the filename, like ("./out/word2vec" + note + ".txt"). if unspecified, note will default to ""
+// -data_path DATA_PATH           folder of data. if unspecified, data_path will default to "../data/"
 // ##################################################
 
 INT main(INT argc, char **argv) {	

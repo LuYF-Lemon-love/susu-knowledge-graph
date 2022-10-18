@@ -312,7 +312,7 @@ void test() {
 
 	// 输出 relation_matrix 和对应的偏置向量
 	fout = fopen(("./out/relation_matrix" + note + ".txt").c_str(), "w");
-	fprintf(fout, "%d\t%d\n", relation_total, dimension_c);
+	fprintf(fout, "%d\t%d\t%f\n", relation_total, dimension_c, dropout_probability);
 	for (INT i_r = 0; i_r < relation_total; i_r++) {
 		for (INT i_s = 0; i_s < dimension_c; i_s++)
 			fprintf(fout, "%f\t", relation_matrix[i_r * dimension_c + i_s]);
