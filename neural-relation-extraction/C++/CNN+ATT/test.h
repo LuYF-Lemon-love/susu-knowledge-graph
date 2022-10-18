@@ -43,6 +43,8 @@ std::vector<std::string> bags_test_key;
 std::vector<INT> thread_first_bags_test;
 pthread_mutex_t test_mutex;
 
+struct timeval test_start, test_end;
+
 // 为 std::sort() 定义比较函数
 // 以模型给出的关系成立的概率降序排列, 用于 predict_relation_vector 变量
 bool cmp_predict_probability(std::pair<std::string, std::pair<INT,double> > a,
@@ -188,6 +190,8 @@ void test() {
 
 	printf("##################################################\n\nTest start...\n\n");
 
+	gettimeofday(&test_start, NULL);
+
 	num_test_non_NA = 0;
 	bags_test_key.clear();
 	thread_first_bags_test.clear();
@@ -253,7 +257,11 @@ void test() {
 	}
 	fclose(f);
 
-	printf("\nTest end.\n\n##################################################\n\n");
+	gettimeofday(&test_end, NULL);
+	long double time_use = (1000000 * (test_end.tv_sec - test_start.tv_sec)
+		+ test_end.tv_usec - test_start.tv_usec) / 1000000.0;
+	printf("\ntest use time - %02d:%02d:%02d\n\n", INT(time_use / 3600.0),
+		INT(time_use) % 3600 / 60, INT(time_use) % 60);
 
 	if (!output_model)return;
 
@@ -323,7 +331,7 @@ void test() {
 	fprintf(fout, "\n");
 	fclose(fout);
 
-	printf("模型保存成功, 保存目录为: %s .\n\n", output_path.c_str());
+	printf("模型保存成功, 保存目录为: %s\n\n", output_path.c_str());
 }
 
 #endif

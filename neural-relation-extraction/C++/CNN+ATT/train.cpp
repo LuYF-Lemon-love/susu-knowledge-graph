@@ -32,7 +32,7 @@ pthread_mutex_t train_mutex;
 INT len;
 INT nbatches;
 
-struct timeval t_start, t_end;
+struct timeval train_start, train_end;
 
 // 计算句子的一维卷机
 std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
@@ -401,7 +401,7 @@ void train() {
 		final_sample = 0;
 		total_loss = 0;
 
-		gettimeofday(&t_start, NULL);
+		gettimeofday(&train_start, NULL);
 
 		for (INT i = 1; i <= nbatches; i++) {
 			final_sample += batch * num_threads;
@@ -425,14 +425,15 @@ void train() {
 			free(pt);
 		}
 
-		gettimeofday(&t_end, NULL);
-		long double time_use = (1000000 * (t_end.tv_sec - t_start.tv_sec)
-			+ t_end.tv_usec - t_start.tv_usec) / 1000000.0;
+		gettimeofday(&train_end, NULL);
+		long double time_use = (1000000 * (train_end.tv_sec - train_start.tv_sec)
+			+ train_end.tv_usec - train_start.tv_usec) / 1000000.0;
 
 		printf("Epoch %d/%d - current_alpha: %.8f - loss: %f - %02d:%02d:%02d\n\n", epoch, epochs,
 			current_alpha, total_loss / final_sample, INT(time_use / 3600.0),
 			INT(time_use) % 3600 / 60, INT(time_use) % 60);
 		test();
+		printf("Test end.\n\n##################################################\n\n");
 
 		current_rate = current_rate * reduce_epoch;
 	}

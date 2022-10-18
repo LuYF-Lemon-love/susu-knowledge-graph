@@ -167,5 +167,6 @@ INT main(INT argc, char **argv) {
 	load_model();
 	print_information();
 	test();
+	printf("Test end.\n\n##################################################\n\n");
 	return 0;
 }
