@@ -2,9 +2,9 @@
 //
 // 使用方法:
 //     编译:
-//           $ g++ test.cpp -o test -pthread -O3 -march=native
+//           $ g++ test.cpp -o ./build/test -pthread -O3 -march=native
 //     运行:
-//           $ ./test
+//           $ ./build/test
 //
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 //

@@ -2,9 +2,9 @@
 //
 // 使用方法:
 //     编译:
-//           $ g++ train.cpp -o train -pthread -O3 -march=native
+//           $ g++ train.cpp -o ./build/train -pthread -O3 -march=native
 //     运行:
-//           $ ./train
+//           $ ./build/train
 //
 // created by LuYF-Lemon-love <luyanfeng_nlp@qq.com>
 //
