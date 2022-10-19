@@ -73,7 +73,7 @@ void load_model()
 	}
 	fclose(fout);
 
-	// 加载一维卷机权重矩阵和对应的偏置向量
+	// 加载一维卷积权重矩阵和对应的偏置向量
 	fout = fopen((output_path + "conv_1d" + note + ".txt").c_str(), "r");
 	tmp = fscanf(fout, "%d%d%d%d", &dimension_c, &window, &dimension, &dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {

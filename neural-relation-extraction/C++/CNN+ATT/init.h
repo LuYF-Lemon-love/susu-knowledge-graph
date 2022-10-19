@@ -125,10 +125,10 @@ std::vector<INT *> test_sentence_list, test_position_head, test_position_tail;
 // position_vec_tail (position_total_tail * dimension_pos): 尾实体的位置嵌入矩阵
 REAL *position_vec_head, *position_vec_tail;
 
-// conv_1d_word (dimension_c * window * dimension): 一维卷机的权重矩阵 (词嵌入)
-// conv_1d_position_head (dimension_c * window * dimension_pos): 一维卷机的权重矩阵 (头实体的位置嵌入)
-// conv_1d_position_tail (dimension_c * window * dimension_pos): 一维卷机的权重矩阵 (尾实体的位置嵌入)
-// conv_1d_bias (dimension_c): 一维卷机的偏置向量
+// conv_1d_word (dimension_c * window * dimension): 一维卷积的权重矩阵 (词嵌入)
+// conv_1d_position_head (dimension_c * window * dimension_pos): 一维卷积的权重矩阵 (头实体的位置嵌入)
+// conv_1d_position_tail (dimension_c * window * dimension_pos): 一维卷积的权重矩阵 (尾实体的位置嵌入)
+// conv_1d_bias (dimension_c): 一维卷积的偏置向量
 REAL *conv_1d_word, *conv_1d_position_head, *conv_1d_position_tail, *conv_1d_bias;
 
 // attention_weights (relation_total * dimension_c * dimension_c): 注意力权重矩阵
@@ -147,10 +147,10 @@ REAL *relation_matrix, *relation_matrix_bias;
 // position_vec_tail_copy (position_total_tail * dimension_pos): 尾实体的位置嵌入矩阵副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
 REAL *word_vec_copy, *position_vec_head_copy, *position_vec_tail_copy;
 
-// conv_1d_word_copy (dimension_c * window * dimension): 一维卷机的权重矩阵 (词嵌入) 副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
-// conv_1d_position_head_copy (dimension_c * window * dimension_pos): 一维卷机的权重矩阵 (头实体的位置嵌入) 副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
-// conv_1d_position_tail_copy (dimension_c * window * dimension_pos): 一维卷机的权重矩阵 (尾实体的位置嵌入) 副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
-// conv_1d_bias_copy (dimension_c): 一维卷机的偏置向量副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
+// conv_1d_word_copy (dimension_c * window * dimension): 一维卷积的权重矩阵 (词嵌入) 副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
+// conv_1d_position_head_copy (dimension_c * window * dimension_pos): 一维卷积的权重矩阵 (头实体的位置嵌入) 副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
+// conv_1d_position_tail_copy (dimension_c * window * dimension_pos): 一维卷积的权重矩阵 (尾实体的位置嵌入) 副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
+// conv_1d_bias_copy (dimension_c): 一维卷积的偏置向量副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值
 REAL *conv_1d_word_copy, *conv_1d_position_head_copy, *conv_1d_position_tail_copy, *conv_1d_bias_copy;
 
 // attention_weights_copy (relation_total * dimension_c * dimension_c): 注意力权重矩阵副本, 由于使用多线程训练模型, 该副本用于每一训练批次计算损失值

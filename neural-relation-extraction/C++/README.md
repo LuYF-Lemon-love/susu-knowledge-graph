@@ -1586,7 +1586,7 @@ $
 // -epochs EPOCHS                 number of epochs. if unspecified, epochs will default to [25]
 // -limit LIMIT                   限制句子中 (头, 尾) 实体相对每个单词的最大距离. 默认值为 [30]
 // -dimension_pos DIMENSION_POS   位置嵌入维度，默认值为 [5]
-// -window WINDOW                 一维卷机的 window 大小. 默认值为 [3]
+// -window WINDOW                 一维卷积的 window 大小. 默认值为 [3]
 // -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]

@@ -53,7 +53,7 @@ bool cmp_predict_probability(std::pair<std::string, std::pair<INT,double> > a,
     return a.second.second > b.second.second;
 }
 
-// 计算句子的一维卷机
+// 计算句子的一维卷积
 std::vector<REAL> calc_conv_1d(INT *sentence, INT *test_position_head,
 	INT *test_position_tail, INT sentence_length) {
 	
@@ -111,7 +111,7 @@ void* test_mode(void *thread_id)
 
 	for (INT i_sample = left; i_sample < right; i_sample++)
 	{
-		// 一维卷机部分
+		// 一维卷积部分
 		sample_relation_list.clear();
 		std::vector<std::vector<REAL> > conv_1d_result;
 		INT bags_size = bags_test[bags_test_key[i_sample]].size();
@@ -291,7 +291,7 @@ void test() {
 	}
 	fclose(fout);
 
-	// 输出一维卷机权重矩阵和对应的偏置向量
+	// 输出一维卷积权重矩阵和对应的偏置向量
 	fout = fopen((output_path + "conv_1d" + note + ".txt").c_str(), "w");
 	fprintf(fout,"%d\t%d\t%d\t%d\n", dimension_c, window, dimension, dimension_pos);
 	for (INT i = 0; i < dimension_c; i++) {

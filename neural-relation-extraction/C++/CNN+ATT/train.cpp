@@ -34,7 +34,7 @@ INT nbatches;
 
 struct timeval train_start, train_end;
 
-// 计算句子的一维卷机
+// 计算句子的一维卷积
 std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	INT *train_position_tail, INT sentence_length, std::vector<INT> &max_pool_window_k) {
 	
@@ -79,7 +79,7 @@ std::vector<REAL> calc_conv_1d(INT *sentence, INT *train_position_head,
 	return conv_1d_result_k;
 }
 
-// 根据梯度更新一维卷机的权重矩阵, 位置嵌入矩阵, 词嵌入矩阵
+// 根据梯度更新一维卷积的权重矩阵, 位置嵌入矩阵, 词嵌入矩阵
 void gradient_conv_1d(INT *sentence, INT *train_position_head, INT *train_position_tail,
 	std::vector<REAL> &conv_1d_result_k, std::vector<INT> &max_pool_window_k, std::vector<REAL> &grad_x_k)
 {
@@ -119,7 +119,7 @@ REAL train_bags(std::string bags_name)
 	// 正向传播
 	// ##################################################
 
-	// 一维卷机部分
+	// 一维卷积部分
 	// relation: 该训练样本的正确标签 (关系)
 	INT relation = -1;
 	INT bags_size = bags_train[bags_name].size();
@@ -284,7 +284,7 @@ REAL train_bags(std::string bags_name)
 		}
 	}
 
-	// 根据梯度更新一维卷机的权重矩阵, 位置嵌入矩阵, 词嵌入矩阵
+	// 根据梯度更新一维卷积的权重矩阵, 位置嵌入矩阵, 词嵌入矩阵
 	for (INT k = 0; k < bags_size; k++)
 	{
 		INT pos = bags_train[bags_name][k];
@@ -483,7 +483,7 @@ void print_train_help() {
 // -epochs EPOCHS                 number of epochs. if unspecified, epochs will default to [25]
 // -limit LIMIT                   限制句子中 (头, 尾) 实体相对每个单词的最大距离. 默认值为 [30]
 // -dimension_pos DIMENSION_POS   位置嵌入维度，默认值为 [5]
-// -window WINDOW                 一维卷机的 window 大小. 默认值为 [3]
+// -window WINDOW                 一维卷积的 window 大小. 默认值为 [3]
 // -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]
@@ -515,7 +515,7 @@ void print_train_help() {
 // -epochs EPOCHS                 number of epochs. if unspecified, epochs will default to [25]
 // -limit LIMIT                   限制句子中 (头, 尾) 实体相对每个单词的最大距离. 默认值为 [30]
 // -dimension_pos DIMENSION_POS   位置嵌入维度，默认值为 [5]
-// -window WINDOW                 一维卷机的 window 大小. 默认值为 [3]
+// -window WINDOW                 一维卷积的 window 大小. 默认值为 [3]
 // -dimension_c DIMENSION_C       sentence embedding size, if unspecified, dimension_c will default to [230]
 // -dropout DROPOUT               dropout probability. if unspecified, dropout_probability will default to [0.5]
 // -output_model 0/1              [1] 保存模型, [0] 不保存模型. 默认值为 [1]
