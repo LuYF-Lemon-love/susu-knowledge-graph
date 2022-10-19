@@ -30,9 +30,9 @@ To run the code, the dataset should be put in the folder **data/** using the fol
 
 **CNN+ATT** 是一种**基于语句级别选择性注意力机制**的神经网络模型, 用于构建**基于远程监督**的**关系抽取系统**.
 
-对应的博客: https://www.luyf-lemon-love.space/1560426839/ .
+对应的博客: https://www.luyf-lemon-love.space/4249978267/ .
 
-**CNN+ATT** 原论文链接：[Neural Relation Extraction with Selective Attention over Instances](https://aclanthology.org/P16-1200v2.pdf).
+**CNN+ATT** 原论文链接: [Neural Relation Extraction with Selective Attention over Instances](https://aclanthology.org/P16-1200v2.pdf).
 
 ### 使用
 
