@@ -90,6 +90,7 @@ void gradient_conv_1d(INT *sentence, INT *train_position_head, INT *train_positi
 		INT last_pos = i * window * dimension_pos;
 		INT total_word = 0;
 		INT total_pos = 0;
+		// (tanh x)^{'} = sech^2x = \frac{1}{cosh^2x} = 1 - tanh^2x
 		REAL grad_word_pos = grad_x_k[i] * (1 -  conv_1d_result_k[i] * conv_1d_result_k[i]);
 		for (INT j = 0; j < window; j++)  {
 			INT last_word_vec = sentence[max_pool_window_k[i] + j] * dimension;
